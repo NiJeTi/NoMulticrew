@@ -10,6 +10,7 @@ internal sealed class ServerSession : IDisposable
 {
     private readonly NetworkServer _server;
     private readonly HashSet<INetworkPlayer> _capable = [];
+    private readonly HashSet<INetworkPlayer> _greeted = [];
     private readonly UnityAction<INetworkPlayer> _onDisconnected;
 
     private bool _commandRegistered;
@@ -30,7 +31,7 @@ internal sealed class ServerSession : IDisposable
 
         messageHandler.RegisterHandler<CrewHello>(OnHello, allowUnauthenticated: false);
 
-        _onDisconnected = Remove;
+        _onDisconnected = OnDisconnected;
 
         server.Disconnected.AddListener(_onDisconnected);
 
@@ -113,9 +114,12 @@ internal sealed class ServerSession : IDisposable
 
     public void Dispose()
     {
-        Plugin.Logger.LogInfo(
-            $"Server session send summary: allowed={SendsAllowed} blocked={SendsBlocked}"
-        );
+        if (SendsAllowed > 0 || SendsBlocked > 0)
+        {
+            Plugin.Logger.LogInfo(
+                $"Server session send summary: allowed={SendsAllowed} blocked={SendsBlocked}"
+            );
+        }
 
         if (_commandRegistered)
         {
@@ -130,10 +134,23 @@ internal sealed class ServerSession : IDisposable
         MessageHandler.UnregisterHandler<CrewHello>();
 
         _capable.Clear();
+        _greeted.Clear();
+    }
+
+    private void OnDisconnected(INetworkPlayer player)
+    {
+        _greeted.Remove(player);
+
+        Remove(player);
     }
 
     private void OnHello(INetworkPlayer player, CrewHello message)
     {
+        if (!_greeted.Add(player))
+        {
+            return;
+        }
+
         var accepted = message.ProtocolVersion == CrewSerializers.ProtocolVersion;
 
         Add(player);

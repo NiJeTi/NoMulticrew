@@ -85,9 +85,12 @@ internal sealed class ClientSession : IDisposable
 
     public void Dispose()
     {
-        Plugin.Logger.LogInfo(
-            $"Client session send summary: allowed={SendsAllowed} blocked={SendsBlocked}"
-        );
+        if (SendsAllowed > 0 || SendsBlocked > 0)
+        {
+            Plugin.Logger.LogInfo(
+                $"Client session send summary: allowed={SendsAllowed} blocked={SendsBlocked}"
+            );
+        }
 
         if (_client != null)
         {

@@ -14,11 +14,16 @@ internal sealed class Plugin : BaseUnityPlugin
     public new static ManualLogSource Logger { get; private set; } = null!;
     public static Settings Settings { get; private set; } = null!;
 
+    private static readonly SeatTable DefaultSeats = SeatTable.Defaults();
+
     private static ClientSession? _clientSession;
     private static ServerSession? _serverSession;
     private static MissionState? _missionState;
 
-    internal static SeatTable Seats => _missionState?.Seats ?? SeatTable.Defaults();
+    internal static ClientSession? Client => _clientSession;
+    internal static ServerSession? Server => _serverSession;
+
+    internal static SeatTable Seats => _missionState?.Seats ?? DefaultSeats;
 
     public static bool IsServer
     {
@@ -104,8 +109,10 @@ internal sealed class Plugin : BaseUnityPlugin
     {
         if (MissionTracker.HasChanged())
         {
-            _missionState?.Dispose();
+            var previous = _missionState;
+
             _missionState = null;
+            previous?.Dispose();
         }
 
         _missionState ??= MissionState.TryCreate();
@@ -119,7 +126,11 @@ internal sealed class Plugin : BaseUnityPlugin
             return;
         }
 
-        _serverSession?.Dispose();
+        var previous = _serverSession;
+
+        _serverSession = null;
+        previous?.Dispose();
+
         _serverSession = server == null ? null : ServerSession.TryCreate(server);
     }
 
@@ -131,7 +142,11 @@ internal sealed class Plugin : BaseUnityPlugin
             return;
         }
 
-        _clientSession?.Dispose();
+        var previous = _clientSession;
+
+        _clientSession = null;
+        previous?.Dispose();
+
         _clientSession = client == null ? null : ClientSession.TryCreate(client);
     }
 
