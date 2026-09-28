@@ -1,11 +1,10 @@
 using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
+using Mirage;
 using NoMulticrew.Networking;
 using NoMulticrew.Seats;
-using NoMulticrew.Server;
 using NuclearOption.Networking;
-using UnityEngine;
 
 namespace NoMulticrew;
 
@@ -15,7 +14,11 @@ internal sealed class Plugin : BaseUnityPlugin
     public new static ManualLogSource Logger { get; private set; } = null!;
     public static Settings Settings { get; private set; } = null!;
 
-    internal static SeatTable Seats { get; private set; } = SeatTable.Defaults();
+    private static ClientSession? _clientSession;
+    private static ServerSession? _serverSession;
+    private static MissionState? _missionState;
+
+    internal static SeatTable Seats => _missionState?.Seats ?? SeatTable.Defaults();
 
     public static bool IsServer
     {
@@ -63,29 +66,81 @@ internal sealed class Plugin : BaseUnityPlugin
 
     private void LateUpdate()
     {
-        CrewNetwork.EnsureHandlersRegistered();
-        CrewServerCommands.EnsureRegistered();
+        UpdateState();
+
+        _serverSession?.Tick();
+
         Advertisement.Tick();
-
-        if (!MissionTracker.InMission)
-        {
-            return;
-        }
-
-        if (!MissionTracker.HasChanged())
-        {
-            return;
-        }
-
-        var table = SeatTableValidator.Validate(SeatTable.Load());
-
-        table.WarnUnmatchedKeys(Resources.FindObjectsOfTypeAll<AircraftDefinition>());
-
-        Seats = table;
     }
 
     private void OnDestroy()
     {
+        DisposeSessions();
+
+        _missionState?.Dispose();
+        _missionState = null;
+
         _harmony?.UnpatchSelf();
+    }
+
+    private static void UpdateState()
+    {
+        UpdateMissionState();
+
+        var manager = CrewNetwork.NetworkManagerLoaded ? NetworkManagerNuclearOption.i : null;
+
+        if (manager == null)
+        {
+            DisposeSessions();
+
+            return;
+        }
+
+        UpdateServerSession(manager.Server);
+        UpdateClientSession(manager.Client);
+    }
+
+    private static void UpdateMissionState()
+    {
+        if (MissionTracker.HasChanged())
+        {
+            _missionState?.Dispose();
+            _missionState = null;
+        }
+
+        _missionState ??= MissionState.TryCreate();
+    }
+
+    private static void UpdateServerSession(NetworkServer server)
+    {
+        if (server != null && _serverSession != null
+            && ReferenceEquals(_serverSession.MessageHandler, server.MessageHandler))
+        {
+            return;
+        }
+
+        _serverSession?.Dispose();
+        _serverSession = server == null ? null : ServerSession.TryCreate(server);
+    }
+
+    private static void UpdateClientSession(NetworkClient client)
+    {
+        if (client != null && _clientSession != null
+            && ReferenceEquals(_clientSession.MessageHandler, client.MessageHandler))
+        {
+            return;
+        }
+
+        _clientSession?.Dispose();
+        _clientSession = client == null ? null : ClientSession.TryCreate(client);
+    }
+
+    private static void DisposeSessions()
+    {
+        _serverSession?.Dispose();
+        _serverSession = null;
+
+        _clientSession?.Dispose();
+        _clientSession = null;
     }
 }

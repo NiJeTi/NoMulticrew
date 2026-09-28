@@ -1,4 +1,3 @@
-using Mirage;
 using NuclearOption.Networking.Lobbies;
 using Steamworks;
 
@@ -7,6 +6,8 @@ namespace NoMulticrew.Networking;
 internal static class Discovery
 {
     private static readonly Dictionary<CSteamID, bool> CapableByLobby = [];
+
+    private static bool _joinInFlightAdvertisedCrew;
 
     public static void NoteServerTags(CSteamID lobbyId, string rawTags)
     {
@@ -44,41 +45,22 @@ internal static class Discovery
 
     public static void NoteJoining(LobbyInstance lobby)
     {
-        CrewNetwork.ServerIsCrewCapable = IsCapable(lobby);
+        _joinInFlightAdvertisedCrew = IsCapable(lobby);
 
         Plugin.Logger.LogInfo(
-            CrewNetwork.ServerIsCrewCapable
+            _joinInFlightAdvertisedCrew
                 ? $"Joining {lobby.LobbyId}: crew support advertised"
                 : $"Joining {lobby.LobbyId}: no crew support advertised, staying dormant"
         );
     }
 
-    public static void OnClientAuthenticated(INetworkPlayer player)
+    public static bool TakeJoinInFlightAdvertisedCrew()
     {
-        if (!CrewNetwork.ServerIsCrewCapable)
-        {
-            return;
-        }
+        var advertised = _joinInFlightAdvertisedCrew;
 
-        if (CrewNetwork.SendToServer(new CrewHello(CrewSerializers.ProtocolVersion)))
-        {
-            Plugin.Logger.LogInfo("Sent CrewHello");
-        }
-        else
-        {
-            Plugin.Logger.LogWarning("CrewHello was blocked, so no crew will form this session.");
-        }
-    }
+        _joinInFlightAdvertisedCrew = false;
 
-    public static void Reset()
-    {
-        Plugin.Logger.LogInfo(
-            $"Session send summary: allowed={CrewNetwork.SendsAllowed} blocked={CrewNetwork.SendsBlocked}"
-        );
-
-        CrewNetwork.ResetCounters();
-
-        CrewNetwork.ServerIsCrewCapable = false;
+        return advertised;
     }
 
     private static bool IsForced(CSteamID lobbyId)

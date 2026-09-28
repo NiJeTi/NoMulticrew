@@ -1,11 +1,12 @@
-using NoMulticrew.Networking;
 using NuclearOption.DedicatedServer.Commands;
 
 namespace NoMulticrew.Server;
 
 internal static class CrewServerCommands
 {
-    public static bool EnsureRegistered()
+    private const string Name = "crew";
+
+    public static bool TryRegister(ServerSession session)
     {
         var instance = ServerRemoteCommands.Instance;
 
@@ -14,15 +15,15 @@ internal static class CrewServerCommands
             return false;
         }
 
-        if (instance.Commands.ContainsKey("crew"))
+        if (instance.Commands.ContainsKey(Name))
         {
             return true;
         }
 
         instance.AddCommands([
-            new ServerCommand("crew", (server, _) =>
+            new ServerCommand(Name, (server, _) =>
             {
-                var (ok, description) = server.RunOnMainThreadBlocking(() => (true, CrewConnections.Describe()));
+                var (ok, description) = server.RunOnMainThreadBlocking(() => (true, session.Describe()));
 
                 return ok
                     ? CommandResponse.Create(StatusCode.Success, description)
@@ -33,5 +34,10 @@ internal static class CrewServerCommands
         Plugin.Logger.LogInfo("Registered 'crew' server command");
 
         return true;
+    }
+
+    public static void Unregister()
+    {
+        ServerRemoteCommands.Instance?.Commands.Remove(Name);
     }
 }
