@@ -12,9 +12,6 @@ internal static class SteamLobby_TryJoinLobby
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static void Prefix(LobbyInstance lobby)
     {
-        if (lobby != null)
-        {
-            Discovery.NoteJoining(lobby);
-        }
+        Discovery.NoteJoining(lobby);
     }
 }
