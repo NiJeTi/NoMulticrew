@@ -5,6 +5,7 @@ using Mirage;
 using NoMulticrew.Networking;
 using NoMulticrew.Seats;
 using NuclearOption.Networking;
+using NetworkManager = NoMulticrew.Networking.NetworkManager;
 
 namespace NoMulticrew;
 
@@ -12,47 +13,25 @@ namespace NoMulticrew;
 internal sealed class Plugin : BaseUnityPlugin
 {
     public new static ManualLogSource Logger { get; private set; } = null!;
+
     public static Settings Settings { get; private set; } = null!;
+    public static SeatTable SeatTable { get; private set; } = null!;
 
-    private static readonly SeatTable DefaultSeats = SeatTable.Defaults();
+    public static ClientSession? Client { get; private set; }
+    public static ServerSession? Server { get; private set; }
 
-    private static ClientSession? _clientSession;
-    private static ServerSession? _serverSession;
-    private static MissionState? _missionState;
+    public static bool IsServer => Server != null;
 
-    internal static ClientSession? Client => _clientSession;
-    internal static ServerSession? Server => _serverSession;
+    private static NetworkManagerNuclearOption? _manager;
 
-    internal static SeatTable Seats => _missionState?.Seats ?? DefaultSeats;
-
-    public static bool IsServer
-    {
-        get
-        {
-            if (!CrewNetwork.NetworkManagerLoaded)
-            {
-                return false;
-            }
-
-            var manager = NetworkManagerNuclearOption.i;
-
-            return manager != null && manager.Server != null && manager.Server.Active;
-        }
-    }
-
-    private Harmony _harmony = null!;
+    private Harmony? _harmony;
 
     private void Awake()
     {
         Logger = base.Logger;
-        Settings = Settings.Init(Config);
 
-        if (!Settings.Enabled.Value)
-        {
-            enabled = false;
-            Logger.LogInfo("Disabled by configuration; nothing patched.");
-            return;
-        }
+        Settings = Settings.Init(Config);
+        SeatTable = SeatTable.Load();
 
         try
         {
@@ -66,96 +45,63 @@ internal sealed class Plugin : BaseUnityPlugin
             return;
         }
 
-        Logger.LogInfo($"{MyPluginInfo.PLUGIN_NAME} {MyPluginInfo.PLUGIN_VERSION} loaded");
+        Logger.LogInfo("Patch successful");
     }
 
     private void LateUpdate()
     {
-        UpdateState();
-
-        _serverSession?.Tick();
-
-        Advertisement.Tick();
+        Attach();
     }
 
     private void OnDestroy()
     {
-        DisposeSessions();
-
-        _missionState?.Dispose();
-        _missionState = null;
+        DisposeServerSession();
+        DisposeClientSession();
 
         _harmony?.UnpatchSelf();
     }
 
-    private static void UpdateState()
+    private static void Attach()
     {
-        UpdateMissionState();
-
-        var manager = CrewNetwork.NetworkManagerLoaded ? NetworkManagerNuclearOption.i : null;
-
-        if (manager == null)
-        {
-            DisposeSessions();
-
-            return;
-        }
-
-        UpdateServerSession(manager.Server);
-        UpdateClientSession(manager.Client);
-    }
-
-    private static void UpdateMissionState()
-    {
-        if (MissionTracker.HasChanged())
-        {
-            var previous = _missionState;
-
-            _missionState = null;
-            previous?.Dispose();
-        }
-
-        _missionState ??= MissionState.TryCreate();
-    }
-
-    private static void UpdateServerSession(NetworkServer server)
-    {
-        if (server != null && _serverSession != null
-            && ReferenceEquals(_serverSession.MessageHandler, server.MessageHandler))
+        var manager = NetworkManager.Instance;
+        if (manager == null || ReferenceEquals(manager, _manager))
         {
             return;
         }
 
-        var previous = _serverSession;
+        _manager = manager;
 
-        _serverSession = null;
-        previous?.Dispose();
+        manager.Server.Started.AddListener(() => StartServerSession(manager.Server));
+        manager.Server.Started.AddListener(Discovery.Advertise);
+        manager.Server.Stopped.AddListener(DisposeServerSession);
 
-        _serverSession = server == null ? null : ServerSession.TryCreate(server);
+        manager.Client.Started.AddListener(() => StartClientSession(manager.Client));
+        manager.Client.Disconnected.AddListener(_ => DisposeClientSession());
     }
 
-    private static void UpdateClientSession(NetworkClient client)
+    private static void StartServerSession(NetworkServer server)
     {
-        if (client != null && _clientSession != null
-            && ReferenceEquals(_clientSession.MessageHandler, client.MessageHandler))
-        {
-            return;
-        }
+        DisposeServerSession();
 
-        var previous = _clientSession;
-
-        _clientSession = null;
-        previous?.Dispose();
-
-        _clientSession = client == null ? null : ClientSession.TryCreate(client);
+        Server = new ServerSession(server);
     }
 
-    private static void DisposeSessions()
+    private static void StartClientSession(NetworkClient client)
     {
-        _serverSession?.Dispose();
-        _serverSession = null;
+        DisposeClientSession();
 
-        _clientSession?.Dispose();
-        _clientSession = null;
+        Client = new ClientSession(client);
+    }
+
+    private static void DisposeServerSession()
+    {
+        Server?.Dispose();
+        Server = null;
+    }
+
+    private static void DisposeClientSession()
+    {
+        Client?.Dispose();
+        Client = null;
     }
 }

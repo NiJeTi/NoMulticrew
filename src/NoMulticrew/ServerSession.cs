@@ -1,173 +1,104 @@
 using Mirage;
 using NoMulticrew.Networking;
-using NoMulticrew.Server;
-using NuclearOption.Networking;
-using UnityEngine.Events;
+using NuclearOption.DedicatedServer.Commands;
 
 namespace NoMulticrew;
 
 internal sealed class ServerSession : IDisposable
 {
+    private const string ServerCommandName = "multicrew";
+
+    private readonly HashSet<INetworkPlayer> _validPlayers = [];
+
     private readonly NetworkServer _server;
-    private readonly HashSet<INetworkPlayer> _capable = [];
-    private readonly HashSet<INetworkPlayer> _greeted = [];
-    private readonly UnityAction<INetworkPlayer> _onDisconnected;
+    private readonly bool _commandRegistered;
 
-    private bool _commandRegistered;
-
-    public MessageHandler MessageHandler { get; }
-
-    public int SendsAllowed { get; private set; }
-
-    public int SendsBlocked { get; private set; }
-
-    private ServerSession(NetworkServer server, MessageHandler messageHandler)
+    public ServerSession(NetworkServer server)
     {
         _server = server;
 
-        MessageHandler = messageHandler;
+        MessageRegistry.RegisterAll();
 
-        CrewSerializers.EnsureRegistered();
+        _server.MessageHandler.RegisterHandler<MulticrewHello>(OnHello, allowUnauthenticated: false);
+        _server.Disconnected.AddListener(OnDisconnected);
 
-        messageHandler.RegisterHandler<CrewHello>(OnHello, allowUnauthenticated: false);
-
-        _onDisconnected = OnDisconnected;
-
-        server.Disconnected.AddListener(_onDisconnected);
-
-        _commandRegistered = CrewServerCommands.TryRegister(this);
-
-        Plugin.Logger.LogInfo("Crew server session started");
-    }
-
-    public static ServerSession? TryCreate(NetworkServer server)
-    {
-        var messageHandler = server.MessageHandler;
-
-        return messageHandler == null ? null : new ServerSession(server, messageHandler);
-    }
-
-    public void Tick()
-    {
-        if (!_commandRegistered)
-        {
-            _commandRegistered = CrewServerCommands.TryRegister(this);
-        }
-    }
-
-    public bool IsCrewCapable(INetworkPlayer? player)
-    {
-        return player != null && _capable.Contains(player);
-    }
-
-    public void Add(INetworkPlayer player)
-    {
-        if (_capable.Add(player))
-        {
-            Plugin.Logger.LogInfo($"Crew-capable connection added: {player} (total {_capable.Count})");
-        }
-    }
-
-    public void Remove(INetworkPlayer player)
-    {
-        if (_capable.Remove(player))
-        {
-            Plugin.Logger.LogInfo($"Crew-capable connection removed: {player} (total {_capable.Count})");
-        }
-    }
-
-    public string Describe()
-    {
-        if (_capable.Count == 0)
-        {
-            return "crew-capable connections: none";
-        }
-
-        var names = _capable.Select(player =>
-            player.TryGetPlayer<Player>(out var gamePlayer)
-                ? gamePlayer.GetDisplayName(PlayerNameContext.Other)
-                : player.ToString()
-        );
-
-        return $"crew-capable connections ({_capable.Count}): {string.Join(", ", names)}";
-    }
-
-    public bool SendToPlayer<T>(INetworkPlayer player, T message)
-    {
-        if (!IsCrewCapable(player))
-        {
-            SendsBlocked++;
-
-            Plugin.Logger.LogWarning(
-                $"Blocked {typeof(T).Name} to a connection outside the crew-capable set. "
-                + "This is a bug: every crew send must be scoped."
-            );
-
-            return false;
-        }
-
-        player.Send(message);
-        SendsAllowed++;
-
-        return true;
+        _commandRegistered = TryRegisterServerCommand();
     }
 
     public void Dispose()
     {
-        if (SendsAllowed > 0 || SendsBlocked > 0)
-        {
-            Plugin.Logger.LogInfo(
-                $"Server session send summary: allowed={SendsAllowed} blocked={SendsBlocked}"
-            );
-        }
+        _server.Disconnected.RemoveListener(OnDisconnected);
+        _server.MessageHandler.UnregisterHandler<MulticrewHello>();
 
         if (_commandRegistered)
         {
-            CrewServerCommands.Unregister();
+            ServerRemoteCommands.Instance?.Commands.Remove(ServerCommandName);
         }
+    }
 
-        if (_server != null)
+    private void Add(INetworkPlayer player)
+    {
+        if (_validPlayers.Add(player))
         {
-            _server.Disconnected.RemoveListener(_onDisconnected);
+            Plugin.Logger.LogDebug($"Multicrew-capable connection added: {player} (total {_validPlayers.Count})");
+        }
+    }
+
+    private void Remove(INetworkPlayer player)
+    {
+        if (_validPlayers.Remove(player))
+        {
+            Plugin.Logger.LogDebug($"Multicrew-capable connection removed: {player} (total {_validPlayers.Count})");
+        }
+    }
+
+    private void OnHello(INetworkPlayer player, MulticrewHello message)
+    {
+        if (message.ProtocolVersion != MessageRegistry.ProtocolVersion)
+        {
+            Plugin.Logger.LogWarning($"Multicrew protocol version mismatch from {player}");
+            return;
         }
 
-        MessageHandler.UnregisterHandler<CrewHello>();
+        Add(player);
 
-        _capable.Clear();
-        _greeted.Clear();
+        player.Send(new MulticrewWelcome(MessageRegistry.ProtocolVersion));
     }
 
     private void OnDisconnected(INetworkPlayer player)
     {
-        _greeted.Remove(player);
-
         Remove(player);
     }
 
-    private void OnHello(INetworkPlayer player, CrewHello message)
+    private bool TryRegisterServerCommand()
     {
-        if (!_greeted.Add(player))
+        var instance = ServerRemoteCommands.Instance;
+        if (instance == null)
         {
-            return;
+            return false;
         }
 
-        var accepted = message.ProtocolVersion == CrewSerializers.ProtocolVersion;
-
-        Add(player);
-
-        if (!accepted)
+        if (instance.Commands.ContainsKey(ServerCommandName))
         {
-            Plugin.Logger.LogWarning(
-                $"Crew protocol mismatch from {player}: theirs {message.ProtocolVersion}, "
-                + $"ours {CrewSerializers.ProtocolVersion}. Crews will not form for this player."
-            );
+            return false;
         }
 
-        SendToPlayer(player, new CrewWelcome(CrewSerializers.ProtocolVersion, accepted));
+        var command = new ServerCommand(
+            ServerCommandName, (server, _) =>
+            {
+                var (ok, description) = server.RunOnMainThreadBlocking(
+                    () => (true, $"multicrew-capable connections: {_validPlayers.Count}")
+                );
 
-        if (!accepted)
-        {
-            Remove(player);
-        }
+                return ok
+                    ? CommandResponse.Create(StatusCode.Success, description)
+                    : CommandResponse.Create(
+                        StatusCode.CommandError, "Could not read multicrew state on the main thread."
+                    );
+            }
+        );
+        instance.AddCommands([command]);
+
+        return true;
     }
 }

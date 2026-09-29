@@ -16,20 +16,12 @@ internal static class DedicatedServerKeyValues_ApplyTags
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static void Postfix(DedicatedServerKeyValues __instance)
     {
-        if (!Plugin.Settings.AdvertiseCrewSupport.Value)
-        {
-            return;
-        }
-
-        var text = Advertisement.BuildTagString(TagsRef(__instance));
-
-        if (text.Length == 0)
+        var text = Discovery.TryAppendTags(TagsRef(__instance));
+        if (text == null)
         {
             return;
         }
 
         SteamGameServer.SetGameTags(text);
-
-        Plugin.Logger.LogInfo($"Advertised crew support in server tags: '{text}'");
     }
 }

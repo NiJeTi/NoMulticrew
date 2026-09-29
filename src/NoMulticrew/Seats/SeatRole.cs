@@ -2,7 +2,7 @@ namespace NoMulticrew.Seats;
 
 internal enum SeatRole : byte
 {
-    Wso = 0,
-
-    Gunner = 1,
+    None = 0,
+    Wso = 1,
+    Gunner = 2,
 }

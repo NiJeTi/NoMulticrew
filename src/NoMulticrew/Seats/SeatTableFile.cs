@@ -1,48 +1,58 @@
+using BepInEx;
 using UnityEngine;
 
 namespace NoMulticrew.Seats;
 
 internal static class SeatTableFile
 {
-    public static string Path => System.IO.Path.Combine(BepInEx.Paths.ConfigPath, "NoMulticrew.seats.json");
+    [Serializable]
+    private sealed class Seat
+    {
+        public required SeatRole role;
+        public required Vector3 viewOffset;
+    }
+
+    [Serializable]
+    private sealed class Aircraft
+    {
+        public required string name;
+        public required Seat[] seats;
+    }
+
+    [Serializable]
+    private sealed class Document
+    {
+        public required Aircraft[] aircraft;
+    }
+
+    public static string FilePath => Path.Combine(Paths.PluginPath, "Seats.json");
 
     public static SeatTable? TryRead()
     {
-        if (!System.IO.File.Exists(Path))
+        if (!File.Exists(FilePath))
         {
             return null;
         }
 
         try
         {
-            var document = JsonUtility.FromJson<SeatTableDocument>(System.IO.File.ReadAllText(Path));
+            var document = JsonUtility.FromJson<Document>(File.ReadAllText(FilePath));
 
-            if (document?.airframes == null)
+            if (document?.aircraft.Length is not > 0)
             {
-                Plugin.Logger.LogError($"Seat table {Path} has no 'airframes' array; using defaults.");
-
                 return null;
             }
 
-            var byJsonKey = new Dictionary<string, IReadOnlyList<SeatDefinition>>();
+            var config = document.aircraft.ToDictionary(
+                a => a.name,
+                a => a.seats.Select(s => new SeatDefinition(s.role, s.viewOffset)).ToArray()
+            );
 
-            foreach (var airframe in document.airframes)
-            {
-                if (string.IsNullOrEmpty(airframe.jsonKey))
-                {
-                    Plugin.Logger.LogError($"Seat table {Path} has an airframe with no jsonKey; skipped.");
-
-                    continue;
-                }
-
-                byJsonKey[airframe.jsonKey] = airframe.seats.Select(seat => seat.ToDefinition()).ToList();
-            }
-
-            return new SeatTable(byJsonKey);
+            return new SeatTable(config);
         }
         catch (Exception e)
         {
-            Plugin.Logger.LogError($"Seat table {Path} could not be read, using defaults: {e}");
+            Plugin.Logger.LogError($"Failed to read seat table file: {e}");
 
             return null;
         }

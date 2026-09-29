@@ -14,7 +14,8 @@ internal static class ServerLobbyInstance_SetDetails
     {
         try
         {
-            Discovery.NoteServerTags(__instance.LobbyId, __instance.details.GetGameTags());
+            // Discovery.NoteServerTags(__instance.LobbyId, __instance.details.GetGameTags());
+            Discovery.NoteServerTags(__instance);
         }
         catch (Exception e)
         {

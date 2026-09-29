@@ -1,3 +1,5 @@
+using System.Text;
+using HarmonyLib;
 using NuclearOption.Networking.Lobbies;
 using Steamworks;
 
@@ -5,75 +7,88 @@ namespace NoMulticrew.Networking;
 
 internal static class Discovery
 {
-    private static readonly Dictionary<CSteamID, bool> CapableByLobby = [];
+    private const string LobbyKey = "nomulticrew";
 
-    private static bool _joinInFlightAdvertisedCrew;
+    private const string TagKey = "nmc";
 
-    public static void NoteServerTags(CSteamID lobbyId, string rawTags)
+    private const string TagValue = "1";
+
+    private const int TagByteBudget = 128;
+
+    private static readonly AccessTools.FieldRef<SteamLobby, HostedLobbyInstance> HostedLobbyRef =
+        AccessTools.FieldRefAccess<SteamLobby, HostedLobbyInstance>("_hostedLobby");
+
+    private static readonly Dictionary<CSteamID, bool> LobbyStateCache = [];
+
+    private static bool _currentLobbyState;
+
+    public static string? TryAppendTags(IReadOnlyDictionary<string, string> tags)
     {
-        var capable = false;
+        var builder = new StringBuilder();
 
-        foreach (var pair in rawTags.Split(','))
+        foreach (var pair in tags)
         {
-            var parts = pair.Split('=');
-
-            if (parts.Length == 2 && parts[0] == Advertisement.TagKey && parts[1] == Advertisement.TagValue)
-            {
-                capable = true;
-
-                break;
-            }
+            builder.Append(pair.Key).Append('=').Append(pair.Value).Append(',');
         }
 
-        CapableByLobby[lobbyId] = capable;
+        builder.Append(TagKey).Append('=').Append(TagValue).Append(',');
+
+        var text = builder.ToString();
+
+        if (Encoding.UTF8.GetByteCount(text) > TagByteBudget)
+        {
+            Plugin.Logger.LogError("Server is out of tag byte budget");
+            return null;
+        }
+
+        return text;
     }
 
-    public static bool IsCapable(LobbyInstance lobby)
+    public static void Advertise()
     {
-        if (IsForced(lobby.LobbyId))
+        var steamLobby = SteamLobby.instance;
+        if (steamLobby == null)
         {
-            return true;
+            return;
         }
 
+        var hosted = HostedLobbyRef(steamLobby);
+
+        if (!hosted.IsValid)
+        {
+            return;
+        }
+
+        hosted.SetData(LobbyKey, TagValue);
+    }
+
+    public static void NoteServerTags(ServerLobbyInstance lobby)
+    {
+        var capable = lobby.details.GetGameTags().Split(',')
+            .Any(tag => tag.Split('=') is [TagKey, TagValue]);
+
+        LobbyStateCache[lobby.LobbyId] = capable;
+    }
+
+    private static bool IsCapable(LobbyInstance lobby)
+    {
         if (lobby.DedicatedServer)
         {
-            return CapableByLobby.TryGetValue(lobby.LobbyId, out var capable) && capable;
+            return LobbyStateCache.GetValueOrDefault(lobby.LobbyId);
         }
 
-        return SteamMatchmaking.GetLobbyData(lobby.LobbyId, Advertisement.LobbyKey) == Advertisement.TagValue;
+        return SteamMatchmaking.GetLobbyData(lobby.LobbyId, LobbyKey) == TagValue;
     }
 
-    public static void NoteJoining(LobbyInstance lobby)
+    public static void OnJoin(LobbyInstance lobby)
     {
-        _joinInFlightAdvertisedCrew = IsCapable(lobby);
-
-        Plugin.Logger.LogInfo(
-            _joinInFlightAdvertisedCrew
-                ? $"Joining {lobby.LobbyId}: crew support advertised"
-                : $"Joining {lobby.LobbyId}: no crew support advertised, staying dormant"
-        );
+        _currentLobbyState = IsCapable(lobby);
     }
 
-    public static bool TakeJoinInFlightAdvertisedCrew()
+    public static bool TakeCurrentLobbyState()
     {
-        var advertised = _joinInFlightAdvertisedCrew;
-
-        _joinInFlightAdvertisedCrew = false;
-
-        return advertised;
-    }
-
-    private static bool IsForced(CSteamID lobbyId)
-    {
-        var forced = Plugin.Settings.ForceCapableServers.Value;
-
-        if (string.IsNullOrWhiteSpace(forced))
-        {
-            return false;
-        }
-
-        var text = lobbyId.m_SteamID.ToString();
-
-        return forced.Split(',').Any(entry => entry.Trim() == text);
+        var state = _currentLobbyState;
+        _currentLobbyState = false;
+        return state;
     }
 }

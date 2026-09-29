@@ -5,6 +5,11 @@ namespace System.Runtime.CompilerServices;
 
 internal static class IsExternalInit;
 
-internal sealed class RequiredMemberAttribute;
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+internal sealed class RequiredMemberAttribute : Attribute;
 
-internal sealed class CompilerFeatureRequiredAttribute;
+[AttributeUsage(AttributeTargets.All, AllowMultiple = true, Inherited = false)]
+internal sealed class CompilerFeatureRequiredAttribute(string featureName) : Attribute
+{
+    public string FeatureName { get; } = featureName;
+}
