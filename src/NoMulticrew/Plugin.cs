@@ -5,11 +5,11 @@ using Mirage;
 using NoMulticrew.Networking;
 using NoMulticrew.Seats;
 using NuclearOption.Networking;
-using NetworkManager = NoMulticrew.Networking.NetworkManager;
 
 namespace NoMulticrew;
 
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
+[BepInDependency(Controls.GuidInputFramework)]
 internal sealed class Plugin : BaseUnityPlugin
 {
     public new static ManualLogSource Logger { get; private set; } = null!;
@@ -24,6 +24,8 @@ internal sealed class Plugin : BaseUnityPlugin
 
     private static NetworkManagerNuclearOption? _manager;
 
+    private static Controls _controls = null!;
+
     private Harmony? _harmony;
 
     private void Awake()
@@ -32,6 +34,8 @@ internal sealed class Plugin : BaseUnityPlugin
 
         Settings = Settings.Init(Config);
         SeatTable = SeatTable.Load();
+
+        MessageRegistry.RegisterAll();
 
         try
         {
@@ -45,12 +49,23 @@ internal sealed class Plugin : BaseUnityPlugin
             return;
         }
 
+        _controls = Controls.Init();
+
         Logger.LogInfo("Patch successful");
     }
 
     private void LateUpdate()
     {
         Attach();
+
+        Server?.Tick();
+        Client?.Tick();
+    }
+
+    private void OnGUI()
+    {
+        Client?.SeatList.Draw();
+        Client?.Prompt.Draw();
     }
 
     private void OnDestroy()
@@ -63,7 +78,7 @@ internal sealed class Plugin : BaseUnityPlugin
 
     private static void Attach()
     {
-        var manager = NetworkManager.Instance;
+        var manager = NetworkManagerProvider.Current;
         if (manager == null || ReferenceEquals(manager, _manager))
         {
             return;
@@ -90,7 +105,7 @@ internal sealed class Plugin : BaseUnityPlugin
     {
         DisposeClientSession();
 
-        Client = new ClientSession(client);
+        Client = new ClientSession(client, _controls);
     }
 
     private static void DisposeServerSession()

@@ -4,21 +4,18 @@ namespace NoMulticrew.Networking;
 
 internal static class MessageRegistry
 {
-    public const byte ProtocolVersion = 1;
-
-    private static bool _registered;
+    public const byte ProtocolVersion = 2;
 
     public static void RegisterAll()
     {
-        if (_registered)
-        {
-            return;
-        }
-
-        _registered = true;
-
         Register<MulticrewHello>();
         Register<MulticrewWelcome>();
+        Register<MulticrewState>();
+        Register<MulticrewJoinRequest>();
+        Register<MulticrewJoinPrompt>();
+        Register<MulticrewJoinResponse>();
+        Register<MulticrewNotice>();
+        Register<MulticrewLeaveRequest>();
     }
 
     private static void Register<T>()
