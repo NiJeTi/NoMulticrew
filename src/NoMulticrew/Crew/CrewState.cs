@@ -1,5 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 using NoMulticrew.Networking;
 using NoMulticrew.Seats;
+using NuclearOption.Networking;
 using UnityEngine;
 
 namespace NoMulticrew.Crew;
@@ -42,8 +44,41 @@ internal sealed class CrewState
     public bool IsTaken(PersistentID aircraftId, int seatIndex)
     {
         return _crews.TryGetValue(aircraftId, out var crew)
-               && seatIndex < crew.Occupants.Length
-               && crew.Occupants[seatIndex] >= 0;
+            && seatIndex < crew.Occupants.Length
+            && crew.Occupants[seatIndex] >= 0;
+    }
+
+    public bool TryGetCrew(PersistentID aircraftId, out MulticrewState crew)
+    {
+        return _crews.TryGetValue(aircraftId, out crew);
+    }
+
+    public bool TryGetLocalSeat([NotNullWhen(true)] out Aircraft? aircraft, out int seatIndex)
+    {
+        aircraft = null;
+        seatIndex = -1;
+
+        if (!GameManager.GetLocalPlayer<Player>(out var player))
+        {
+            return false;
+        }
+
+        foreach (var (aircraftId, crew) in _crews)
+        {
+            var index = Array.IndexOf(crew.Occupants, player.PlayerIndex);
+
+            if (index < 0 || !UnitRegistry.TryGetUnit<Aircraft>(aircraftId, out var found) || found.disabled)
+            {
+                continue;
+            }
+
+            aircraft = found;
+            seatIndex = index;
+
+            return true;
+        }
+
+        return false;
     }
 
     public bool BlocksStation(Unit unit, int stationIndex)
@@ -84,7 +119,20 @@ internal sealed class CrewState
         return false;
     }
 
-    private static bool Owns(SeatRole role, Aircraft aircraft, int stationIndex)
+    public static bool OwnsAny(SeatRole role, Aircraft aircraft)
+    {
+        for (var i = 0; i < aircraft.weaponStations.Count; i++)
+        {
+            if (Owns(role, aircraft, i))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static bool Owns(SeatRole role, Aircraft aircraft, int stationIndex)
     {
         var stations = aircraft.weaponStations;
         if (stationIndex < 0 || stationIndex >= stations.Count)

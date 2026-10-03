@@ -13,6 +13,9 @@ internal sealed class ClientSession : IDisposable
 
     private INetworkPlayer? _server;
 
+    private VirtualMFD? _mfd;
+    private CrewScreen? _crewScreen;
+
     public bool Confirmed => _server != null;
 
     public CrewState Crew { get; } = new();
@@ -20,6 +23,8 @@ internal sealed class ClientSession : IDisposable
     public CrewJoinPromptUi Prompt { get; }
 
     public CrewSeatList SeatList { get; }
+
+    public BackSeat BackSeat { get; }
 
     public ClientSession(NetworkClient client, Controls controls)
     {
@@ -29,6 +34,7 @@ internal sealed class ClientSession : IDisposable
 
         Prompt = new CrewJoinPromptUi(this);
         SeatList = new CrewSeatList(this);
+        BackSeat = new BackSeat(Crew);
 
         _client.MessageHandler.RegisterHandler<MulticrewWelcome>(OnWelcome, allowUnauthenticated: false);
         _client.MessageHandler.RegisterHandler<MulticrewState>(OnState, allowUnauthenticated: false);
@@ -39,11 +45,20 @@ internal sealed class ClientSession : IDisposable
 
     public void Dispose()
     {
+        BackSeat.Dispose();
+        _crewScreen?.Dispose();
         _client.Authenticated.RemoveListener(OnAuthenticated);
         _client.MessageHandler.UnregisterHandler<MulticrewWelcome>();
         _client.MessageHandler.UnregisterHandler<MulticrewState>();
         _client.MessageHandler.UnregisterHandler<MulticrewJoinPrompt>();
         _client.MessageHandler.UnregisterHandler<MulticrewNotice>();
+    }
+
+    public void AttachMfd(VirtualMFD mfd)
+    {
+        _crewScreen?.Dispose();
+        _crewScreen = null;
+        _mfd = mfd;
     }
 
     public bool Send<T>(T message)
@@ -124,8 +139,26 @@ internal sealed class ClientSession : IDisposable
     public void Tick()
     {
         Prompt.Tick();
+        BackSeat.Tick();
 
         HandleInput();
+
+        if (Confirmed && _crewScreen == null && _mfd != null && GameManager.gameState != GameState.SinglePlayer)
+        {
+            var mfd = _mfd;
+            _mfd = null;
+
+            try
+            {
+                _crewScreen = CrewScreen.Create(this, mfd);
+            }
+            catch (Exception e)
+            {
+                Plugin.Logger.LogError($"Failed to create the crew screen: {e}");
+            }
+        }
+
+        _crewScreen?.Tick();
     }
 
     private void HandleInput()

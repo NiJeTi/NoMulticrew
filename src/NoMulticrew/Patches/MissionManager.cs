@@ -10,6 +10,7 @@ internal static class MissionManager_SetMission
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static void Prefix()
     {
+        Plugin.Client?.BackSeat.Leave(showMap: false);
         Plugin.Server?.Clear();
         Plugin.Client?.Crew.Clear();
     }

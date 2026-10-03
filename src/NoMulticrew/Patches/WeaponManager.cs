@@ -35,6 +35,14 @@ internal static class WeaponManager_TargetListChanged
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prefix(WeaponManager __instance)
     {
-        return Plugin.Client?.Crew.BlocksSensors(AircraftRef(__instance)) != true;
+        var client = Plugin.Client;
+        if (client == null)
+        {
+            return true;
+        }
+
+        var aircraft = AircraftRef(__instance);
+
+        return !client.Crew.BlocksSensors(aircraft) && !ReferenceEquals(client.BackSeat.Aircraft, aircraft);
     }
 }

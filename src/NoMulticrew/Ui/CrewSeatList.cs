@@ -56,7 +56,8 @@ internal sealed class CrewSeatList
 
             for (var index = 0; index < seats.Count; index++)
             {
-                if (_session.Crew.IsTaken(aircraft.persistentID, index))
+                if (_session.Crew.IsTaken(aircraft.persistentID, index)
+                    || !CrewState.OwnsAny(seats[index].Role, aircraft))
                 {
                     continue;
                 }
