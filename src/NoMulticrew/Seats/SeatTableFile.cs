@@ -34,21 +34,70 @@ internal static class SeatTableFile
             return null;
         }
 
-        try
+        var document = TryReadDocument();
+        if (document?.aircraft.Length is not > 0)
         {
-            var document = JsonUtility.FromJson<Document>(File.ReadAllText(FilePath));
+            return null;
+        }
 
-            if (document?.aircraft.Length is not > 0)
+        var config = GetValidConfig(document);
+        if (config.Count == 0)
+        {
+            return null;
+        }
+
+        return new SeatTable(config);
+    }
+
+    private static Dictionary<string, SeatDefinition[]> GetValidConfig(Document document)
+    {
+        var config = new Dictionary<string, SeatDefinition[]>(document.aircraft.Length);
+
+        for (var i = 0; i < document.aircraft.Length; i++)
+        {
+            var aircraft = document.aircraft[i];
+
+            if (string.IsNullOrWhiteSpace(aircraft.name))
             {
-                return null;
+                Plugin.Logger.LogWarning($"Seat table file: Invalid name for aircraft {i}");
+                continue;
             }
 
-            var config = document.aircraft.ToDictionary(
-                a => a.name,
-                a => a.seats.Select(s => new SeatDefinition(s.role, s.viewOffset)).ToArray()
-            );
+            var seats = new List<SeatDefinition>(aircraft.seats.Length);
+            for (var j = 0; j < aircraft.seats.Length; j++)
+            {
+                var seat = aircraft.seats[j];
 
-            return new SeatTable(config);
+                if (seat.role == SeatRole.None || !Enum.IsDefined(typeof(SeatRole), seat.role))
+                {
+                    Plugin.Logger.LogWarning(
+                        $"Seat table file: Invalid role for seat {j} at aircraft '{aircraft.name}'"
+                    );
+                    continue;
+                }
+
+                if (seat.viewOffset == Vector3.zero)
+                {
+                    Plugin.Logger.LogWarning(
+                        $"Seat table file: Invalid view offset for seat {j} at aircraft '{aircraft.name}'"
+                    );
+                    continue;
+                }
+
+                seats.Add(new SeatDefinition(seat.role, seat.viewOffset));
+            }
+
+            config[aircraft.name] = [.. seats];
+        }
+
+        return config;
+    }
+
+    private static Document? TryReadDocument()
+    {
+        try
+        {
+            return JsonUtility.FromJson<Document>(File.ReadAllText(FilePath));
         }
         catch (Exception e)
         {

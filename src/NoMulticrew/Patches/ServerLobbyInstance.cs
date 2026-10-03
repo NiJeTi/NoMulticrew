@@ -14,12 +14,11 @@ internal static class ServerLobbyInstance_SetDetails
     {
         try
         {
-            // Discovery.NoteServerTags(__instance.LobbyId, __instance.details.GetGameTags());
             Discovery.NoteServerTags(__instance);
         }
         catch (Exception e)
         {
-            Plugin.Logger.LogWarning($"Could not read game tags for server {__instance.LobbyId}: {e}");
+            Plugin.Logger.LogError($"Failed to read server game tags: {e}");
         }
     }
 }

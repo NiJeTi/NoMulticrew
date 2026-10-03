@@ -21,8 +21,6 @@ internal sealed class SeatTable
 
     private readonly Dictionary<string, SeatDefinition[]> _config;
 
-    public IReadOnlyCollection<string> Keys => _config.Keys;
-
     public SeatTable(Dictionary<string, SeatDefinition[]> config)
     {
         _config = config;
@@ -49,10 +47,5 @@ internal sealed class SeatTable
     public IReadOnlyList<SeatDefinition> SeatsFor(string name)
     {
         return _config.GetValueOrDefault(name, EmptySeats);
-    }
-
-    public bool HasSeats(UnitDefinition unit)
-    {
-        return SeatsFor(unit.jsonKey).Count > 0;
     }
 }

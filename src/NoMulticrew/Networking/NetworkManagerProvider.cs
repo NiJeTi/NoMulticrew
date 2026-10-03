@@ -3,13 +3,13 @@ using NuclearOption.Networking;
 
 namespace NoMulticrew.Networking;
 
-internal static class NetworkManager
+internal static class NetworkManagerProvider
 {
     private static readonly AccessTools.FieldRef<ResourcesAsyncLoader<NetworkManagerNuclearOption>>
         NetworkManagerLoaderRef = AccessTools.StaticFieldRefAccess<ResourcesAsyncLoader<NetworkManagerNuclearOption>>(
             AccessTools.Field(typeof(NetworkManagerNuclearOption), "loader")
         );
 
-    public static NetworkManagerNuclearOption? Instance =>
+    public static NetworkManagerNuclearOption? Current =>
         NetworkManagerLoaderRef().IsLoaded ? NetworkManagerNuclearOption.i : null;
 }
