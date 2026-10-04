@@ -67,8 +67,8 @@ internal sealed class JoinRequests
         airbase = null;
 
         return aircraft.IsLanded()
-               && aircraft.NetworkHQ != null
-               && aircraft.NetworkHQ.AnyNearAirbase(aircraft.transform.position, out airbase);
+            && aircraft.NetworkHQ != null
+            && aircraft.NetworkHQ.AnyNearAirbase(aircraft.transform.position, out airbase);
     }
 
     public void OnRequest(INetworkPlayer connection, MulticrewJoinRequest message)
@@ -194,9 +194,16 @@ internal sealed class JoinRequests
             return false;
         }
 
-        if (seatIndex >= Plugin.SeatTable.SeatsFor(aircraft.definition.jsonKey).Count)
+        var seats = Plugin.SeatTable.SeatsFor(aircraft.definition.jsonKey);
+        if (seatIndex >= seats.Count)
         {
             reason = "That aircraft has no such seat";
+            return false;
+        }
+
+        if (!CrewState.OwnsAny(seats[seatIndex].Role, aircraft))
+        {
+            reason = "That seat has no weapons in this loadout";
             return false;
         }
 

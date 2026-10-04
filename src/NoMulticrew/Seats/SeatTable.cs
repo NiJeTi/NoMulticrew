@@ -8,15 +8,15 @@ internal sealed class SeatTable
 
     private static readonly Dictionary<string, SeatDefinition[]> DefaultConfig = new()
     {
-        ["COIN"] = [new SeatDefinition(SeatRole.Wso, new Vector3(0f, -0.1f, -1.4f))], // CI-22
-        ["trainer"] = EmptySeats, // T/A-30
-        ["VTOLTrainer1"] = EmptySeats, // VT-7
-        ["UtilityHelo1"] = EmptySeats, // UH-90
-        ["AttackHelo1"] = [new SeatDefinition(SeatRole.Gunner, new Vector3(0f, -0.1f, -1.5f))], // SAH-46
-        ["QuadVTOL1"] = [new SeatDefinition(SeatRole.Gunner, new Vector3(-1.1f, -0.3f, -2.0f))], // VL-49
-        ["EW1"] = [new SeatDefinition(SeatRole.Wso, new Vector3(0f, -0.1f, -1.6f))], // EW-25
-        ["Darkreach"] = EmptySeats, // SFB-81
-        ["FastBomber1"] = EmptySeats, // AB-4
+        ["COIN"] = [new SeatDefinition(SeatRole.Wso, new Vector3(0f, 0f, -0.95f))], // CI-22
+        ["trainer"] = [new SeatDefinition(SeatRole.Wso, new Vector3(0f, -0.02f, -1.28f))], // T/A-30
+        ["VTOLTrainer1"] = [new SeatDefinition(SeatRole.Wso, new Vector3(0f, 0.16f, -1.30f))], // VT-7
+        ["UtilityHelo1"] = [new SeatDefinition(SeatRole.Gunner, new Vector3(-0.45f, 0f, -1.20f))], // UH-90
+        ["AttackHelo1"] = [new SeatDefinition(SeatRole.Gunner, new Vector3(0f, -0.43f, 1.40f))], // SAH-46
+        ["QuadVTOL1"] = [new SeatDefinition(SeatRole.Gunner, new Vector3(0f, 0f, -1.48f))], // VL-49
+        ["EW1"] = [new SeatDefinition(SeatRole.Wso, new Vector3(0.80f, 0f, 0f))], // EW-25
+        ["Darkreach"] = [new SeatDefinition(SeatRole.Wso, new Vector3(0.99f, 0f, 0f))], // SFB-81
+        ["FastBomber1"] = [new SeatDefinition(SeatRole.Wso, new Vector3(0.84f, 0f, 0f))], // AB-4
     };
 
     private readonly Dictionary<string, SeatDefinition[]> _config;

@@ -19,14 +19,26 @@ internal sealed class CrewJoinPromptUi
         _session = session;
     }
 
+    public MulticrewJoinPrompt? Pending => _prompt;
+
     public void Show(MulticrewJoinPrompt prompt)
     {
         _prompt = prompt;
         _expiresAt = Time.timeSinceLevelLoad + prompt.ExpiresInSeconds;
+
+        ShowNotice($"{NameOf(prompt.JoinerPlayerIndex)} wants a crew seat: answer on the CRW page");
     }
 
     public void ShowNotice(string text)
     {
+        var hud = SceneSingleton<CombatHUD>.i;
+        var report = SceneSingleton<AircraftActionsReport>.i;
+        if (hud != null && report != null && GameManager.GetLocalAircraft(out var own) && hud.aircraft == own)
+        {
+            report.ReportText(text, 5f);
+            return;
+        }
+
         _toast = text;
         _toastUntil = Time.timeSinceLevelLoad + 5f;
     }
@@ -61,26 +73,6 @@ internal sealed class CrewJoinPromptUi
         {
             GUI.Label(new Rect(20f, Screen.height - 60f, 600f, 24f), _toast);
         }
-
-        if (_prompt is not { } prompt)
-        {
-            return;
-        }
-
-        var remaining = Mathf.Max(0f, _expiresAt - Time.timeSinceLevelLoad);
-        var box = new Rect(Screen.width * 0.5f - 200f, 80f, 400f, 96f);
-
-        GUI.Box(box, $"{NameOf(prompt.JoinerPlayerIndex)} wants the back seat  ({remaining:F0}s)");
-
-        if (GUI.Button(new Rect(box.x + 20f, box.y + 50f, 170f, 30f), "Accept"))
-        {
-            Respond(prompt, accepted: true);
-        }
-
-        if (GUI.Button(new Rect(box.x + 210f, box.y + 50f, 170f, 30f), "Decline"))
-        {
-            Respond(prompt, accepted: false);
-        }
     }
 
     private void Respond(MulticrewJoinPrompt prompt, bool accepted)
@@ -90,7 +82,7 @@ internal sealed class CrewJoinPromptUi
         _session.Send(new MulticrewJoinResponse(prompt.RequestId, accepted));
     }
 
-    private static string NameOf(int playerIndex)
+    public static string NameOf(int playerIndex)
     {
         foreach (var player in UnityEngine.Object.FindObjectsOfType<Player>())
         {

@@ -87,7 +87,6 @@ internal sealed class ServerSession : IDisposable
         if (!_validPlayers.Contains(player))
         {
             Plugin.Logger.LogError($"Attempt to send {typeof(T).Name} to a multicrew-incapable connection: {player}");
-
             return false;
         }
 

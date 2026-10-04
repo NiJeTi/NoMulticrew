@@ -16,7 +16,7 @@ internal sealed class CrewRegistry
 
     public bool IsSeated(Player player)
     {
-        return _crews.Values.Any(seats => seats.Any(seat => ReferenceEquals(seat.Occupant, player)));
+        return _crews.Values.Any(ss => ss.Any(s => ReferenceEquals(s.Occupant, player)));
     }
 
     public bool IsTaken(PersistentID aircraftId, int seatIndex)
@@ -28,7 +28,7 @@ internal sealed class CrewRegistry
     {
         foreach (var (aircraftId, seats) in _crews)
         {
-            if (seats.Any(seat => ReferenceEquals(seat.Occupant, player)))
+            if (seats.Any(x => ReferenceEquals(x.Occupant, player)))
             {
                 return aircraftId;
             }
@@ -60,12 +60,12 @@ internal sealed class CrewRegistry
 
         var seats = _crews[aircraftId.Value];
 
-        foreach (var seat in seats.Where(seat => ReferenceEquals(seat.Occupant, player)))
+        foreach (var seat in seats.Where(x => ReferenceEquals(x.Occupant, player)))
         {
             seat.Occupant = null;
         }
 
-        if (seats.All(seat => seat.Occupant == null))
+        if (seats.All(x => x.Occupant == null))
         {
             _crews.Remove(aircraftId.Value);
         }
@@ -112,8 +112,8 @@ internal sealed class CrewRegistry
     {
         var seats = _crews.GetValueOrDefault(aircraftId, []);
 
-        var occupants = seats.Select(seat => seat.Occupant != null ? seat.Occupant.PlayerIndex : -1).ToArray();
-        var roles = seats.Select(seat => seat.Role).ToArray();
+        var occupants = seats.Select(x => x.Occupant != null ? x.Occupant.PlayerIndex : -1).ToArray();
+        var roles = seats.Select(x => x.Role).ToArray();
 
         _session.SendToAllCapable(new MulticrewState(aircraftId, occupants, roles));
     }
