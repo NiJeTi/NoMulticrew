@@ -267,7 +267,7 @@ internal sealed class CrewCommands
                 StoppedFiring?.Invoke(aircraft, message.Station);
                 break;
             case CrewCommandKind.ClaimHit:
-                Attributed(
+                _session.Economy.Attributed(
                     sender,
                     () => ClaimHit?.Invoke(aircraft, message.TargetId, message.Vector, message.Velocity, message.Station)
                 );
@@ -297,7 +297,7 @@ internal sealed class CrewCommands
 
         UnitRegistry.TryGetUnit(message.TargetId, out var target);
 
-        Attributed(sender, () => LaunchMissile(aircraft, message.Station, target, message.Aimpoint));
+        _session.Economy.Attributed(sender, () => LaunchMissile(aircraft, message.Station, target, message.Aimpoint));
 
         if (!aircraft.LocalSim)
         {
@@ -316,19 +316,5 @@ internal sealed class CrewCommands
         _firing[id] = firing ? bits | (1 << station) : bits & ~(1 << station);
 
         aircraft.NetworkremoteWeaponStates = aircraft.NetworkremoteWeaponStates;
-    }
-
-    private void Attributed(Player sender, Action action)
-    {
-        _session.Economy.Sender = sender;
-
-        try
-        {
-            action();
-        }
-        finally
-        {
-            _session.Economy.Sender = null;
-        }
     }
 }

@@ -31,12 +31,25 @@ internal sealed class CrewEconomy
     private Player? _contextCrew;
     private bool _paying;
     private bool _missileScope;
-
-    public Player? Sender { get; set; }
+    private Player? _sender;
 
     public CrewEconomy(ServerSession session)
     {
         _session = session;
+    }
+
+    public void Attributed(Player sender, Action action)
+    {
+        _sender = sender;
+
+        try
+        {
+            action();
+        }
+        finally
+        {
+            _sender = null;
+        }
     }
 
     public void OnLaunch(Unit owner, WeaponStation station)
@@ -47,7 +60,7 @@ internal sealed class CrewEconomy
         }
 
         var key = (aircraft.persistentID, station.WeaponInfo);
-        var launcher = Sender;
+        var launcher = _sender;
 
         if (launcher != null)
         {
@@ -76,7 +89,7 @@ internal sealed class CrewEconomy
             _claims[claimer.persistentID] = queue;
         }
 
-        queue.Enqueue((Sender, Time.unscaledTime));
+        queue.Enqueue((_sender, Time.unscaledTime));
     }
 
     public bool EnterGunContext(PersistentID dealer)
