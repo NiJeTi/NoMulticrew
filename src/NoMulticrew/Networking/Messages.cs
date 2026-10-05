@@ -26,7 +26,7 @@ internal struct MulticrewHello : IMessage<MulticrewHello>
     public void Read(NetworkReader reader)
     {
         ProtocolVersion = reader.ReadByte();
-        PluginVersion = reader.ReadString();
+        PluginVersion = ProtocolVersion == MessageRegistry.ProtocolVersion ? reader.ReadString() : "";
     }
 
     public void Write(NetworkWriter writer)
@@ -51,7 +51,7 @@ internal struct MulticrewWelcome : IMessage<MulticrewWelcome>
     public void Read(NetworkReader reader)
     {
         ProtocolVersion = reader.ReadByte();
-        PluginVersion = reader.ReadString();
+        PluginVersion = ProtocolVersion == MessageRegistry.ProtocolVersion ? reader.ReadString() : "";
     }
 
     public void Write(NetworkWriter writer)
