@@ -242,6 +242,18 @@ internal sealed class CrewEconomy
             {
                 ledger.Crew.Remove(crew);
             }
+
+            foreach (var key in _launchers.Where(x => ReferenceEquals(x.Value, crew)).Select(x => x.Key).ToList())
+            {
+                _launchers.Remove(key);
+            }
+
+            foreach (var dealer in _claims.Keys.ToList())
+            {
+                _claims[dealer] = new Queue<(Player?, float)>(
+                    _claims[dealer].Select(x => ReferenceEquals(x.Claimant, crew) ? (null, x.Time) : x)
+                );
+            }
         }
 
         if (!_escrow.Remove(crew, out var held))
