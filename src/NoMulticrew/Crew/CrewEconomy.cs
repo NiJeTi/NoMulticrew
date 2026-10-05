@@ -19,11 +19,13 @@ internal sealed class CrewEconomy
     private static readonly AccessTools.FieldRef<Unit, Dictionary<PersistentID, float>?> DamageCreditRef =
         AccessTools.FieldRefAccess<Unit, Dictionary<PersistentID, float>?>("damageCredit");
 
+    private readonly ServerSession _session;
     private readonly CrewRegistry _crew;
 
     private readonly Dictionary<(PersistentID Aircraft, WeaponInfo Weapon), Player> _launchers = [];
     private readonly Dictionary<PersistentID, Queue<(Player? Claimant, float Time)>> _claims = [];
     private readonly Dictionary<(PersistentID Target, PersistentID Aircraft), Ledger> _ledger = [];
+    private readonly Dictionary<Player, (float Allocation, float Score)> _escrow = [];
 
     private PersistentID _contextAircraft;
     private Player? _contextCrew;
@@ -32,8 +34,9 @@ internal sealed class CrewEconomy
 
     public Player? Sender { get; set; }
 
-    public CrewEconomy(CrewRegistry crew)
+    public CrewEconomy(ServerSession session, CrewRegistry crew)
     {
+        _session = session;
         _crew = crew;
     }
 
@@ -42,6 +45,7 @@ internal sealed class CrewEconomy
         _launchers.Clear();
         _claims.Clear();
         _ledger.Clear();
+        _escrow.Clear();
         _missileScope = false;
         Sender = null;
         ExitContext();
@@ -224,6 +228,77 @@ internal sealed class CrewEconomy
         return true;
     }
 
+    public float PendingOf(Player player)
+    {
+        return _escrow.TryGetValue(player, out var held) ? held.Allocation : 0f;
+    }
+
+    public void Settle(Player crew, PersistentID aircraftId, bool forfeit)
+    {
+        if (forfeit)
+        {
+            foreach (var ledger in _ledger.Values)
+            {
+                ledger.Crew.Remove(crew);
+            }
+        }
+
+        if (!_escrow.Remove(crew, out var held))
+        {
+            return;
+        }
+
+        var recipient = forfeit ? PilotOf(aircraftId, crew) : crew;
+        if (recipient == null || recipient.HQ == null)
+        {
+            Plugin.Logger.LogInfo($"Crew escrow of {held.Allocation:F0} dropped: nobody to receive it");
+            return;
+        }
+
+        _paying = true;
+
+        try
+        {
+            recipient.HQ.RewardPlayer(recipient, null, held.Allocation, held.Score, FactionHQ.RewardType.None);
+        }
+        catch (Exception e)
+        {
+            Plugin.Logger.LogError($"Failed to settle crew escrow: {e}");
+            return;
+        }
+        finally
+        {
+            _paying = false;
+        }
+
+        Plugin.Logger.LogInfo(
+            $"Crew escrow of {held.Allocation:F0} {(forfeit ? "forfeited to" : "paid to")} "
+            + recipient.GetDisplayName(PlayerNameContext.Other)
+        );
+
+        if (!forfeit)
+        {
+            _session.Notify(crew, $"Crew earnings paid: +{held.Allocation:F0}");
+        }
+    }
+
+    public void PayAll()
+    {
+        foreach (var crew in _escrow.Keys.ToList())
+        {
+            Settle(crew, PersistentID.None, forfeit: false);
+        }
+    }
+
+    private static Player? PilotOf(PersistentID aircraftId, Player crew)
+    {
+        return UnitRegistry.TryGetUnit<Aircraft>(aircraftId, out var aircraft)
+            && aircraft.Player != null
+            && !ReferenceEquals(aircraft.Player, crew)
+            ? aircraft.Player
+            : null;
+    }
+
     private bool Enter(PersistentID aircraft, Player? crew)
     {
         if (crew == null)
@@ -312,7 +387,7 @@ internal sealed class CrewEconomy
         return portions;
     }
 
-    private static void Share(
+    private void Share(
         FactionHQ hq,
         Player earner,
         Player pilot,
@@ -345,13 +420,33 @@ internal sealed class CrewEconomy
         }
     }
 
-    private static void Pay(FactionHQ hq, Player player, Unit? target, float allocation, float score, FactionHQ.RewardType type)
+    private void Pay(FactionHQ hq, Player player, Unit? target, float allocation, float score, FactionHQ.RewardType type)
     {
         if (player == null || (allocation <= 0f && score <= 0f))
         {
             return;
         }
 
-        hq.RewardPlayer(player, target, allocation, score, type);
+        var aircraftId = _crew.AircraftOf(player);
+        if (aircraftId == null)
+        {
+            hq.RewardPlayer(player, target, allocation, score, type);
+            return;
+        }
+
+        var held = _escrow.GetValueOrDefault(player);
+        _escrow[player] = (held.Allocation + allocation, held.Score + score);
+
+        if (type != FactionHQ.RewardType.None)
+        {
+            NetworkSceneSingleton<MessageManager>.i.TargetCreditMessage(
+                player.Owner,
+                target != null ? target.persistentID : PersistentID.None,
+                score,
+                type
+            );
+        }
+
+        _crew.SendRoster(aircraftId.Value);
     }
 }

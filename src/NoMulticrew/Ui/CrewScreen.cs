@@ -297,6 +297,12 @@ internal sealed class CrewScreen : IDisposable
 
             crew.Add($"{Plugin.SeatTable.Label(aircraft.definition.jsonKey, seat).ToUpperInvariant()}  {name}{here}");
         }
+
+        var mine = ReferenceEquals(_session.BackSeat.Aircraft, aircraft) ? _session.BackSeat.SeatIndex : -1;
+        if (mine >= 0 && mine < state.Pending.Length)
+        {
+            crew.Add($"PENDING  +{state.Pending[mine]:F0}");
+        }
     }
 
     private void DescribeStations(Aircraft aircraft, List<(string, bool)> stations)

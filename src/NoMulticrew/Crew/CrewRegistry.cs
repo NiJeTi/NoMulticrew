@@ -136,6 +136,11 @@ internal sealed class CrewRegistry
             return;
         }
 
+        foreach (var occupant in seats.Where(x => x != null))
+        {
+            _session.Economy.Settle(occupant!, aircraftId, forfeit: false);
+        }
+
         Plugin.Logger.LogInfo($"Crew of {aircraftId} dissolved");
 
         foreach (var occupant in seats.Where(x => x != null))
@@ -164,12 +169,18 @@ internal sealed class CrewRegistry
         _crews.Clear();
     }
 
-    private void Broadcast(PersistentID aircraftId)
+    public void SendRoster(PersistentID aircraftId)
     {
         var seats = _crews.GetValueOrDefault(aircraftId, []);
         var occupants = seats.Select(x => x != null ? x.PlayerIndex : -1).ToArray();
+        var pending = seats.Select(x => x != null ? _session.Economy.PendingOf(x) : 0f).ToArray();
 
-        _session.SendToAllCapable(new CrewRoster(aircraftId, occupants));
+        _session.SendToAllCapable(new CrewRoster(aircraftId, occupants, pending));
+    }
+
+    private void Broadcast(PersistentID aircraftId)
+    {
+        SendRoster(aircraftId);
         _session.Commands.Reconcile(aircraftId);
 
         if (UnitRegistry.TryGetUnit<Aircraft>(aircraftId, out var aircraft))

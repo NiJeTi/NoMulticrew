@@ -30,7 +30,7 @@ internal sealed class ServerSession : IDisposable
         _server = server;
 
         Crew = new CrewRegistry(this);
-        Economy = new CrewEconomy(Crew);
+        Economy = new CrewEconomy(this, Crew);
         Commands = new CrewCommands(this, Crew, Economy);
         Requests = new JoinRequests(this, Crew);
 
@@ -178,6 +178,7 @@ internal sealed class ServerSession : IDisposable
             + (valid ? "with a valid exit" : "by bailing out")
         );
 
+        Economy.Settle(player, aircraftId.Value, forfeit: !valid);
         Crew.Release(player);
         Notify(player, valid ? "Left the seat" : "Bailed out");
     }
@@ -190,6 +191,12 @@ internal sealed class ServerSession : IDisposable
         if (connection.TryGetPlayer<Player>(out var player))
         {
             Requests.Forget(player);
+
+            if (Crew.AircraftOf(player) is { } seatedIn)
+            {
+                Economy.Settle(player, seatedIn, forfeit: true);
+            }
+
             Crew.Release(player);
             Crew.DissolvePilotedBy(player);
         }

@@ -67,10 +67,13 @@ internal struct CrewRoster : IMessage<CrewRoster>
 
     public int[] Occupants { get; private set; }
 
-    public CrewRoster(PersistentID aircraftId, int[] occupants)
+    public float[] Pending { get; private set; }
+
+    public CrewRoster(PersistentID aircraftId, int[] occupants, float[] pending)
     {
         AircraftId = aircraftId;
         Occupants = occupants;
+        Pending = pending;
     }
 
     public void Read(NetworkReader reader)
@@ -80,10 +83,12 @@ internal struct CrewRoster : IMessage<CrewRoster>
         var count = reader.ReadByte();
 
         Occupants = new int[count];
+        Pending = new float[count];
 
         for (var i = 0; i < count; i++)
         {
             Occupants[i] = reader.ReadPackedInt32();
+            Pending[i] = reader.ReadSingleConverter();
         }
     }
 
@@ -95,6 +100,7 @@ internal struct CrewRoster : IMessage<CrewRoster>
         for (var i = 0; i < Occupants.Length; i++)
         {
             writer.WritePackedInt32(Occupants[i]);
+            writer.WriteSingleConverter(Pending[i]);
         }
     }
 }

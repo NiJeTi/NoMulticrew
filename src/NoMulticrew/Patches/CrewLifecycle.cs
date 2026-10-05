@@ -12,6 +12,7 @@ internal static class MissionManager_SetMission
     private static void Prefix()
     {
         Plugin.Client?.BackSeat.Leave(showMap: false);
+        Plugin.Server?.Economy.PayAll();
         Plugin.Server?.Clear();
         Plugin.Client?.Crew.Clear();
         Plugin.Client?.ClearRequest();
@@ -51,9 +52,13 @@ internal static class Player_SetAircraft
     private static void Postfix(Player __instance)
     {
         var server = Plugin.Server;
-        if (server != null && server.Crew.Release(__instance))
+        if (server == null || server.Crew.AircraftOf(__instance) is not { } seatedIn)
         {
-            server.Notify(__instance, "Left the seat");
+            return;
         }
+
+        server.Economy.Settle(__instance, seatedIn, forfeit: __instance.Aircraft != null);
+        server.Crew.Release(__instance);
+        server.Notify(__instance, "Left the seat");
     }
 }
