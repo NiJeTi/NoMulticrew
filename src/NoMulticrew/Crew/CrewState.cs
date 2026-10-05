@@ -142,6 +142,13 @@ internal sealed class CrewState
         return false;
     }
 
+    public bool RefuseStation(Aircraft aircraft, int stationIndex)
+    {
+        var label = Plugin.SeatTable.Label(aircraft.definition.jsonKey, OwnerSeat(aircraft, stationIndex));
+
+        return Refuse($"{label} has this weapon");
+    }
+
     public static bool Owns(Aircraft aircraft, int seatIndex, int stationIndex)
     {
         var stations = aircraft.weaponStations;

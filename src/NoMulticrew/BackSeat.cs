@@ -100,7 +100,7 @@ internal sealed class BackSeat : IDisposable
             Select(Next(Station, -1));
         }
 
-        Weapons.Tick(Station >= 0 && _controls.IsFireHeld());
+        Weapons.Tick(_controls.IsFireHeld());
     }
 
     private void Select(int station)

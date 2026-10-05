@@ -29,7 +29,11 @@ internal sealed class BackSeatWeapons
             return;
         }
 
-        if (triggerHeld && _seat.Station >= 0)
+        if (triggerHeld && _seat.Station < 0)
+        {
+            _session.Crew.Refuse("No weapons for this seat");
+        }
+        else if (triggerHeld)
         {
             Fire(aircraft, aircraft.weaponStations[_seat.Station]);
         }

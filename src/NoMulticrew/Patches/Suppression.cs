@@ -16,7 +16,7 @@ internal static class Aircraft_SetActiveStation
             return true;
         }
 
-        return crew.Refuse("Back seat has this station");
+        return crew.RefuseStation(__instance, stationIndex);
     }
 }
 
@@ -38,7 +38,7 @@ internal static class WeaponManager_Fire
             return true;
         }
 
-        return crew.Refuse("Back seat has this station");
+        return crew.RefuseStation(AircraftRef(__instance), station.Number);
     }
 }
 

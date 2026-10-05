@@ -110,11 +110,20 @@ internal sealed class ClientSession : IDisposable
             return;
         }
 
-        player.Send(new MulticrewHello(MessageRegistry.ProtocolVersion));
+        player.Send(new MulticrewHello(MessageRegistry.ProtocolVersion, MyPluginInfo.PLUGIN_VERSION));
     }
 
     private void OnWelcome(INetworkPlayer player, MulticrewWelcome message)
     {
+        if (message.PluginVersion != MyPluginInfo.PLUGIN_VERSION)
+        {
+            Plugin.Logger.LogWarning(
+                $"Server runs NoMulticrew {message.PluginVersion}, this client {MyPluginInfo.PLUGIN_VERSION}: multicrew is off"
+            );
+            Prompt.ShowNotice($"Multicrew needs NoMulticrew {message.PluginVersion}");
+            return;
+        }
+
         _server = player;
 
         Plugin.Logger.LogInfo($"Server confirmed multicrew support, protocol {message.ProtocolVersion}");

@@ -62,11 +62,11 @@ internal sealed class ScreenRow : IDisposable
         return CreateToggle(container, template, label, () => true, onClick);
     }
 
-    public static ScreenRow CreateLabel(Transform container, MapOptions_ToggleButton template, string text)
+    public static ScreenRow CreateLabel(Transform container, MapOptions_ToggleButton template, string text, bool usable = true)
     {
         var label = Object.Instantiate(LabelRef(template), container);
         label.gameObject.name = $"NoMulticrew.CrewScreen.Label: {text}";
-        label.color = ThemeManager.Active.ColorTheme.AllClear;
+        label.color = usable ? ThemeManager.Active.ColorTheme.AllClear : Color.grey;
 
         var rect = (RectTransform)label.transform;
         rect.sizeDelta = new Vector2(rect.sizeDelta.x, Height);

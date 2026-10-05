@@ -41,7 +41,7 @@ internal static class Unit_SetFiringState
             return true;
         }
 
-        return client.Crew.Refuse("Back seat has this station");
+        return client.Crew.RefuseStation((Aircraft)__instance, index);
     }
 }
 

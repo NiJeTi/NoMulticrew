@@ -144,9 +144,17 @@ internal sealed class ServerSession : IDisposable
             return;
         }
 
-        Add(player);
+        player.Send(new MulticrewWelcome(MessageRegistry.ProtocolVersion, MyPluginInfo.PLUGIN_VERSION));
 
-        player.Send(new MulticrewWelcome(MessageRegistry.ProtocolVersion));
+        if (message.PluginVersion != MyPluginInfo.PLUGIN_VERSION)
+        {
+            Plugin.Logger.LogWarning(
+                $"{player} runs NoMulticrew {message.PluginVersion}, this server {MyPluginInfo.PLUGIN_VERSION}: not crew-capable"
+            );
+            return;
+        }
+
+        Add(player);
     }
 
     private void OnLeave(INetworkPlayer connection, CrewLeaveRequest message)

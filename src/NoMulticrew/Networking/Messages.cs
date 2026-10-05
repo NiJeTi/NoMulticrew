@@ -15,19 +15,24 @@ internal struct MulticrewHello : IMessage<MulticrewHello>
 {
     public byte ProtocolVersion { get; private set; }
 
-    public MulticrewHello(byte protocolVersion)
+    public string PluginVersion { get; private set; }
+
+    public MulticrewHello(byte protocolVersion, string pluginVersion)
     {
         ProtocolVersion = protocolVersion;
+        PluginVersion = pluginVersion;
     }
 
     public void Read(NetworkReader reader)
     {
         ProtocolVersion = reader.ReadByte();
+        PluginVersion = reader.ReadString();
     }
 
     public void Write(NetworkWriter writer)
     {
         writer.WriteByte(ProtocolVersion);
+        writer.WriteString(PluginVersion);
     }
 }
 
@@ -35,19 +40,24 @@ internal struct MulticrewWelcome : IMessage<MulticrewWelcome>
 {
     public byte ProtocolVersion { get; private set; }
 
-    public MulticrewWelcome(byte protocolVersion)
+    public string PluginVersion { get; private set; }
+
+    public MulticrewWelcome(byte protocolVersion, string pluginVersion)
     {
         ProtocolVersion = protocolVersion;
+        PluginVersion = pluginVersion;
     }
 
     public void Read(NetworkReader reader)
     {
         ProtocolVersion = reader.ReadByte();
+        PluginVersion = reader.ReadString();
     }
 
     public void Write(NetworkWriter writer)
     {
         writer.WriteByte(ProtocolVersion);
+        writer.WriteString(PluginVersion);
     }
 }
 

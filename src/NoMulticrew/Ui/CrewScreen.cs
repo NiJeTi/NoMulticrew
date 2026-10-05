@@ -32,7 +32,7 @@ internal sealed class CrewScreen : IDisposable
 
     private sealed class Content(
         string[] crew,
-        string[] stations,
+        (string Text, bool Usable)[] stations,
         string? request,
         bool isPilot,
         bool isBackSeat,
@@ -40,7 +40,7 @@ internal sealed class CrewScreen : IDisposable
     )
     {
         public string[] Crew { get; } = crew;
-        public string[] Stations { get; } = stations;
+        public (string Text, bool Usable)[] Stations { get; } = stations;
         public string? Request { get; } = request;
         public bool IsPilot { get; } = isPilot;
         public bool IsBackSeat { get; } = isBackSeat;
@@ -147,7 +147,7 @@ internal sealed class CrewScreen : IDisposable
         var aircraft = backSeat != null ? backSeat : LocalAircraft();
 
         var crew = new List<string>();
-        var stations = new List<string>();
+        var stations = new List<(string, bool)>();
 
         if (aircraft == null)
         {
@@ -160,17 +160,19 @@ internal sealed class CrewScreen : IDisposable
 
             if (_session.Crew.TryGetCrew(aircraft.persistentID, out var state))
             {
-                DescribeSeats(aircraft, state, crew, stations);
+                DescribeSeats(aircraft, state, crew);
             }
             else
             {
                 crew.Add("NO CREW");
             }
+
+            DescribeStations(aircraft, stations);
         }
 
         if (stations.Count == 0)
         {
-            stations.Add("NONE");
+            stations.Add(("NONE", true));
         }
 
         var request = _session.Prompt.Pending is { } prompt
@@ -187,32 +189,38 @@ internal sealed class CrewScreen : IDisposable
         );
     }
 
-    private void DescribeSeats(Aircraft aircraft, CrewRoster state, List<string> crew, List<string> stations)
+    private void DescribeSeats(Aircraft aircraft, CrewRoster state, List<string> crew)
     {
         for (var seat = 0; seat < state.Occupants.Length; seat++)
         {
             var occupant = state.Occupants[seat];
             var name = occupant < 0 ? "EMPTY" : CrewJoinPromptUi.NameOf(occupant);
-            var here = seat == _session.BackSeat.SeatIndex ? " <" : "";
+            var here = ReferenceEquals(_session.BackSeat.Aircraft, aircraft) && seat == _session.BackSeat.SeatIndex
+                ? " <"
+                : "";
 
-            crew.Add($"{seat}  {Plugin.SeatTable.Label(aircraft.definition.jsonKey, seat).ToUpperInvariant()}  {name}{here}");
+            crew.Add($"{Plugin.SeatTable.Label(aircraft.definition.jsonKey, seat).ToUpperInvariant()}  {name}{here}");
+        }
+    }
 
-            if (occupant < 0)
-            {
-                continue;
-            }
+    private void DescribeStations(Aircraft aircraft, List<(string, bool)> stations)
+    {
+        var key = aircraft.definition.jsonKey;
+        var mine = ReferenceEquals(_session.BackSeat.Aircraft, aircraft) ? _session.BackSeat.SeatIndex : -1;
+        var selected = mine >= 0
+            ? _session.BackSeat.Station
+            : aircraft.weaponManager.currentWeaponStation?.Number ?? -1;
 
-            for (var station = 0; station < aircraft.weaponStations.Count; station++)
-            {
-                if (!CrewState.Owns(aircraft, seat, station))
-                {
-                    continue;
-                }
+        for (var i = 0; i < aircraft.weaponStations.Count; i++)
+        {
+            var weapon = aircraft.weaponStations[i].WeaponInfo;
+            var owner = _session.Crew.OwnerSeat(aircraft, i);
+            var label = owner < 0 ? "PILOT" : Plugin.SeatTable.Label(key, owner).ToUpperInvariant();
+            var usable = mine >= 0 ? owner == mine : owner < 0;
 
-                var weapon = aircraft.weaponStations[station].WeaponInfo;
-                var selected = seat == _session.BackSeat.SeatIndex && station == _session.BackSeat.Station ? " >" : "";
-                stations.Add($"{station}  {(weapon != null ? weapon.shortName : "-")}  SEAT {seat}{selected}");
-            }
+            stations.Add(
+                ($"{i}  {(weapon != null ? weapon.shortName : "-")}  {label}{(i == selected ? " >" : "")}", usable)
+            );
         }
     }
 
@@ -225,9 +233,9 @@ internal sealed class CrewScreen : IDisposable
             _rows.Add(ScreenRow.CreateLabel(_layout.Crew.Container, _layout.RowTemplate, line));
         }
 
-        foreach (var line in content.Stations)
+        foreach (var (text, usable) in content.Stations)
         {
-            _rows.Add(ScreenRow.CreateLabel(_layout.Stations.Container, _layout.RowTemplate, line));
+            _rows.Add(ScreenRow.CreateLabel(_layout.Stations.Container, _layout.RowTemplate, text, usable));
         }
 
         var actions = _layout.Actions.Container;
