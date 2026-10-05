@@ -12,10 +12,7 @@ internal static class ThemeManager_SaveActiveThemeGroup
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static void Postfix()
     {
-        if (ThemeManager.Active != null)
-        {
-            Plugin.Palette.Save(ThemeManager.Active);
-        }
+        Plugin.Palette.Save(ThemeManager.Active);
     }
 }
 
@@ -24,18 +21,15 @@ internal static class ThemeManager_SaveActiveThemeGroup
 internal static class ThemeManager_CopyActiveThemeGroupWithNewId
 {
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static void Prefix(out ThemeGroup? __state)
+    private static void Prefix(out ThemeGroup __state)
     {
         __state = ThemeManager.Active;
     }
 
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static void Postfix(string __result, ThemeGroup? __state)
+    private static void Postfix(string __result, ThemeGroup __state)
     {
-        if (__state != null)
-        {
-            Plugin.Palette.Copy(__state, __result);
-        }
+        Plugin.Palette.Copy(__state, __result);
     }
 }
 
@@ -44,18 +38,15 @@ internal static class ThemeManager_CopyActiveThemeGroupWithNewId
 internal static class ThemeManager_DeleteActiveThemeGroup
 {
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static void Prefix(out string? __state)
+    private static void Prefix(out string __state)
     {
-        __state = ThemeManager.Active?.Id;
+        __state = ThemeManager.Active.Id;
     }
 
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static void Postfix(string? __state)
+    private static void Postfix(string __state)
     {
-        if (!string.IsNullOrEmpty(__state))
-        {
-            Plugin.Palette.Drop(__state!);
-        }
+        Plugin.Palette.Drop(__state);
     }
 }
 

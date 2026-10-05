@@ -54,7 +54,7 @@ internal static class Player_SetAircraft
             return;
         }
 
-        server.Economy.Settle(__instance, seatedIn, forfeit: __instance.Aircraft != null);
+        server.Economy.Settle(__instance, seatedIn, forfeit: true);
         server.Crew.Release(__instance);
         server.Notify(__instance, "Left the seat");
     }

@@ -82,13 +82,12 @@ internal sealed class MarkPaletteSection : IDisposable
 
     public static void Commit()
     {
-        var group = ThemeManager.Active;
-        if (_current == null || group == null)
+        if (_current == null)
         {
             return;
         }
 
-        Plugin.Palette.Set(group.Id, _current._picker.Color.WithAlpha(1f));
+        Plugin.Palette.Set(ThemeManager.Active.Id, _current._picker.Color.WithAlpha(1f));
         Plugin.Client?.Marks.Repaint();
     }
 
@@ -143,8 +142,7 @@ internal sealed class MarkPaletteSection : IDisposable
     {
         _picker.SetValues(CrewTargetLabel, Plugin.Palette.Active, CrewTargetTooltip);
 
-        var toggle = SliderToggleRef(_menu);
-        _container.SetActive(toggle != null && toggle.isOn);
+        _container.SetActive(SliderToggleRef(_menu).isOn);
 
         if (_container.transform.parent is RectTransform parent)
         {

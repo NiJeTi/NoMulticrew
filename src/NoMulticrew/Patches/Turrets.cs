@@ -11,7 +11,7 @@ internal static class WeaponStation_SetStationActive
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prefix(WeaponStation __instance, Aircraft aircraft)
     {
-        if (aircraft == null || !IsManned(aircraft, __instance))
+        if (!IsManned(aircraft, __instance))
         {
             return true;
         }
@@ -64,9 +64,7 @@ internal static class Turret_FixedUpdate
         if (!___manual
             || ___stowed
             || ___disabled
-            || ___aircraft == null
             || ___aircraft.disabled
-            || ___currentWeaponStation == null
             || !WeaponStation_SetStationActive.IsManned(___aircraft, ___currentWeaponStation)
             || ___target != null)
         {

@@ -47,11 +47,7 @@ internal static class MarkPaletteFile
 
         try
         {
-            var folder = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(folder) && !Directory.Exists(folder))
-            {
-                Directory.CreateDirectory(folder);
-            }
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 
             var dto = new Dto { id = group.Id, crewTarget = ColorUtility.ToHtmlStringRGB(crewTarget) };
             File.WriteAllText(path, JsonUtility.ToJson(dto, true));

@@ -36,13 +36,8 @@ internal sealed class MarkPalette
         _colors.Remove(id);
     }
 
-    private Color Get(ThemeGroup? group)
+    private Color Get(ThemeGroup group)
     {
-        if (group == null)
-        {
-            return DefaultCrewTarget;
-        }
-
         if (_colors.TryGetValue(group.Id, out var cached))
         {
             return cached;

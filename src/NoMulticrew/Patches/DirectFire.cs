@@ -79,7 +79,7 @@ internal static class Unit_RegisterHit
             }
         }
 
-        __state = __instance.IsServer && Plugin.Server?.Economy.EnterHitContext(__instance, weaponInfo) == true;
+        __state = Plugin.Server?.Economy.EnterHitContext(__instance, weaponInfo) == true;
 
         return true;
     }
@@ -94,7 +94,7 @@ internal static class Unit_RegisterHit
     {
         if (__state)
         {
-            Plugin.Server?.Economy.ExitContext();
+            Plugin.Server!.Economy.ExitContext();
         }
     }
 }
@@ -110,7 +110,7 @@ internal static class BulletSim_AddBullet
     private static void Prefix(Unit ___owner, Gun ___gun, ref bool ___visualOnly)
     {
         var client = Plugin.Client;
-        if (client == null || ___owner == null || ___gun == null)
+        if (client == null)
         {
             return;
         }
@@ -131,8 +131,8 @@ internal static class BulletSim_AddBullet
 [HarmonyPatch(typeof(Gun), "SpawnBullet")]
 internal static class Gun_SpawnBullet
 {
-    private static readonly AccessTools.FieldRef<Weapon, WeaponStation?> WeaponStationRef =
-        AccessTools.FieldRefAccess<Weapon, WeaponStation?>("weaponStation");
+    private static readonly AccessTools.FieldRef<Weapon, WeaponStation> WeaponStationRef =
+        AccessTools.FieldRefAccess<Weapon, WeaponStation>("weaponStation");
 
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static void Prefix(Gun __instance, float ___fireInterval)
@@ -142,7 +142,6 @@ internal static class Gun_SpawnBullet
 
         if (client == null
             || ___fireInterval <= 0.2f
-            || station == null
             || !client.BackSeat.Owns(__instance.attachedUnit, station.Number))
         {
             return;
