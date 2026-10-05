@@ -26,11 +26,6 @@ internal sealed class CrewRegistry
         return index >= 0 ? index : null;
     }
 
-    public bool IsSeated(Player player)
-    {
-        return _crews.Values.Any(seats => seats.Any(x => ReferenceEquals(x, player)));
-    }
-
     public bool IsCrewed(PersistentID aircraftId)
     {
         return _crews.ContainsKey(aircraftId);

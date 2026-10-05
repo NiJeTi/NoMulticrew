@@ -49,8 +49,7 @@ internal sealed class CrewCommands
     private readonly ServerSession _session;
 
     private readonly Dictionary<(INetworkPlayer Connection, CrewCommandKind Kind), RateLimitBucket> _buckets = [];
-    private readonly Dictionary<PersistentID, int> _owned = [];
-    private readonly Dictionary<PersistentID, int> _firing = [];
+    private readonly Dictionary<PersistentID, (int Owned, int Firing)> _masks = [];
     private readonly Dictionary<INetworkPlayer, (PersistentID Aircraft, float Time)> _released = [];
 
     public CrewCommands(ServerSession session)
@@ -118,17 +117,17 @@ internal sealed class CrewCommands
 
     public void MergeFiring(Unit unit, ref WeaponMask value)
     {
-        if (!_owned.TryGetValue(unit.persistentID, out var owned))
+        if (!_masks.TryGetValue(unit.persistentID, out var masks))
         {
             return;
         }
 
-        value = new WeaponMask((value.Mask & ~owned) | (_firing.GetValueOrDefault(unit.persistentID) & owned));
+        value = new WeaponMask((value.Mask & ~masks.Owned) | (masks.Firing & masks.Owned));
     }
 
     public void Reconcile(PersistentID aircraftId)
     {
-        var before = _owned.GetValueOrDefault(aircraftId);
+        var before = _masks.GetValueOrDefault(aircraftId).Owned;
         var owned = 0;
 
         UnitRegistry.TryGetUnit<Aircraft>(aircraftId, out var aircraft);
@@ -146,13 +145,11 @@ internal sealed class CrewCommands
 
         if (owned == 0)
         {
-            _owned.Remove(aircraftId);
-            _firing.Remove(aircraftId);
+            _masks.Remove(aircraftId);
         }
         else
         {
-            _owned[aircraftId] = owned;
-            _firing[aircraftId] = _firing.GetValueOrDefault(aircraftId) & owned;
+            _masks[aircraftId] = (owned, _masks.GetValueOrDefault(aircraftId).Firing & owned);
         }
 
         var dropped = before & ~owned;
@@ -311,9 +308,9 @@ internal sealed class CrewCommands
     private void SetFiring(Aircraft aircraft, byte station, bool firing)
     {
         var id = aircraft.persistentID;
-        var bits = _firing.GetValueOrDefault(id);
+        var (owned, bits) = _masks.GetValueOrDefault(id);
 
-        _firing[id] = firing ? bits | (1 << station) : bits & ~(1 << station);
+        _masks[id] = (owned, firing ? bits | (1 << station) : bits & ~(1 << station));
 
         aircraft.NetworkremoteWeaponStates = aircraft.NetworkremoteWeaponStates;
     }

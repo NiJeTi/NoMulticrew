@@ -230,7 +230,7 @@ internal sealed class JoinRequests
             return false;
         }
 
-        if (_session.Crew.IsSeated(joiner))
+        if (_session.Crew.AircraftOf(joiner) != null)
         {
             reason = "You need to leave your current seat first";
             return false;
