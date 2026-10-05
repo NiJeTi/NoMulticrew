@@ -20,6 +20,7 @@ internal sealed class CrewCommands
     }
 
     private const int NoAuthorityCost = 10;
+    private const float ReleaseGraceSeconds = 1f;
 
     private static readonly Limit FireLimit = new(20, 100, 1);
     private static readonly Limit ClaimLimit = new(20, 400, 5);
@@ -52,6 +53,7 @@ internal sealed class CrewCommands
     private readonly Dictionary<(INetworkPlayer Connection, CrewCommandKind Kind), RateLimitBucket> _buckets = [];
     private readonly Dictionary<PersistentID, int> _owned = [];
     private readonly Dictionary<PersistentID, int> _firing = [];
+    private readonly Dictionary<INetworkPlayer, (PersistentID Aircraft, float Time)> _released = [];
 
     public CrewCommands(ServerSession session, CrewRegistry crew, CrewEconomy economy)
     {
@@ -80,6 +82,14 @@ internal sealed class CrewCommands
         var seat = _crew.SeatOf(sender, message.AircraftId);
         if (seat == null)
         {
+            if (_released.TryGetValue(connection, out var released)
+                && released.Aircraft == message.AircraftId
+                && Time.unscaledTime - released.Time <= ReleaseGraceSeconds)
+            {
+                Plugin.Logger.LogDebug($"Dropped late crew {message.Kind} for {message.AircraftId} from {name}");
+                return;
+            }
+
             Plugin.Logger.LogWarning($"Crew {message.Kind} for {message.AircraftId} from {name}, who has no seat in it");
             connection.SetError(NoAuthorityCost, PlayerErrorFlags.NoAuthority);
             return;
@@ -169,8 +179,15 @@ internal sealed class CrewCommands
         }
     }
 
+    public void Released(Player player, PersistentID aircraftId)
+    {
+        _released[player.Owner] = (aircraftId, Time.unscaledTime);
+    }
+
     public void Forget(INetworkPlayer connection)
     {
+        _released.Remove(connection);
+
         foreach (var key in _buckets.Keys.Where(x => x.Connection == connection).ToList())
         {
             _buckets.Remove(key);
@@ -182,6 +199,7 @@ internal sealed class CrewCommands
         _buckets.Clear();
         _owned.Clear();
         _firing.Clear();
+        _released.Clear();
     }
 
     private static T? Bind<T>(Type type, string name)

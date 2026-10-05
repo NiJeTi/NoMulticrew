@@ -186,7 +186,6 @@ internal sealed class ServerSession : IDisposable
     private void OnDisconnected(INetworkPlayer connection)
     {
         Remove(connection);
-        Commands.Forget(connection);
 
         if (connection.TryGetPlayer<Player>(out var player))
         {
@@ -200,6 +199,8 @@ internal sealed class ServerSession : IDisposable
             Crew.Release(player);
             Crew.DissolvePilotedBy(player);
         }
+
+        Commands.Forget(connection);
     }
 
     private bool TryRegisterServerCommand()

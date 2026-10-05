@@ -126,6 +126,8 @@ internal sealed class CrewRegistry
             }
         }
 
+        _session.Commands.Released(player, aircraftId.Value);
+
         var left = $"{player.GetDisplayName(PlayerNameContext.Other)} left {label}";
 
         foreach (var aboard in seats.Where(x => x != null).Append(aircraft != null ? aircraft.Player : null))
@@ -158,6 +160,7 @@ internal sealed class CrewRegistry
         foreach (var occupant in seats.Where(x => x != null))
         {
             _session.Economy.Settle(occupant!, aircraftId, forfeit: false);
+            _session.Commands.Released(occupant!, aircraftId);
         }
 
         Plugin.Logger.LogInfo($"Crew of {aircraftId} dissolved");
