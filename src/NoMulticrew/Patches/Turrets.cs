@@ -1,0 +1,65 @@
+using System.Diagnostics.CodeAnalysis;
+using HarmonyLib;
+using NoMulticrew.Crew;
+using UnityEngine;
+
+namespace NoMulticrew.Patches;
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[HarmonyPatch(typeof(WeaponStation), nameof(WeaponStation.SetStationActive))]
+internal static class WeaponStation_SetStationActive
+{
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static bool Prefix(WeaponStation __instance, Aircraft aircraft)
+    {
+        if (aircraft == null || !CrewState.IsManned(aircraft, __instance))
+        {
+            return true;
+        }
+
+        foreach (var turret in __instance.Turrets)
+        {
+            turret.SetManual(true);
+        }
+
+        return false;
+    }
+}
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[HarmonyPatch(typeof(Turret), "FixedUpdate")]
+internal static class Turret_FixedUpdate
+{
+    private static readonly Action<Turret, Vector3> AimTurret = AccessTools.MethodDelegate<Action<Turret, Vector3>>(
+        AccessTools.Method(typeof(Turret), "AimTurret", [typeof(Vector3)])
+    );
+
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static bool Prefix(
+        Turret __instance,
+        Aircraft ___aircraft,
+        WeaponStation ___currentWeaponStation,
+        bool ___manual,
+        bool ___stowed,
+        bool ___disabled,
+        ref Vector3 ___manualVector
+    )
+    {
+        if (!___manual
+            || ___stowed
+            || ___disabled
+            || ___aircraft == null
+            || ___aircraft.disabled
+            || ___currentWeaponStation == null
+            || !CrewState.IsManned(___aircraft, ___currentWeaponStation))
+        {
+            return true;
+        }
+
+        Plugin.Client?.BackSeat.Aim(__instance, ___aircraft, ___currentWeaponStation);
+
+        AimTurret(__instance, ___manualVector);
+
+        return false;
+    }
+}
