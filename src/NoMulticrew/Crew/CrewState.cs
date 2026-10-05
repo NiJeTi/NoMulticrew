@@ -15,7 +15,6 @@ internal sealed class CrewState
 
     private float _lastRefusal = float.NegativeInfinity;
 
-    public bool Relaying { get; set; }
 
     public void Apply(CrewRoster message)
     {
@@ -139,8 +138,7 @@ internal sealed class CrewState
 
     public bool BlocksStation(Unit unit, int stationIndex)
     {
-        if (Relaying
-            || unit is not Aircraft aircraft
+        if (unit is not Aircraft aircraft
             || !GameManager.IsLocalAircraft(aircraft)
             || !_crews.TryGetValue(aircraft.persistentID, out var crew))
         {
@@ -160,7 +158,7 @@ internal sealed class CrewState
 
     public bool BlocksSensors(Unit unit)
     {
-        return !Relaying && GameManager.IsLocalAircraft(unit) && _crews.ContainsKey(unit.persistentID);
+        return GameManager.IsLocalAircraft(unit) && _crews.ContainsKey(unit.persistentID);
     }
 
     public bool Refuse(string text)

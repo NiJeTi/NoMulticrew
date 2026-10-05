@@ -11,10 +11,8 @@ namespace NoMulticrew;
 internal sealed class ServerSession : IDisposable
 {
     private const string ServerCommandName = "multicrew";
-    private const float RadarIntervalSeconds = 0.5f;
 
     private readonly HashSet<INetworkPlayer> _validPlayers = [];
-    private readonly Dictionary<Player, float> _radarForwardedAt = [];
 
     private readonly NetworkServer _server;
     private readonly bool _commandRegistered;
@@ -40,7 +38,6 @@ internal sealed class ServerSession : IDisposable
         _server.MessageHandler.RegisterHandler<CrewJoinRequest>(Requests.OnRequest, allowUnauthenticated: false);
         _server.MessageHandler.RegisterHandler<CrewJoinResponse>(Requests.OnResponse, allowUnauthenticated: false);
         _server.MessageHandler.RegisterHandler<CrewLeaveRequest>(OnLeave, allowUnauthenticated: false);
-        _server.MessageHandler.RegisterHandler<CrewAction>(OnAction, allowUnauthenticated: false);
         _server.MessageHandler.RegisterHandler<CrewCommand>(Commands.OnCommand, allowUnauthenticated: false);
         _server.Disconnected.AddListener(OnDisconnected);
 
@@ -56,7 +53,6 @@ internal sealed class ServerSession : IDisposable
         _server.MessageHandler.UnregisterHandler<CrewJoinRequest>();
         _server.MessageHandler.UnregisterHandler<CrewJoinResponse>();
         _server.MessageHandler.UnregisterHandler<CrewLeaveRequest>();
-        _server.MessageHandler.UnregisterHandler<CrewAction>();
         _server.MessageHandler.UnregisterHandler<CrewCommand>();
 
         Clear();
@@ -78,7 +74,6 @@ internal sealed class ServerSession : IDisposable
         Requests.Clear();
         Economy.Clear();
         Commands.Clear();
-        _radarForwardedAt.Clear();
     }
 
     public bool TryGetPlayer(INetworkPlayer connection, [NotNullWhen(true)] out Player? player)
@@ -181,61 +176,6 @@ internal sealed class ServerSession : IDisposable
         Notify(player, "Left the seat");
     }
 
-    private void OnAction(INetworkPlayer connection, CrewAction message)
-    {
-        if (!TryGetPlayer(connection, out var sender))
-        {
-            return;
-        }
-
-        if (!Enum.IsDefined(typeof(CrewActionKind), message.Kind))
-        {
-            Plugin.Logger.LogWarning($"Unknown crew action {message.Kind} from {connection}");
-            return;
-        }
-
-        if (!UnitRegistry.TryGetUnit<Aircraft>(message.AircraftId, out var aircraft)
-            || aircraft.disabled
-            || aircraft.Player == null)
-        {
-            Plugin.Logger.LogDebug($"Dropped crew {message.Kind} for {message.AircraftId}: no live piloted aircraft");
-            return;
-        }
-
-        var role = Crew.RoleOf(sender, message.AircraftId);
-        if (role == null)
-        {
-            Plugin.Logger.LogDebug(
-                $"Dropped crew {message.Kind} for {message.AircraftId} from "
-                + $"{sender.GetDisplayName(PlayerNameContext.Other)}, who has no seat in it"
-            );
-            return;
-        }
-
-        if (message.Kind != CrewActionKind.Radar
-            && !CrewState.Owns(role.Value, aircraft, message.StationIndex))
-        {
-            Plugin.Logger.LogWarning(
-                $"Crew {message.Kind} names station {message.StationIndex} of {message.AircraftId}, "
-                + $"which a {role.Value} seat does not own"
-            );
-            return;
-        }
-
-        if (message.Kind == CrewActionKind.Radar)
-        {
-            var now = Time.realtimeSinceStartup;
-            if (now - _radarForwardedAt.GetValueOrDefault(sender, float.NegativeInfinity) < RadarIntervalSeconds)
-            {
-                return;
-            }
-
-            _radarForwardedAt[sender] = now;
-        }
-
-        SendToPlayer(aircraft.Player.Owner, message);
-    }
-
     private void OnDisconnected(INetworkPlayer connection)
     {
         Remove(connection);
@@ -244,7 +184,6 @@ internal sealed class ServerSession : IDisposable
         if (connection.TryGetPlayer<Player>(out var player))
         {
             Requests.Forget(player);
-            _radarForwardedAt.Remove(player);
             Crew.Release(player);
             Crew.DissolvePilotedBy(player);
         }

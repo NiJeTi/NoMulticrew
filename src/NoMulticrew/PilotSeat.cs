@@ -6,164 +6,73 @@ namespace NoMulticrew;
 
 internal sealed class PilotSeat
 {
-    private const float AimForwardIntervalSeconds = 0.2f;
-
     private readonly CrewState _crew;
-
-    private readonly Dictionary<byte, PersistentID> _triggers = [];
-
-    private readonly Dictionary<byte, float> _aimForwardedAt = [];
-
-    private Aircraft? _aircraft;
 
     public PilotSeat(CrewState crew)
     {
         _crew = crew;
     }
 
-    public void OnAction(CrewAction message)
-    {
-        if (!UnitRegistry.TryGetUnit<Aircraft>(message.AircraftId, out var aircraft)
-            || !GameManager.IsLocalAircraft(aircraft))
-        {
-            Plugin.Logger.LogDebug($"Dropped relayed {message.Kind} for {message.AircraftId}, which this client does not fly");
-            return;
-        }
-
-        switch (message.Kind)
-        {
-            case CrewActionKind.Radar when _crew.BlocksSensors(aircraft):
-                Plugin.Logger.LogDebug("Relayed radar toggle");
-                Relay(aircraft.CmdToggleRadar);
-                break;
-            case CrewActionKind.Trigger when _crew.BlocksStation(aircraft, message.StationIndex):
-                SetTrigger(aircraft, message);
-                break;
-            case CrewActionKind.Aim when _crew.BlocksStation(aircraft, message.StationIndex):
-                Aim(aircraft, message.StationIndex, message.Vector);
-                break;
-            default:
-                Plugin.Logger.LogDebug($"Dropped relayed {message.Kind} for station {message.StationIndex}: not crewed here");
-                break;
-        }
-    }
-
     public void Tick()
     {
-        if (_triggers.Count == 0)
+        if (!GameManager.GetLocalAircraft(out var aircraft) || aircraft.disabled)
         {
             return;
         }
 
-        var aircraft = _aircraft;
-        if (aircraft == null || !GameManager.IsLocalAircraft(aircraft))
+        var states = aircraft.NetworkremoteWeaponStates;
+        if (states.Mask == 0)
         {
-            Clear();
             return;
         }
 
-        foreach (var station in _triggers.Keys.ToList())
+        var stations = aircraft.weaponStations;
+
+        for (var i = 0; i < stations.Count; i++)
         {
-            if (!_crew.BlocksStation(aircraft, station))
+            if (states.Get(i) && _crew.BlocksStation(aircraft, i))
             {
-                _triggers.Remove(station);
+                stations[i].RemoteFireAuto(aircraft);
             }
         }
-
-        _crew.Relaying = true;
-
-        try
-        {
-            foreach (var (station, target) in _triggers)
-            {
-                Fire(aircraft, aircraft.weaponStations[station], target);
-            }
-        }
-        finally
-        {
-            _crew.Relaying = false;
-        }
     }
 
-    public void Clear()
+    public void OnTurretVector(CrewTurretVector message)
     {
-        _triggers.Clear();
-        _aimForwardedAt.Clear();
-        _aircraft = null;
+        var aircraft = Flown(message.AircraftId, message.Station);
+
+        aircraft?.weaponStations[message.Station].SetTurretVector(
+            NetworkFloatHelper.DecompressIfValid(message.Direction, logErrors: true, "direction", Vector3.forward)
+        );
     }
 
-    private void Aim(Aircraft aircraft, byte station, Vector3 vector)
+    public void OnLaunch(CrewLaunch message)
     {
-        if (!float.IsFinite(vector.x) || !float.IsFinite(vector.y) || !float.IsFinite(vector.z))
+        var aircraft = Flown(message.AircraftId, message.Station);
+        if (aircraft == null)
         {
             return;
         }
 
-        aircraft.weaponStations[station].SetTurretVector(vector);
+        UnitRegistry.TryGetUnit(message.TargetId, out var target);
 
-        var now = Time.timeSinceLevelLoad;
-        if (now - _aimForwardedAt.GetValueOrDefault(station, float.NegativeInfinity) < AimForwardIntervalSeconds)
-        {
-            return;
-        }
-
-        _aimForwardedAt[station] = now;
-        aircraft.SetTurretVector(station, vector);
+        aircraft.weaponStations[message.Station].LaunchMount(aircraft, target, message.Aimpoint);
     }
 
-    private void SetTrigger(Aircraft aircraft, CrewAction message)
+    private Aircraft? Flown(PersistentID aircraftId, byte station)
     {
-        if (!ReferenceEquals(aircraft, _aircraft))
+        if (UnitRegistry.TryGetUnit<Aircraft>(aircraftId, out var aircraft)
+            && GameManager.IsLocalAircraft(aircraft)
+            && _crew.BlocksStation(aircraft, station))
         {
-            Clear();
-            _aircraft = aircraft;
+            return aircraft;
         }
 
-        Plugin.Logger.LogDebug(
-            $"Relayed trigger {(message.Held ? "held" : "released")} on station {message.StationIndex}"
+        Plugin.Logger.LogWarning(
+            $"Crew replay for station {station} of {aircraftId} reached a client that does not fly it "
+            + "or whose crew does not own that station"
         );
 
-        if (message.Held)
-        {
-            _triggers[message.StationIndex] = message.TargetId;
-        }
-        else
-        {
-            _triggers.Remove(message.StationIndex);
-        }
-    }
-
-    private static void Fire(Aircraft aircraft, WeaponStation station, PersistentID targetId)
-    {
-        if (station.SafetyIsOn(aircraft) || aircraft.remoteSim || !station.Ready() || station.SalvoInProgress)
-        {
-            return;
-        }
-
-        UnitRegistry.TryGetUnit(targetId, out var target);
-
-        var info = station.WeaponInfo;
-        if (info.gun || info.fireInterval == 0f || info.sling)
-        {
-            station.Fire(aircraft, target);
-        }
-        else
-        {
-            station.LaunchMount(aircraft, target, aircraft.GlobalPosition() + aircraft.transform.forward * 50000f);
-        }
-    }
-
-    private void Relay(Action action)
-    {
-        _crew.Relaying = true;
-
-        try
-        {
-            action();
-        }
-        finally
-        {
-            _crew.Relaying = false;
-        }
+        return null;
     }
 }

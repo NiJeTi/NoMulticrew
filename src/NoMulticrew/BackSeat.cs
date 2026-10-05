@@ -17,7 +17,6 @@ internal sealed class BackSeat : IDisposable
     private static readonly System.Reflection.MethodInfo? RepeatSearchMethod =
         AccessTools.Method(typeof(TargetDetector), "RepeatSearch");
 
-    private readonly ClientSession _session;
     private readonly CrewState _crew;
     private readonly Controls _controls;
 
@@ -46,7 +45,6 @@ internal sealed class BackSeat : IDisposable
 
     public BackSeat(ClientSession session, Controls controls)
     {
-        _session = session;
         _crew = session.Crew;
         _controls = controls;
         Weapons = new BackSeatWeapons(session, this);

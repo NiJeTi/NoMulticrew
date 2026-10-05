@@ -43,23 +43,6 @@ internal static class WeaponManager_Fire
 }
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
-[HarmonyPatch(typeof(Aircraft), nameof(Aircraft.CmdToggleRadar))]
-internal static class Aircraft_CmdToggleRadar
-{
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prefix(Aircraft __instance)
-    {
-        var crew = Plugin.Client?.Crew;
-        if (crew == null || !crew.BlocksSensors(__instance))
-        {
-            return true;
-        }
-
-        return crew.Refuse("Back seat runs the sensors");
-    }
-}
-
-[SuppressMessage("ReSharper", "InconsistentNaming")]
 [HarmonyPatch(typeof(WeaponManager), nameof(WeaponManager.TargetListChanged))]
 internal static class WeaponManager_TargetListChanged
 {

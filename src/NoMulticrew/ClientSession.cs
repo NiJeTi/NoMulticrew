@@ -43,7 +43,8 @@ internal sealed class ClientSession : IDisposable
         _client.MessageHandler.RegisterHandler<CrewRoster>(OnState, allowUnauthenticated: false);
         _client.MessageHandler.RegisterHandler<CrewJoinPrompt>(OnJoinPrompt, allowUnauthenticated: false);
         _client.MessageHandler.RegisterHandler<CrewNotice>(OnNotice, allowUnauthenticated: false);
-        _client.MessageHandler.RegisterHandler<CrewAction>(OnAction, allowUnauthenticated: false);
+        _client.MessageHandler.RegisterHandler<CrewTurretVector>(OnTurretVector, allowUnauthenticated: false);
+        _client.MessageHandler.RegisterHandler<CrewLaunch>(OnLaunch, allowUnauthenticated: false);
         _client.Authenticated.AddListener(OnAuthenticated);
     }
 
@@ -56,7 +57,8 @@ internal sealed class ClientSession : IDisposable
         _client.MessageHandler.UnregisterHandler<CrewRoster>();
         _client.MessageHandler.UnregisterHandler<CrewJoinPrompt>();
         _client.MessageHandler.UnregisterHandler<CrewNotice>();
-        _client.MessageHandler.UnregisterHandler<CrewAction>();
+        _client.MessageHandler.UnregisterHandler<CrewTurretVector>();
+        _client.MessageHandler.UnregisterHandler<CrewLaunch>();
     }
 
     public void AttachMfd(VirtualMFD mfd)
@@ -154,14 +156,20 @@ internal sealed class ClientSession : IDisposable
         Prompt.ShowNotice(message.Text);
     }
 
-    private void OnAction(INetworkPlayer player, CrewAction message)
+    private void OnTurretVector(INetworkPlayer player, CrewTurretVector message)
     {
-        if (!Confirmed)
+        if (Confirmed)
         {
-            return;
+            PilotSeat.OnTurretVector(message);
         }
+    }
 
-        PilotSeat.OnAction(message);
+    private void OnLaunch(INetworkPlayer player, CrewLaunch message)
+    {
+        if (Confirmed)
+        {
+            PilotSeat.OnLaunch(message);
+        }
     }
 
     public void Tick()

@@ -16,7 +16,6 @@ internal static class MessageRegistry
         Register<CrewJoinResponse>();
         Register<CrewNotice>();
         Register<CrewLeaveRequest>();
-        Register<CrewAction>();
         Register<CrewCommand>();
         Register<CrewTurretVector>();
         Register<CrewLaunch>();

@@ -227,3 +227,25 @@ internal static class Aircraft_UserCode_RpcSetTurretVector
         return Plugin.Client?.BackSeat.Owns(__instance, weaponStationIndex) != true;
     }
 }
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[HarmonyPatch(typeof(Unit), nameof(Unit.SingleRemoteFire))]
+internal static class Unit_SingleRemoteFire
+{
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static bool Prefix(Unit __instance, byte stationIndex)
+    {
+        return Plugin.Client?.Crew.BlocksStation(__instance, stationIndex) != true;
+    }
+}
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[HarmonyPatch(typeof(Aircraft), nameof(Aircraft.CmdLaunchMissile))]
+internal static class Aircraft_CmdLaunchMissile
+{
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static bool Prefix(Aircraft __instance, byte stationIndex)
+    {
+        return Plugin.Client?.Crew.BlocksStation(__instance, stationIndex) != true;
+    }
+}

@@ -14,7 +14,6 @@ internal static class MissionManager_SetMission
         Plugin.Client?.BackSeat.Leave(showMap: false);
         Plugin.Server?.Clear();
         Plugin.Client?.Crew.Clear();
-        Plugin.Client?.PilotSeat.Clear();
     }
 }
 
