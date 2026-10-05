@@ -47,19 +47,15 @@ internal sealed class CrewCommands
         Bind<StationTargetsHalf>(typeof(Unit), "CmdSetStationTargets");
 
     private readonly ServerSession _session;
-    private readonly CrewRegistry _crew;
-    private readonly CrewEconomy _economy;
 
     private readonly Dictionary<(INetworkPlayer Connection, CrewCommandKind Kind), RateLimitBucket> _buckets = [];
     private readonly Dictionary<PersistentID, int> _owned = [];
     private readonly Dictionary<PersistentID, int> _firing = [];
     private readonly Dictionary<INetworkPlayer, (PersistentID Aircraft, float Time)> _released = [];
 
-    public CrewCommands(ServerSession session, CrewRegistry crew, CrewEconomy economy)
+    public CrewCommands(ServerSession session)
     {
         _session = session;
-        _crew = crew;
-        _economy = economy;
     }
 
     public void OnCommand(INetworkPlayer connection, CrewCommand message)
@@ -79,7 +75,7 @@ internal sealed class CrewCommands
 
         var name = sender.GetDisplayName(PlayerNameContext.Other);
 
-        var seat = _crew.SeatOf(sender, message.AircraftId);
+        var seat = _session.Crew.SeatOf(sender, message.AircraftId);
         if (seat == null)
         {
             if (_released.TryGetValue(connection, out var released)
@@ -141,7 +137,7 @@ internal sealed class CrewCommands
         {
             for (var i = 0; i < aircraft.weaponStations.Count && i < 32; i++)
             {
-                if (_crew.OccupantOwning(aircraft, i) != null)
+                if (_session.Crew.OccupantOwning(aircraft, i) != null)
                 {
                     owned |= 1 << i;
                 }
@@ -332,7 +328,7 @@ internal sealed class CrewCommands
 
     private void Attributed(Player sender, Action action)
     {
-        _economy.Sender = sender;
+        _session.Economy.Sender = sender;
 
         try
         {
@@ -340,7 +336,7 @@ internal sealed class CrewCommands
         }
         finally
         {
-            _economy.Sender = null;
+            _session.Economy.Sender = null;
         }
     }
 }

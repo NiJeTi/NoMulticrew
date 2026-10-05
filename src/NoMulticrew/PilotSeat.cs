@@ -1,4 +1,3 @@
-using NoMulticrew.Crew;
 using NoMulticrew.Networking;
 using UnityEngine;
 
@@ -6,11 +5,11 @@ namespace NoMulticrew;
 
 internal sealed class PilotSeat
 {
-    private readonly CrewState _crew;
+    private readonly ClientSession _session;
 
-    public PilotSeat(CrewState crew)
+    public PilotSeat(ClientSession session)
     {
-        _crew = crew;
+        _session = session;
     }
 
     public void Tick()
@@ -32,7 +31,7 @@ internal sealed class PilotSeat
 
         for (var i = 0; i < stations.Count; i++)
         {
-            if (states.Get(i) && _crew.BlocksStation(aircraft, i))
+            if (states.Get(i) && _session.Crew.BlocksStation(aircraft, i))
             {
                 stations[i].RemoteFireAuto(aircraft);
             }
@@ -42,7 +41,7 @@ internal sealed class PilotSeat
     private void KeepOffCrewStations(Aircraft aircraft)
     {
         var current = aircraft.weaponManager.currentWeaponStation;
-        if (current == null || !_crew.BlocksStation(aircraft, current.Number))
+        if (current == null || !_session.Crew.BlocksStation(aircraft, current.Number))
         {
             return;
         }
@@ -52,7 +51,7 @@ internal sealed class PilotSeat
         for (var step = 1; step < count; step++)
         {
             var candidate = (current.Number + step) % count;
-            if (_crew.BlocksStation(aircraft, candidate))
+            if (_session.Crew.BlocksStation(aircraft, candidate))
             {
                 continue;
             }
@@ -93,7 +92,7 @@ internal sealed class PilotSeat
     {
         if (UnitRegistry.TryGetUnit<Aircraft>(aircraftId, out var aircraft)
             && GameManager.IsLocalAircraft(aircraft)
-            && _crew.BlocksStation(aircraft, station))
+            && _session.Crew.BlocksStation(aircraft, station))
         {
             return aircraft;
         }

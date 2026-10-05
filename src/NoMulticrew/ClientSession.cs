@@ -42,7 +42,7 @@ internal sealed class ClientSession : IDisposable
 
         Prompt = new CrewJoinPromptUi(this);
         BackSeat = new BackSeat(this, controls);
-        PilotSeat = new PilotSeat(Crew);
+        PilotSeat = new PilotSeat(this);
         Marks = new CrewMarks(this);
 
         _client.MessageHandler.RegisterHandler<MulticrewWelcome>(OnWelcome, allowUnauthenticated: false);

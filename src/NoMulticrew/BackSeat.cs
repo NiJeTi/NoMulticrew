@@ -22,7 +22,6 @@ internal sealed class BackSeat : IDisposable
     private const float BailOutConfirmSeconds = 3f;
 
     private readonly ClientSession _session;
-    private readonly CrewState _crew;
     private readonly Controls _controls;
 
     private readonly HashSet<TargetDetector> _scanning = [];
@@ -52,7 +51,6 @@ internal sealed class BackSeat : IDisposable
     public BackSeat(ClientSession session, Controls controls)
     {
         _session = session;
-        _crew = session.Crew;
         _controls = controls;
         Weapons = new BackSeatWeapons(session, this);
     }
@@ -64,7 +62,7 @@ internal sealed class BackSeat : IDisposable
 
     public void Tick()
     {
-        _crew.TryGetLocalSeat(out var aircraft, out var seatIndex);
+        _session.Crew.TryGetLocalSeat(out var aircraft, out var seatIndex);
 
         if (ReferenceEquals(aircraft, Aircraft) && seatIndex == SeatIndex)
         {

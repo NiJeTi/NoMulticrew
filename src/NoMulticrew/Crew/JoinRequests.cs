@@ -23,14 +23,12 @@ internal sealed class JoinRequests
     private readonly List<Request> _requests = [];
 
     private readonly ServerSession _session;
-    private readonly CrewRegistry _crew;
 
     private int _nextId = 1;
 
-    public JoinRequests(ServerSession session, CrewRegistry crew)
+    public JoinRequests(ServerSession session)
     {
         _session = session;
-        _crew = crew;
     }
 
     public static bool CanBoard(Aircraft aircraft, Player joiner, [NotNullWhen(false)] out string? reason)
@@ -173,12 +171,12 @@ internal sealed class JoinRequests
             return;
         }
 
-        _crew.Seat(request.Aircraft, request.SeatIndex, request.Joiner);
+        _session.Crew.Seat(request.Aircraft, request.SeatIndex, request.Joiner);
 
         var label = Plugin.SeatTable.Label(request.Aircraft.definition.jsonKey, request.SeatIndex);
         var joined = $"{request.Joiner.GetDisplayName(PlayerNameContext.Other)} joined as {label}";
 
-        foreach (var aboard in _crew.Occupants(request.Aircraft.persistentID).Append(request.Aircraft.Player))
+        foreach (var aboard in _session.Crew.Occupants(request.Aircraft.persistentID).Append(request.Aircraft.Player))
         {
             if (aboard != null && !ReferenceEquals(aboard, request.Joiner))
             {
@@ -237,13 +235,13 @@ internal sealed class JoinRequests
             return false;
         }
 
-        if (_crew.IsSeated(joiner))
+        if (_session.Crew.IsSeated(joiner))
         {
             reason = "You need to leave your current seat first";
             return false;
         }
 
-        if (_crew.IsTaken(aircraft.persistentID, seatIndex))
+        if (_session.Crew.IsTaken(aircraft.persistentID, seatIndex))
         {
             reason = "That seat is taken";
             return false;

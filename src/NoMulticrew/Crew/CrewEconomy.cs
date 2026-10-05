@@ -21,7 +21,6 @@ internal sealed class CrewEconomy
         AccessTools.FieldRefAccess<Unit, Dictionary<PersistentID, float>?>("damageCredit");
 
     private readonly ServerSession _session;
-    private readonly CrewRegistry _crew;
 
     private readonly Dictionary<(PersistentID Aircraft, WeaponInfo Weapon), Player> _launchers = [];
     private readonly Dictionary<PersistentID, Queue<(Player? Claimant, float Time)>> _claims = [];
@@ -35,10 +34,9 @@ internal sealed class CrewEconomy
 
     public Player? Sender { get; set; }
 
-    public CrewEconomy(ServerSession session, CrewRegistry crew)
+    public CrewEconomy(ServerSession session)
     {
         _session = session;
-        _crew = crew;
     }
 
     public void Clear()
@@ -78,7 +76,7 @@ internal sealed class CrewEconomy
 
     public void OnClaim(Unit claimer)
     {
-        if (!_crew.IsCrewed(claimer.persistentID))
+        if (!_session.Crew.IsCrewed(claimer.persistentID))
         {
             return;
         }
@@ -150,14 +148,14 @@ internal sealed class CrewEconomy
 
     public bool EnterHitContext(Unit shooter, WeaponInfo weapon)
     {
-        if (_contextCrew != null || shooter is not Aircraft aircraft || !_crew.IsCrewed(aircraft.persistentID))
+        if (_contextCrew != null || shooter is not Aircraft aircraft || !_session.Crew.IsCrewed(aircraft.persistentID))
         {
             return false;
         }
 
         var index = aircraft.weaponStations.FindIndex(x => x.WeaponInfo == weapon);
 
-        return index >= 0 && Enter(aircraft.persistentID, _crew.OccupantOwning(aircraft, index));
+        return index >= 0 && Enter(aircraft.persistentID, _session.Crew.OccupantOwning(aircraft, index));
     }
 
     public void ExitContext()
@@ -199,7 +197,7 @@ internal sealed class CrewEconomy
         }
 
         var aircraft = player.Aircraft;
-        var occupants = aircraft != null ? _crew.Occupants(aircraft.persistentID) : [];
+        var occupants = aircraft != null ? _session.Crew.Occupants(aircraft.persistentID) : [];
         var portions = Attribute(player, target, type, occupants);
 
         if (occupants.Count == 0 && portions.Count == 1 && ReferenceEquals(portions[0].Earner, player))
@@ -440,7 +438,7 @@ internal sealed class CrewEconomy
             return;
         }
 
-        var aircraftId = _crew.AircraftOf(player);
+        var aircraftId = _session.Crew.AircraftOf(player);
         if (aircraftId == null)
         {
             hq.RewardPlayer(player, target, allocation, score, type);
@@ -460,6 +458,6 @@ internal sealed class CrewEconomy
             );
         }
 
-        _crew.SendRoster(aircraftId.Value);
+        _session.Crew.SendRoster(aircraftId.Value);
     }
 }

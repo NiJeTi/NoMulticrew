@@ -29,9 +29,9 @@ internal sealed class ServerSession : IDisposable
         _server = server;
 
         Crew = new CrewRegistry(this);
-        Economy = new CrewEconomy(this, Crew);
-        Commands = new CrewCommands(this, Crew, Economy);
-        Requests = new JoinRequests(this, Crew);
+        Economy = new CrewEconomy(this);
+        Commands = new CrewCommands(this);
+        Requests = new JoinRequests(this);
 
         _server.MessageHandler.RegisterHandler<MulticrewHello>(OnHello, allowUnauthenticated: false);
         _server.MessageHandler.RegisterHandler<CrewJoinRequest>(Requests.OnRequest, allowUnauthenticated: false);
