@@ -372,7 +372,12 @@ internal sealed class CrewScreen : IDisposable
                     template,
                     "REQUESTS",
                     () => !Plugin.Settings.RejectAllRequests.Value,
-                    () => Plugin.Settings.RejectAllRequests.Value = !Plugin.Settings.RejectAllRequests.Value
+                    () =>
+                    {
+                        var reject = !Plugin.Settings.RejectAllRequests.Value;
+                        Plugin.Settings.RejectAllRequests.Value = reject;
+                        Feedback.Play(reject ? CrewCue.Deselect : CrewCue.Select);
+                    }
                 )
             );
         }

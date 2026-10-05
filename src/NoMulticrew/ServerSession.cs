@@ -92,9 +92,9 @@ internal sealed class ServerSession : IDisposable
         Commands.OnCommand(_server.LocalPlayer, message);
     }
 
-    public void Notify(Player player, string text)
+    public void Notify(Player player, string text, CrewCue cue = CrewCue.None)
     {
-        SendToPlayer(player.Owner, new CrewNotice(text));
+        SendToPlayer(player.Owner, new CrewNotice(text, cue));
     }
 
     public bool SendToPlayer<T>(INetworkPlayer player, T message)
@@ -180,7 +180,7 @@ internal sealed class ServerSession : IDisposable
 
         Economy.Settle(player, aircraftId.Value, forfeit: !valid);
         Crew.Release(player);
-        Notify(player, valid ? "Left the seat" : "Bailed out");
+        Notify(player, valid ? "Left the seat" : "Bailed out", CrewCue.Deselect);
     }
 
     private void OnDisconnected(INetworkPlayer connection)

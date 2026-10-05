@@ -27,6 +27,7 @@ internal sealed class CrewJoinPromptUi
         _expiresAt = Time.timeSinceLevelLoad + prompt.ExpiresInSeconds;
 
         ShowNotice($"{NameOf(prompt.JoinerPlayerIndex)} wants {SeatLabel(prompt)} — open the map to answer");
+        Feedback.Play(CrewCue.WeaponSwitch);
     }
 
     public void ShowNotice(string text)

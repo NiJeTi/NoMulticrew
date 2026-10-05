@@ -109,11 +109,30 @@ internal sealed class CrewRegistry
 
         var seats = _crews[aircraftId.Value];
 
+        UnitRegistry.TryGetUnit<Aircraft>(aircraftId.Value, out var aircraft);
+
+        var label = "Crew";
+
         for (var i = 0; i < seats.Length; i++)
         {
             if (ReferenceEquals(seats[i], player))
             {
+                if (aircraft != null)
+                {
+                    label = Plugin.SeatTable.Label(aircraft.definition.jsonKey, i);
+                }
+
                 seats[i] = null;
+            }
+        }
+
+        var left = $"{player.GetDisplayName(PlayerNameContext.Other)} left {label}";
+
+        foreach (var aboard in seats.Where(x => x != null).Append(aircraft != null ? aircraft.Player : null))
+        {
+            if (aboard != null)
+            {
+                _session.Notify(aboard, left, CrewCue.Deselect);
             }
         }
 
@@ -145,7 +164,7 @@ internal sealed class CrewRegistry
 
         foreach (var occupant in seats.Where(x => x != null))
         {
-            _session.Notify(occupant!, "The crew was dissolved");
+            _session.Notify(occupant!, "The crew was dissolved", CrewCue.Deselect);
         }
 
         Broadcast(aircraftId);

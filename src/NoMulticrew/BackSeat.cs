@@ -105,6 +105,7 @@ internal sealed class BackSeat : IDisposable
 
         _bailOutArmedAt = Time.timeSinceLevelLoad;
         _session.Prompt.ShowNotice("Press Eject again to bail out — your sortie earnings go to the pilot");
+        Feedback.Play(CrewCue.WeaponSwitch);
     }
 
     private void Employ()

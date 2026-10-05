@@ -1,4 +1,5 @@
 using HarmonyLib;
+using NoMulticrew.Networking;
 using NuclearOption.Networking;
 using UnityEngine;
 
@@ -278,7 +279,7 @@ internal sealed class CrewEconomy
 
         if (!forfeit)
         {
-            _session.Notify(crew, $"Crew earnings paid: +{held.Allocation:F0}");
+            _session.Notify(crew, $"Crew earnings paid: +{held.Allocation:F0}", CrewCue.Select);
         }
     }
 

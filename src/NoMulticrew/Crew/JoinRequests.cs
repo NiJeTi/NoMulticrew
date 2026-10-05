@@ -162,19 +162,31 @@ internal sealed class JoinRequests
         if (!message.Accepted)
         {
             Plugin.Logger.LogInfo($"Crew request {request.Id} declined");
-            _session.Notify(request.Joiner, "The pilot declined");
+            _session.Notify(request.Joiner, "The pilot declined", CrewCue.Deselect);
             return;
         }
 
         if (!CanSeat(request.Aircraft, request.Joiner, request.SeatIndex, out var reason))
         {
             Plugin.Logger.LogInfo($"Crew request {request.Id} accepted but no longer valid: {reason}");
-            _session.Notify(request.Joiner, reason);
+            _session.Notify(request.Joiner, reason, CrewCue.Deselect);
             return;
         }
 
         _crew.Seat(request.Aircraft, request.SeatIndex, request.Joiner);
-        _session.Notify(request.Joiner, "Seated");
+
+        var label = Plugin.SeatTable.Label(request.Aircraft.definition.jsonKey, request.SeatIndex);
+        var joined = $"{request.Joiner.GetDisplayName(PlayerNameContext.Other)} joined as {label}";
+
+        foreach (var aboard in _crew.Occupants(request.Aircraft.persistentID).Append(request.Aircraft.Player))
+        {
+            if (aboard != null && !ReferenceEquals(aboard, request.Joiner))
+            {
+                _session.Notify(aboard, joined, CrewCue.Select);
+            }
+        }
+
+        _session.Notify(request.Joiner, "Seated", CrewCue.Select);
     }
 
     public void Tick()
@@ -191,7 +203,7 @@ internal sealed class JoinRequests
 
             _requests.RemoveAt(i);
             Plugin.Logger.LogInfo($"Crew request {request.Id} timed out");
-            _session.Notify(request.Joiner, "The pilot did not answer");
+            _session.Notify(request.Joiner, "The pilot did not answer", CrewCue.Deselect);
         }
     }
 

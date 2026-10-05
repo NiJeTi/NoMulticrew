@@ -115,6 +115,7 @@ internal sealed class ClientSession : IDisposable
         }
 
         _request = (aircraftId, seatIndex, Time.timeSinceLevelLoad);
+        Feedback.Play(CrewCue.Select);
     }
 
     public void SendCommand(CrewCommand message)
@@ -191,6 +192,7 @@ internal sealed class ClientSession : IDisposable
 
         _request = null;
         Prompt.ShowNotice(message.Text);
+        Feedback.Play(message.Cue);
     }
 
     private void OnTurretVector(INetworkPlayer player, CrewTurretVector message)

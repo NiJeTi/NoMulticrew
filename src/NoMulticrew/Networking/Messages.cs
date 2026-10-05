@@ -190,23 +190,35 @@ internal struct CrewJoinResponse : IMessage<CrewJoinResponse>
     }
 }
 
+internal enum CrewCue : byte
+{
+    None = 0,
+    Select = 1,
+    Deselect = 2,
+    WeaponSwitch = 3,
+}
+
 internal struct CrewNotice : IMessage<CrewNotice>
 {
     public string Text { get; private set; }
+    public CrewCue Cue { get; private set; }
 
-    public CrewNotice(string text)
+    public CrewNotice(string text, CrewCue cue = CrewCue.None)
     {
         Text = text;
+        Cue = cue;
     }
 
     public void Read(NetworkReader reader)
     {
         Text = reader.ReadString();
+        Cue = (CrewCue)reader.ReadByte();
     }
 
     public void Write(NetworkWriter writer)
     {
         writer.WriteString(Text);
+        writer.WriteByte((byte)Cue);
     }
 }
 
