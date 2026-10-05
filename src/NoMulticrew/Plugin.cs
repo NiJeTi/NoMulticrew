@@ -4,6 +4,7 @@ using HarmonyLib;
 using Mirage;
 using NoMulticrew.Networking;
 using NoMulticrew.Seats;
+using NoMulticrew.Theming;
 using NuclearOption.Networking;
 
 namespace NoMulticrew;
@@ -16,6 +17,7 @@ internal sealed class Plugin : BaseUnityPlugin
 
     public static Settings Settings { get; private set; } = null!;
     public static SeatTable SeatTable { get; private set; } = null!;
+    public static MarkPalette Palette { get; private set; } = null!;
 
     public static ClientSession? Client { get; private set; }
     public static ServerSession? Server { get; private set; }
@@ -35,6 +37,7 @@ internal sealed class Plugin : BaseUnityPlugin
         Logger = base.Logger;
 
         Settings = Settings.Init(Config);
+        Palette = new MarkPalette();
         SeatTable = new SeatTable();
 
         MessageRegistry.RegisterAll();

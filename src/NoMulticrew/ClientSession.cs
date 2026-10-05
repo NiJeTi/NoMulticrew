@@ -1,5 +1,6 @@
 using Mirage;
 using NoMulticrew.Crew;
+using NoMulticrew.Marks;
 using NoMulticrew.Networking;
 using NoMulticrew.Ui;
 
@@ -28,6 +29,8 @@ internal sealed class ClientSession : IDisposable
 
     public PilotSeat PilotSeat { get; }
 
+    public CrewMarks Marks { get; }
+
     public ClientSession(NetworkClient client, Controls controls)
     {
         _client = client;
@@ -38,6 +41,7 @@ internal sealed class ClientSession : IDisposable
         SeatList = new CrewSeatList(this);
         BackSeat = new BackSeat(this, controls);
         PilotSeat = new PilotSeat(Crew);
+        Marks = new CrewMarks(this);
 
         _client.MessageHandler.RegisterHandler<MulticrewWelcome>(OnWelcome, allowUnauthenticated: false);
         _client.MessageHandler.RegisterHandler<CrewRoster>(OnState, allowUnauthenticated: false);
@@ -51,6 +55,7 @@ internal sealed class ClientSession : IDisposable
     public void Dispose()
     {
         BackSeat.Dispose();
+        Marks.Dispose();
         _crewScreen?.Dispose();
         _client.Authenticated.RemoveListener(OnAuthenticated);
         _client.MessageHandler.UnregisterHandler<MulticrewWelcome>();
@@ -186,6 +191,11 @@ internal sealed class ClientSession : IDisposable
         Prompt.Tick();
         BackSeat.Tick();
         PilotSeat.Tick();
+
+        if (Confirmed)
+        {
+            Marks.Tick();
+        }
 
         HandleInput();
 
