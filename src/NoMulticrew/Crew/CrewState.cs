@@ -15,7 +15,6 @@ internal sealed class CrewState
 
     private float _lastRefusal = float.NegativeInfinity;
 
-
     public void Apply(CrewRoster message)
     {
         if (message.Occupants.All(id => id < 0))
