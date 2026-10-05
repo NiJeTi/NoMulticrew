@@ -479,8 +479,11 @@ internal sealed class CrewScreen : IDisposable
 
     private static Layout BuildLayout(VirtualMFD mfd)
     {
-        var mapOptions = SceneSingleton<MapOptions>.i ??
+        var mapOptions = SceneSingleton<MapOptions>.i;
+        if (mapOptions == null)
+        {
             throw new InvalidOperationException($"{nameof(MapOptions)} is null.");
+        }
 
         var mapScreen = mapOptions.screen;
 
@@ -585,7 +588,14 @@ internal sealed class CrewScreen : IDisposable
             return false;
         }
 
-        screens[index] = layout.Screen;
+        if (index == screens.Count)
+        {
+            screens.Add(layout.Screen);
+        }
+        else
+        {
+            screens[index] = layout.Screen;
+        }
 
         button.onClick = new Button.ButtonClickedEvent();
         button.onClick.AddListener(() => layout.Mfd.PressLeftButton(button));
@@ -615,7 +625,14 @@ internal sealed class CrewScreen : IDisposable
 
     private static T? FindByName<T>(Transform parent, Component? source) where T : Component
     {
-        return source == null ? null : parent.Find(source.name)?.GetComponent<T>();
+        if (source == null)
+        {
+            return null;
+        }
+
+        var child = parent.Find(source.name);
+
+        return child != null ? child.GetComponent<T>() : null;
     }
 
     private static int FindFreeSlotIndex(List<Button> buttons, List<MFDScreen?> screens)

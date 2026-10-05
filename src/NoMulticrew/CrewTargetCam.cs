@@ -72,13 +72,16 @@ internal sealed class CrewTargetCam
         _cam = null;
         _aircraft = null;
 
-        if (cam == null)
+        if (ReferenceEquals(cam, null))
         {
             return;
         }
 
-        DestroyOrReport(CamRef(cam)?.gameObject, "camera");
-        DestroyOrReport(UiCamRef(cam)?.gameObject, null);
+        var camera = CamRef(cam);
+        var uiCamera = UiCamRef(cam);
+
+        DestroyOrReport(camera != null ? camera.gameObject : null, "camera");
+        DestroyOrReport(uiCamera != null ? uiCamera.gameObject : null, null);
         DestroyOrReport(TargetCanvasRef(cam), null);
         DestroyOrReport(LandingCanvasRef(cam), null);
 
@@ -109,7 +112,10 @@ internal sealed class CrewTargetCam
             }
         }
 
-        cam.enabled = false;
+        if (cam != null)
+        {
+            cam.enabled = false;
+        }
     }
 
     private static T Handler<T>(TargetCam cam, string name)

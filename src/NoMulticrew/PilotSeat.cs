@@ -66,8 +66,12 @@ internal sealed class PilotSeat
     public void OnTurretVector(CrewTurretVector message)
     {
         var aircraft = Flown(message.AircraftId, message.Station);
+        if (aircraft == null)
+        {
+            return;
+        }
 
-        aircraft?.weaponStations[message.Station].SetTurretVector(
+        aircraft.weaponStations[message.Station].SetTurretVector(
             NetworkFloatHelper.DecompressIfValid(message.Direction, logErrors: true, "direction", Vector3.forward)
         );
     }

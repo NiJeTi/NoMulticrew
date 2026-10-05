@@ -116,7 +116,8 @@ internal sealed class MarkPaletteSection : IDisposable
 
         container.name = "NoMulticrew.MarkPaletteSection";
 
-        var after = template.parent.Find(NoWingmenSectionName) ?? template;
+        var noWingmen = template.parent.Find(NoWingmenSectionName);
+        var after = noWingmen != null ? noWingmen : template;
         container.transform.SetSiblingIndex(after.GetSiblingIndex() + 1);
 
         for (var i = container.transform.childCount - 1; i >= 0; i--)
