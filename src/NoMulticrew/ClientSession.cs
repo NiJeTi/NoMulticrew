@@ -88,6 +88,18 @@ internal sealed class ClientSession : IDisposable
         return true;
     }
 
+    public void SendCommand(CrewCommand message)
+    {
+        var server = Plugin.Server;
+        if (server != null)
+        {
+            server.DispatchLocal(message);
+            return;
+        }
+
+        Send(message);
+    }
+
     private void OnAuthenticated(INetworkPlayer player)
     {
         if (!_advertised && !Plugin.IsServer)

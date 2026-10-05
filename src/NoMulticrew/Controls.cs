@@ -10,7 +10,6 @@ internal sealed class Controls
     public const string GuidInputFramework = "experimental.assassin1076.extrainputframework";
 
     private const string ActionCategory = "Gameplay";
-    private const string ActionRadar = "Radar";
     private const string ActionFire = "Fire";
     private const string ActionNextWeapon = "Next Weapon";
     private const string ActionPreviousWeapon = "Previous Weapon";
@@ -45,11 +44,6 @@ internal sealed class Controls
     public bool IsDeclineRequestDown()
     {
         return IsButtonDown(ActionDeclineRequest);
-    }
-
-    public bool IsRadarPressed()
-    {
-        return IsButtonClicked(ActionRadar);
     }
 
     public bool IsFireHeld()

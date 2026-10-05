@@ -30,11 +30,7 @@ internal sealed class BackSeat : IDisposable
 
     public Aircraft? Aircraft { get; private set; }
 
-    private bool _firing;
-
-    private const float AimIntervalSeconds = 0.05f;
-
-    private float _aimSentAt = float.NegativeInfinity;
+    public BackSeatWeapons Weapons { get; }
 
     public int SeatIndex { get; private set; } = -1;
 
@@ -53,6 +49,7 @@ internal sealed class BackSeat : IDisposable
         _session = session;
         _crew = session.Crew;
         _controls = controls;
+        Weapons = new BackSeatWeapons(session, this);
     }
 
     public void Dispose()
@@ -109,16 +106,7 @@ internal sealed class BackSeat : IDisposable
             Select(Next(Station, -1));
         }
 
-        if (_controls.IsRadarPressed())
-        {
-            _session.Send(CrewAction.Radar(Aircraft.persistentID));
-        }
-
-        var firing = Station >= 0 && _controls.IsFireHeld();
-        if (firing != _firing)
-        {
-            SendTrigger(firing);
-        }
+        Weapons.Tick(Station >= 0 && _controls.IsFireHeld());
     }
 
     private void Select(int station)
@@ -128,51 +116,11 @@ internal sealed class BackSeat : IDisposable
             return;
         }
 
-        if (_firing)
-        {
-            SendTrigger(false);
-        }
-
         Station = station;
 
         Plugin.Logger.LogDebug($"Back seat selected station {station}");
 
         SceneSingleton<CombatHUD>.i.ShowWeaponStation(station >= 0 ? Aircraft.weaponStations[station] : null);
-    }
-
-    public void Aim(Turret turret, Aircraft aircraft, WeaponStation station)
-    {
-        if (!ReferenceEquals(aircraft, Aircraft) || Role != SeatRole.Gunner || station.Number != Station)
-        {
-            return;
-        }
-
-        var camera = SceneSingleton<CameraStateManager>.i;
-        if (camera == null || camera.currentState != camera.cockpitState)
-        {
-            return;
-        }
-
-        var vector = camera.transform.forward;
-        turret.SetVector(vector);
-
-        if (Time.timeSinceLevelLoad - _aimSentAt < AimIntervalSeconds)
-        {
-            return;
-        }
-
-        _aimSentAt = Time.timeSinceLevelLoad;
-        _session.Send(CrewAction.Aim(aircraft.persistentID, station.Number, vector));
-    }
-
-    private void SendTrigger(bool held)
-    {
-        _firing = held;
-
-        var targets = Aircraft!.weaponManager.GetTargetList();
-        var target = held && targets.Count > 0 && targets[0] != null ? targets[0].persistentID : PersistentID.None;
-
-        _session.Send(CrewAction.Trigger(Aircraft.persistentID, (byte)Station, held, target));
     }
 
     private int Next(int from, int direction)
@@ -191,9 +139,14 @@ internal sealed class BackSeat : IDisposable
         return -1;
     }
 
+    public bool Owns(Unit unit, int station)
+    {
+        return Aircraft != null && ReferenceEquals(unit, Aircraft) && CrewState.Owns(Role, Aircraft, station);
+    }
+
     private bool Owns(int station)
     {
-        return Aircraft != null && CrewState.Owns(Role, Aircraft, station);
+        return Aircraft != null && Owns(Aircraft, station);
     }
 
     private void Reattach()
@@ -241,8 +194,7 @@ internal sealed class BackSeat : IDisposable
         Aircraft = null;
         SeatIndex = -1;
         Station = -1;
-        _firing = false;
-        _aimSentAt = float.NegativeInfinity;
+        Weapons.Clear();
 
         if (aircraft != null && _originalViewPoint != null)
         {

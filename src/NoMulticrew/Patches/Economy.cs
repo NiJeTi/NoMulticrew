@@ -112,26 +112,6 @@ internal static class Missile_PenetrateObject
 }
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
-[HarmonyPatch(typeof(Unit), nameof(Unit.RegisterHit))]
-internal static class Unit_RegisterHit
-{
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static void Prefix(Unit __instance, WeaponInfo weaponInfo, out bool __state)
-    {
-        __state = __instance.IsServer && Plugin.Server?.Economy.EnterHitContext(__instance, weaponInfo) == true;
-    }
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static void Finalizer(bool __state)
-    {
-        if (__state)
-        {
-            Plugin.Server?.Economy.ExitContext();
-        }
-    }
-}
-
-[SuppressMessage("ReSharper", "InconsistentNaming")]
 [HarmonyPatch(typeof(Unit), nameof(Unit.RecordDamage))]
 internal static class Unit_RecordDamage
 {

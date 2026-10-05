@@ -56,7 +56,7 @@ internal static class Turret_FixedUpdate
             return true;
         }
 
-        Plugin.Client?.BackSeat.Aim(__instance, ___aircraft, ___currentWeaponStation);
+        Plugin.Client?.BackSeat.Weapons.Aim(__instance, ___aircraft, ___currentWeaponStation);
 
         AimTurret(__instance, ___manualVector);
 
