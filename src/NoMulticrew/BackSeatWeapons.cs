@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using NoMulticrew.Networking;
 using UnityEngine;
 
@@ -153,7 +154,40 @@ internal sealed class BackSeatWeapons
             return;
         }
 
+        if (targets.Count > 1)
+        {
+            station.SalvoInProgress = true;
+            Salvo(aircraft, station, targets, info.fireInterval * 1.1f).Forget();
+            return;
+        }
+
         Launch(aircraft, station, target, aircraft.GlobalPosition() + aircraft.transform.forward * 50000f);
+    }
+
+    private async UniTask Salvo(Aircraft aircraft, WeaponStation station, List<Unit> targets, float interval)
+    {
+        try
+        {
+            for (var i = 0; i < targets.Count; i++)
+            {
+                if (!ReferenceEquals(_seat.Aircraft, aircraft))
+                {
+                    return;
+                }
+
+                var unit = targets[i];
+                if (unit != null && !unit.disabled)
+                {
+                    Launch(aircraft, station, unit, default);
+                }
+
+                await UniTask.Delay((int)(interval * 1000f));
+            }
+        }
+        finally
+        {
+            station.SalvoInProgress = false;
+        }
     }
 
     private void Launch(Aircraft aircraft, WeaponStation station, Unit? target, GlobalPosition aimpoint)

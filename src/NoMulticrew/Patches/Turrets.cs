@@ -42,6 +42,7 @@ internal static class Turret_FixedUpdate
         bool ___manual,
         bool ___stowed,
         bool ___disabled,
+        Unit? ___target,
         ref Vector3 ___manualVector
     )
     {
@@ -51,7 +52,8 @@ internal static class Turret_FixedUpdate
             || ___aircraft == null
             || ___aircraft.disabled
             || ___currentWeaponStation == null
-            || !CrewState.IsManned(___aircraft, ___currentWeaponStation))
+            || !CrewState.IsManned(___aircraft, ___currentWeaponStation)
+            || ___target != null)
         {
             return true;
         }
