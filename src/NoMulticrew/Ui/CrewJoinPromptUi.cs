@@ -74,6 +74,12 @@ internal sealed class CrewJoinPromptUi
         }
     }
 
+    public void Clear()
+    {
+        _prompts.Clear();
+        _toastUntil = 0f;
+    }
+
     public void Tick()
     {
         var now = Time.unscaledTime;

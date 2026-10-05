@@ -186,11 +186,6 @@ internal sealed class CrewRegistry
         }
     }
 
-    public void Clear()
-    {
-        _crews.Clear();
-    }
-
     public void SendRoster(PersistentID aircraftId)
     {
         var seats = _crews.GetValueOrDefault(aircraftId, []);

@@ -102,8 +102,11 @@ internal sealed class ClientSession : IDisposable
         return _request is { } request && request.AircraftId == aircraftId && request.SeatIndex == seatIndex;
     }
 
-    public void ClearRequest()
+    public void EndMission()
     {
+        BackSeat.Leave(showMap: false);
+        Crew.Clear();
+        Prompt.Clear();
         _request = null;
     }
 

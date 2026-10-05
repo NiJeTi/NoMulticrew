@@ -39,17 +39,6 @@ internal sealed class CrewEconomy
         _session = session;
     }
 
-    public void Clear()
-    {
-        _launchers.Clear();
-        _claims.Clear();
-        _ledger.Clear();
-        _escrow.Clear();
-        _missileScope = false;
-        Sender = null;
-        ExitContext();
-    }
-
     public void OnLaunch(Unit owner, WeaponStation station)
     {
         if (owner is not Aircraft aircraft || station.WeaponInfo == null)

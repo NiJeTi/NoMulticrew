@@ -190,14 +190,6 @@ internal sealed class CrewCommands
         }
     }
 
-    public void Clear()
-    {
-        _buckets.Clear();
-        _owned.Clear();
-        _firing.Clear();
-        _released.Clear();
-    }
-
     private static T? Bind<T>(Type type, string name)
         where T : Delegate
     {

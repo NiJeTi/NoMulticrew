@@ -16,28 +16,25 @@ internal sealed class ServerSession : IDisposable
     private readonly NetworkServer _server;
     private readonly bool _commandRegistered;
 
-    public CrewRegistry Crew { get; }
+    public CrewRegistry Crew { get; private set; } = null!;
 
-    public JoinRequests Requests { get; }
+    public JoinRequests Requests { get; private set; } = null!;
 
-    public CrewEconomy Economy { get; }
+    public CrewEconomy Economy { get; private set; } = null!;
 
-    public CrewCommands Commands { get; }
+    public CrewCommands Commands { get; private set; } = null!;
 
     public ServerSession(NetworkServer server)
     {
         _server = server;
 
-        Crew = new CrewRegistry(this);
-        Economy = new CrewEconomy(this);
-        Commands = new CrewCommands(this);
-        Requests = new JoinRequests(this);
+        StartMission();
 
         _server.MessageHandler.RegisterHandler<MulticrewHello>(OnHello, allowUnauthenticated: false);
-        _server.MessageHandler.RegisterHandler<CrewJoinRequest>(Requests.OnRequest, allowUnauthenticated: false);
-        _server.MessageHandler.RegisterHandler<CrewJoinResponse>(Requests.OnResponse, allowUnauthenticated: false);
+        _server.MessageHandler.RegisterHandler<CrewJoinRequest>((c, m) => Requests.OnRequest(c, m), allowUnauthenticated: false);
+        _server.MessageHandler.RegisterHandler<CrewJoinResponse>((c, m) => Requests.OnResponse(c, m), allowUnauthenticated: false);
         _server.MessageHandler.RegisterHandler<CrewLeaveRequest>(OnLeave, allowUnauthenticated: false);
-        _server.MessageHandler.RegisterHandler<CrewCommand>(Commands.OnCommand, allowUnauthenticated: false);
+        _server.MessageHandler.RegisterHandler<CrewCommand>((c, m) => Commands.OnCommand(c, m), allowUnauthenticated: false);
         _server.Disconnected.AddListener(OnDisconnected);
 
         _commandRegistered = TryRegisterServerCommand();
@@ -52,8 +49,6 @@ internal sealed class ServerSession : IDisposable
         _server.MessageHandler.UnregisterHandler<CrewLeaveRequest>();
         _server.MessageHandler.UnregisterHandler<CrewCommand>();
 
-        Clear();
-
         if (_commandRegistered)
         {
             ServerRemoteCommands.Instance.Commands.Remove(ServerCommandName);
@@ -65,12 +60,10 @@ internal sealed class ServerSession : IDisposable
         Requests.Tick();
     }
 
-    public void Clear()
+    public void EndMission()
     {
-        Crew.Clear();
-        Requests.Clear();
-        Economy.Clear();
-        Commands.Clear();
+        Economy.PayAll();
+        StartMission();
     }
 
     public bool TryGetPlayer(INetworkPlayer connection, [NotNullWhen(true)] out Player? player)
@@ -117,6 +110,14 @@ internal sealed class ServerSession : IDisposable
         {
             SendToPlayer(player, message);
         }
+    }
+
+    private void StartMission()
+    {
+        Crew = new CrewRegistry(this);
+        Economy = new CrewEconomy(this);
+        Commands = new CrewCommands(this);
+        Requests = new JoinRequests(this);
     }
 
     private void Add(INetworkPlayer player)

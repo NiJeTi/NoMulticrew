@@ -210,11 +210,6 @@ internal sealed class JoinRequests
         _requests.RemoveAll(x => ReferenceEquals(x.Joiner, player));
     }
 
-    public void Clear()
-    {
-        _requests.Clear();
-    }
-
     private bool CanSeat(Aircraft aircraft, Player joiner, byte seatIndex, [NotNullWhen(false)] out string? reason)
     {
         if (!CanBoard(aircraft, joiner, out reason))
