@@ -24,6 +24,8 @@ internal sealed class Plugin : BaseUnityPlugin
 
     private static NetworkManagerNuclearOption? _manager;
 
+    private static bool _seatTableAudited;
+
     private static Controls _controls = null!;
 
     private Harmony? _harmony;
@@ -99,6 +101,7 @@ internal sealed class Plugin : BaseUnityPlugin
         DisposeServerSession();
 
         Server = new ServerSession(server);
+        AuditSeatTable();
     }
 
     private static void StartClientSession(NetworkClient client)
@@ -106,6 +109,7 @@ internal sealed class Plugin : BaseUnityPlugin
         DisposeClientSession();
 
         Client = new ClientSession(client, _controls);
+        AuditSeatTable();
     }
 
     private static void DisposeServerSession()
@@ -118,5 +122,16 @@ internal sealed class Plugin : BaseUnityPlugin
     {
         Client?.Dispose();
         Client = null;
+    }
+
+    private static void AuditSeatTable()
+    {
+        if (_seatTableAudited)
+        {
+            return;
+        }
+
+        _seatTableAudited = true;
+        SeatTable.Audit();
     }
 }
