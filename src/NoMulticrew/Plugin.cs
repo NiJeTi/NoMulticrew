@@ -35,7 +35,7 @@ internal sealed class Plugin : BaseUnityPlugin
         Logger = base.Logger;
 
         Settings = Settings.Init(Config);
-        SeatTable = SeatTable.Load();
+        SeatTable = new SeatTable();
 
         MessageRegistry.RegisterAll();
 

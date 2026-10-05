@@ -195,7 +195,7 @@ internal sealed class CrewScreen : IDisposable
             var name = occupant < 0 ? "EMPTY" : CrewJoinPromptUi.NameOf(occupant);
             var here = seat == _session.BackSeat.SeatIndex ? " <" : "";
 
-            crew.Add($"{seat}  {state.Roles[seat].ToString().ToUpperInvariant()}  {name}{here}");
+            crew.Add($"{seat}  {Plugin.SeatTable.Label(aircraft.definition.jsonKey, seat).ToUpperInvariant()}  {name}{here}");
 
             if (occupant < 0)
             {
@@ -204,7 +204,7 @@ internal sealed class CrewScreen : IDisposable
 
             for (var station = 0; station < aircraft.weaponStations.Count; station++)
             {
-                if (!CrewState.Owns(state.Roles[seat], aircraft, station))
+                if (!CrewState.Owns(aircraft, seat, station))
                 {
                     continue;
                 }

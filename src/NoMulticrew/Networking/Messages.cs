@@ -1,6 +1,5 @@
 using Mirage;
 using Mirage.Serialization;
-using NoMulticrew.Seats;
 using UnityEngine;
 
 namespace NoMulticrew.Networking;
@@ -58,13 +57,10 @@ internal struct CrewRoster : IMessage<CrewRoster>
 
     public int[] Occupants { get; private set; }
 
-    public SeatRole[] Roles { get; private set; }
-
-    public CrewRoster(PersistentID aircraftId, int[] occupants, SeatRole[] roles)
+    public CrewRoster(PersistentID aircraftId, int[] occupants)
     {
         AircraftId = aircraftId;
         Occupants = occupants;
-        Roles = roles;
     }
 
     public void Read(NetworkReader reader)
@@ -74,12 +70,10 @@ internal struct CrewRoster : IMessage<CrewRoster>
         var count = reader.ReadByte();
 
         Occupants = new int[count];
-        Roles = new SeatRole[count];
 
         for (var i = 0; i < count; i++)
         {
             Occupants[i] = reader.ReadPackedInt32();
-            Roles[i] = (SeatRole)reader.ReadByte();
         }
     }
 
@@ -91,7 +85,6 @@ internal struct CrewRoster : IMessage<CrewRoster>
         for (var i = 0; i < Occupants.Length; i++)
         {
             writer.WritePackedInt32(Occupants[i]);
-            writer.WriteByte((byte)Roles[i]);
         }
     }
 }

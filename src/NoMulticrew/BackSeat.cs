@@ -2,7 +2,6 @@ using Cysharp.Threading.Tasks;
 using HarmonyLib;
 using NoMulticrew.Crew;
 using NoMulticrew.Networking;
-using NoMulticrew.Seats;
 using NuclearOption.Networking;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -34,14 +33,6 @@ internal sealed class BackSeat : IDisposable
     public int SeatIndex { get; private set; } = -1;
 
     public int Station { get; private set; } = -1;
-
-    public SeatRole Role =>
-        Aircraft != null
-        && _crew.TryGetCrew(Aircraft.persistentID, out var state)
-        && SeatIndex >= 0
-        && SeatIndex < state.Roles.Length
-            ? state.Roles[SeatIndex]
-            : SeatRole.None;
 
     public BackSeat(ClientSession session, Controls controls)
     {
@@ -139,7 +130,7 @@ internal sealed class BackSeat : IDisposable
 
     public bool Owns(Unit unit, int station)
     {
-        return Aircraft != null && ReferenceEquals(unit, Aircraft) && CrewState.Owns(Role, Aircraft, station);
+        return Aircraft != null && ReferenceEquals(unit, Aircraft) && CrewState.Owns(Aircraft, SeatIndex, station);
     }
 
     private bool Owns(int station)
@@ -244,7 +235,7 @@ internal sealed class BackSeat : IDisposable
         {
             Plugin.Logger.LogError(
                 $"Seated in seat {seatIndex} of {aircraft.definition.jsonKey}, but the local seat table has "
-                + $"{seats.Count}. This client's Seats.json differs from the server's."
+                + $"{seats.Count}. This client's seat table differs from the server's."
             );
 
             return;
@@ -263,7 +254,7 @@ internal sealed class BackSeat : IDisposable
         var cockpit = aircraft.cockpit.transform;
         _rearViewPoint.transform.SetParent(cockpit, false);
         _rearViewPoint.transform.localPosition =
-            cockpit.InverseTransformPoint(original.position) + seats[seatIndex].ViewOffset;
+            cockpit.InverseTransformPoint(original.position) + seats[seatIndex].DefaultView.Offset;
         _rearViewPoint.transform.rotation = original.rotation;
 
         aircraft.cockpitViewPoint = _rearViewPoint.transform;
@@ -283,7 +274,7 @@ internal sealed class BackSeat : IDisposable
         StartScanLoops(aircraft);
 
         Plugin.Logger.LogInfo(
-            $"Entered seat {seatIndex} of {aircraft.definition.jsonKey} at {seats[seatIndex].ViewOffset:F2}"
+            $"Entered seat {seatIndex} of {aircraft.definition.jsonKey} at {seats[seatIndex].DefaultView.Offset:F2}"
         );
     }
 

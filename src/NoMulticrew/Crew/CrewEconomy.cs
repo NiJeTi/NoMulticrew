@@ -244,11 +244,6 @@ internal sealed class CrewEconomy
         List<Player> occupants
     )
     {
-        if (type == FactionHQ.RewardType.Recon && occupants.Count > 0)
-        {
-            return [(occupants[0], 1f)];
-        }
-
         if (type != FactionHQ.RewardType.Kill || target == null)
         {
             return [(pilot, 1f)];

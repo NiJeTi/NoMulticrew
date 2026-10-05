@@ -42,8 +42,6 @@ internal sealed class ServerSession : IDisposable
         _server.Disconnected.AddListener(OnDisconnected);
 
         _commandRegistered = TryRegisterServerCommand();
-
-        CrewState.LogClassification();
     }
 
     public void Dispose()

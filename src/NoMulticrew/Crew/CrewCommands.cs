@@ -71,15 +71,15 @@ internal sealed class CrewCommands
 
         var name = sender.GetDisplayName(PlayerNameContext.Other);
 
-        var role = _crew.RoleOf(sender, message.AircraftId);
-        if (role == null)
+        var seat = _crew.SeatOf(sender, message.AircraftId);
+        if (seat == null)
         {
             Plugin.Logger.LogWarning($"Crew {message.Kind} for {message.AircraftId} from {name}, who has no seat in it");
             connection.SetError(NoAuthorityCost, PlayerErrorFlags.NoAuthority);
             return;
         }
 
-        if (!CrewState.Owns(role.Value, aircraft, message.Station))
+        if (!CrewState.Owns(aircraft, seat.Value, message.Station))
         {
             Plugin.Logger.LogWarning(
                 $"Crew {message.Kind} from {name} names station {message.Station} of {message.AircraftId}, "

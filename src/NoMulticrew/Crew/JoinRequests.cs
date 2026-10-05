@@ -209,7 +209,7 @@ internal sealed class JoinRequests
             return false;
         }
 
-        if (!CrewState.OwnsAny(seats[seatIndex].Role, aircraft))
+        if (!CrewState.OwnsAny(aircraft, seatIndex))
         {
             reason = "That seat has no weapons in this loadout";
             return false;

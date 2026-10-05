@@ -57,7 +57,7 @@ internal sealed class CrewSeatList
             for (var index = 0; index < seats.Count; index++)
             {
                 if (_session.Crew.IsTaken(aircraft.persistentID, index)
-                    || !CrewState.OwnsAny(seats[index].Role, aircraft))
+                    || !CrewState.OwnsAny(aircraft, index))
                 {
                     continue;
                 }
@@ -67,7 +67,7 @@ internal sealed class CrewSeatList
                         aircraft.persistentID,
                         (byte)index,
                         $"{aircraft.definition.unitName} — "
-                        + $"{aircraft.Player.GetDisplayName(PlayerNameContext.Other)} ({seats[index].Role})"
+                        + $"{aircraft.Player.GetDisplayName(PlayerNameContext.Other)} ({Plugin.SeatTable.Label(aircraft.definition.jsonKey, index).ToUpperInvariant()})"
                     )
                 );
             }

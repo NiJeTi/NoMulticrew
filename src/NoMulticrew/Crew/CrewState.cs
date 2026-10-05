@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using NoMulticrew.Networking;
-using NoMulticrew.Seats;
 using NuclearOption.Networking;
 using UnityEngine;
 
@@ -32,7 +31,7 @@ internal sealed class CrewState
             + string.Join(
                 ", ",
                 message.Occupants.Select(
-                    (id, i) => $"seat {i}={(id < 0 ? "empty" : id.ToString())} role={message.Roles[i]}"
+                    (id, i) => $"seat {i}={(id < 0 ? "empty" : id.ToString())}"
                 )
             )
         );
@@ -56,24 +55,6 @@ internal sealed class CrewState
             && crew.Occupants[seatIndex] >= 0;
     }
 
-    public bool HasGunner(PersistentID aircraftId)
-    {
-        if (!_crews.TryGetValue(aircraftId, out var crew))
-        {
-            return false;
-        }
-
-        for (var i = 0; i < crew.Occupants.Length; i++)
-        {
-            if (crew.Occupants[i] >= 0 && crew.Roles[i] == SeatRole.Gunner)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     public static bool IsManned(Aircraft aircraft, WeaponStation station)
     {
         if (!station.HasTurret())
@@ -84,10 +65,10 @@ internal sealed class CrewState
         var server = Plugin.Server;
         if (server != null)
         {
-            return server.Crew.HasGunner(aircraft.persistentID);
+            return server.Crew.OccupantOwning(aircraft, station.Number) != null;
         }
 
-        return Plugin.Client?.Crew.HasGunner(aircraft.persistentID) == true;
+        return Plugin.Client?.Crew.OwnerSeat(aircraft, station.Number) >= 0;
     }
 
     public static void ApplyTurrets(Aircraft aircraft)
@@ -138,22 +119,9 @@ internal sealed class CrewState
 
     public bool BlocksStation(Unit unit, int stationIndex)
     {
-        if (unit is not Aircraft aircraft
-            || !GameManager.IsLocalAircraft(aircraft)
-            || !_crews.TryGetValue(aircraft.persistentID, out var crew))
-        {
-            return false;
-        }
-
-        for (var i = 0; i < crew.Occupants.Length; i++)
-        {
-            if (crew.Occupants[i] >= 0 && Owns(crew.Roles[i], aircraft, stationIndex))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return unit is Aircraft aircraft
+            && GameManager.IsLocalAircraft(aircraft)
+            && OwnerSeat(aircraft, stationIndex) >= 0;
     }
 
     public bool BlocksSensors(Unit unit)
@@ -174,11 +142,25 @@ internal sealed class CrewState
         return false;
     }
 
-    public static bool OwnsAny(SeatRole role, Aircraft aircraft)
+    public static bool Owns(Aircraft aircraft, int seatIndex, int stationIndex)
+    {
+        var stations = aircraft.weaponStations;
+        if (stationIndex < 0 || stationIndex >= stations.Count)
+        {
+            return false;
+        }
+
+        var weapon = stations[stationIndex].WeaponInfo;
+        var seats = Plugin.SeatTable.SeatsFor(aircraft.definition.jsonKey);
+
+        return weapon != null && seatIndex >= 0 && seatIndex < seats.Count && seats[seatIndex].Operates(weapon.name);
+    }
+
+    public static bool OwnsAny(Aircraft aircraft, int seatIndex)
     {
         for (var i = 0; i < aircraft.weaponStations.Count; i++)
         {
-            if (Owns(role, aircraft, i))
+            if (Owns(aircraft, seatIndex, i))
             {
                 return true;
             }
@@ -187,50 +169,21 @@ internal sealed class CrewState
         return false;
     }
 
-    public static bool Owns(SeatRole role, Aircraft aircraft, int stationIndex)
+    public int OwnerSeat(Aircraft aircraft, int stationIndex)
     {
-        var stations = aircraft.weaponStations;
-        if (stationIndex < 0 || stationIndex >= stations.Count)
+        if (!_crews.TryGetValue(aircraft.persistentID, out var crew))
         {
-            return false;
+            return -1;
         }
 
-        var station = stations[stationIndex];
-
-        switch (role)
+        for (var i = 0; i < crew.Occupants.Length; i++)
         {
-            case SeatRole.Gunner:
-                return station.HasTurret();
-            case SeatRole.Wso:
-                return !station.HasTurret() && IsGroundWeapon(station.WeaponInfo);
-            default:
-                return false;
-        }
-    }
-
-    public static bool IsGroundWeapon(WeaponInfo weapon)
-    {
-        var ground = weapon.effectiveness.antiSurface + weapon.effectiveness.antiRadar;
-        var air = weapon.effectiveness.antiAir + weapon.effectiveness.antiMissile;
-
-        return !weapon.gun && ground > air;
-    }
-
-    public static void LogClassification()
-    {
-        Plugin.Logger.LogDebug("=== Weapon classification ===");
-        Plugin.Logger.LogDebug("seat | weapon | surf | radar | air | msl | gun");
-
-        foreach (var weapon in Resources.FindObjectsOfTypeAll<WeaponInfo>().OrderBy(x => x.weaponName))
-        {
-            var e = weapon.effectiveness;
-
-            Plugin.Logger.LogDebug(
-                $"{(IsGroundWeapon(weapon) ? "WSO  " : "PILOT")} | {weapon.weaponName} | "
-                + $"{e.antiSurface:F2} | {e.antiRadar:F2} | {e.antiAir:F2} | {e.antiMissile:F2} | {weapon.gun}"
-            );
+            if (crew.Occupants[i] >= 0 && Owns(aircraft, i, stationIndex))
+            {
+                return i;
+            }
         }
 
-        Plugin.Logger.LogDebug("=== end weapon classification ===");
+        return -1;
     }
 }
