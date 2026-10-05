@@ -112,6 +112,14 @@ internal sealed class ServerSession : IDisposable
         }
     }
 
+    public void OnSceneReady(INetworkPlayer player)
+    {
+        if (_validPlayers.Contains(player))
+        {
+            Crew.SendRosters(player);
+        }
+    }
+
     private void StartMission()
     {
         Crew = new CrewRegistry(this);

@@ -1,3 +1,4 @@
+using Mirage;
 using NoMulticrew.Networking;
 using NuclearOption.Networking;
 
@@ -181,11 +182,24 @@ internal sealed class CrewRegistry
 
     public void SendRoster(PersistentID aircraftId)
     {
+        _session.SendToAllCapable(Roster(aircraftId));
+    }
+
+    public void SendRosters(INetworkPlayer player)
+    {
+        foreach (var aircraftId in _crews.Keys.ToList())
+        {
+            _session.SendToPlayer(player, Roster(aircraftId));
+        }
+    }
+
+    private CrewRoster Roster(PersistentID aircraftId)
+    {
         var seats = _crews.GetValueOrDefault(aircraftId, []);
         var occupants = seats.Select(x => x != null ? x.PlayerIndex : -1).ToArray();
         var pending = seats.Select(x => x != null ? _session.Economy.PendingOf(x) : 0f).ToArray();
 
-        _session.SendToAllCapable(new CrewRoster(aircraftId, occupants, pending));
+        return new CrewRoster(aircraftId, occupants, pending);
     }
 
     private void Broadcast(PersistentID aircraftId)
