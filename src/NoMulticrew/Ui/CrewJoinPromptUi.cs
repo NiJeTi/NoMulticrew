@@ -8,8 +8,7 @@ internal sealed class CrewJoinPromptUi
 {
     private readonly ClientSession _session;
 
-    private CrewJoinPrompt? _prompt;
-    private float _expiresAt;
+    private readonly List<(CrewJoinPrompt Prompt, float ExpiresAt)> _prompts = [];
 
     private string _toast = "";
     private float _toastUntil;
@@ -19,12 +18,27 @@ internal sealed class CrewJoinPromptUi
         _session = session;
     }
 
-    public CrewJoinPrompt? Pending => _prompt;
+    public CrewJoinPrompt? Pending
+    {
+        get
+        {
+            var now = Time.timeSinceLevelLoad;
+
+            foreach (var (prompt, expiresAt) in _prompts)
+            {
+                if (now <= expiresAt)
+                {
+                    return prompt;
+                }
+            }
+
+            return null;
+        }
+    }
 
     public void Show(CrewJoinPrompt prompt)
     {
-        _prompt = prompt;
-        _expiresAt = Time.timeSinceLevelLoad + prompt.ExpiresInSeconds;
+        _prompts.Add((prompt, Time.timeSinceLevelLoad + prompt.ExpiresInSeconds));
 
         ShowNotice($"{NameOf(prompt.JoinerPlayerIndex)} wants {SeatLabel(prompt)} — open the map to answer");
         Feedback.Play(CrewCue.WeaponSwitch);
@@ -46,7 +60,7 @@ internal sealed class CrewJoinPromptUi
 
     public void Accept()
     {
-        if (_prompt is { } prompt)
+        if (Pending is { } prompt)
         {
             Respond(prompt, accepted: true);
         }
@@ -54,7 +68,7 @@ internal sealed class CrewJoinPromptUi
 
     public void Decline()
     {
-        if (_prompt is { } prompt)
+        if (Pending is { } prompt)
         {
             Respond(prompt, accepted: false);
         }
@@ -62,10 +76,9 @@ internal sealed class CrewJoinPromptUi
 
     public void Tick()
     {
-        if (_prompt != null && Time.timeSinceLevelLoad > _expiresAt)
-        {
-            _prompt = null;
-        }
+        var now = Time.timeSinceLevelLoad;
+
+        _prompts.RemoveAll(x => now > x.ExpiresAt);
     }
 
     public void Draw()
@@ -78,7 +91,7 @@ internal sealed class CrewJoinPromptUi
 
     private void Respond(CrewJoinPrompt prompt, bool accepted)
     {
-        _prompt = null;
+        _prompts.RemoveAll(x => x.Prompt.RequestId == prompt.RequestId);
 
         _session.Send(new CrewJoinResponse(prompt.RequestId, accepted));
     }
