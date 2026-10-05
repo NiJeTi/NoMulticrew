@@ -102,6 +102,11 @@ internal sealed class ClientSession : IDisposable
         return _request is { } request && request.AircraftId == aircraftId && request.SeatIndex == seatIndex;
     }
 
+    public void ClearRequest()
+    {
+        _request = null;
+    }
+
     public void RequestSeat(PersistentID aircraftId, byte seatIndex)
     {
         if (_request != null || !Send(new CrewJoinRequest(aircraftId, seatIndex)))
