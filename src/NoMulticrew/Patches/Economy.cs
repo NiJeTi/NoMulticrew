@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using HarmonyLib;
+using NoMulticrew.Networking;
 using NuclearOption.Networking;
 
 namespace NoMulticrew.Patches;
@@ -20,8 +21,7 @@ internal static class WeaponStation_LaunchMount
 [HarmonyPatch]
 internal static class Unit_UserCode_CmdClaimHit
 {
-    private static readonly MethodBase? Target = AccessTools.GetDeclaredMethods(typeof(Unit))
-        .FirstOrDefault(x => x.Name.StartsWith("UserCode_CmdClaimHit", StringComparison.Ordinal));
+    private static readonly MethodBase? Target = UserCode.Find(typeof(Unit), "CmdClaimHit");
 
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prepare()
@@ -43,9 +43,9 @@ internal static class Unit_UserCode_CmdClaimHit
     }
 
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static void Prefix(Unit __instance, byte weaponStationIndex)
+    private static void Prefix(Unit __instance)
     {
-        Plugin.Server?.Economy.OnClaim(__instance, weaponStationIndex);
+        Plugin.Server?.Economy.OnClaim(__instance);
     }
 }
 

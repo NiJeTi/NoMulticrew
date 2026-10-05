@@ -22,13 +22,15 @@ internal sealed class CrewEconomy
     private readonly CrewRegistry _crew;
 
     private readonly Dictionary<(PersistentID Aircraft, WeaponInfo Weapon), Player> _launchers = [];
-    private readonly Dictionary<PersistentID, Queue<(byte Station, float Time)>> _claims = [];
+    private readonly Dictionary<PersistentID, Queue<(Player? Claimant, float Time)>> _claims = [];
     private readonly Dictionary<(PersistentID Target, PersistentID Aircraft), Ledger> _ledger = [];
 
     private PersistentID _contextAircraft;
     private Player? _contextCrew;
     private bool _paying;
     private bool _missileScope;
+
+    public Player? Sender { get; set; }
 
     public CrewEconomy(CrewRegistry crew)
     {
@@ -41,6 +43,7 @@ internal sealed class CrewEconomy
         _claims.Clear();
         _ledger.Clear();
         _missileScope = false;
+        Sender = null;
         ExitContext();
     }
 
@@ -52,7 +55,7 @@ internal sealed class CrewEconomy
         }
 
         var key = (aircraft.persistentID, station.WeaponInfo);
-        var launcher = _crew.OccupantOwning(aircraft, station.Number);
+        var launcher = Sender;
 
         if (launcher != null)
         {
@@ -68,7 +71,7 @@ internal sealed class CrewEconomy
         }
     }
 
-    public void OnClaim(Unit claimer, byte stationIndex)
+    public void OnClaim(Unit claimer)
     {
         if (!_crew.IsCrewed(claimer.persistentID))
         {
@@ -77,11 +80,11 @@ internal sealed class CrewEconomy
 
         if (!_claims.TryGetValue(claimer.persistentID, out var queue))
         {
-            queue = new Queue<(byte, float)>();
+            queue = new Queue<(Player?, float)>();
             _claims[claimer.persistentID] = queue;
         }
 
-        queue.Enqueue((stationIndex, Time.timeSinceLevelLoad));
+        queue.Enqueue((Sender, Time.timeSinceLevelLoad));
     }
 
     public bool EnterGunContext(PersistentID dealer)
@@ -95,14 +98,13 @@ internal sealed class CrewEconomy
 
         while (queue.Count > 0)
         {
-            var (station, time) = queue.Dequeue();
+            var (claimant, time) = queue.Dequeue();
             if (now - time > ClaimLifetimeSeconds)
             {
                 continue;
             }
 
-            return UnitRegistry.TryGetUnit<Aircraft>(dealer, out var aircraft)
-                && Enter(dealer, _crew.OccupantOwning(aircraft, station));
+            return Enter(dealer, claimant);
         }
 
         return false;

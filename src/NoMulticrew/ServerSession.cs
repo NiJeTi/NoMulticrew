@@ -25,12 +25,15 @@ internal sealed class ServerSession : IDisposable
 
     public CrewEconomy Economy { get; }
 
+    public CrewCommands Commands { get; }
+
     public ServerSession(NetworkServer server)
     {
         _server = server;
 
         Crew = new CrewRegistry(this);
         Economy = new CrewEconomy(Crew);
+        Commands = new CrewCommands(this, Crew, Economy);
         Requests = new JoinRequests(this, Crew);
 
         _server.MessageHandler.RegisterHandler<MulticrewHello>(OnHello, allowUnauthenticated: false);
@@ -38,6 +41,7 @@ internal sealed class ServerSession : IDisposable
         _server.MessageHandler.RegisterHandler<CrewJoinResponse>(Requests.OnResponse, allowUnauthenticated: false);
         _server.MessageHandler.RegisterHandler<CrewLeaveRequest>(OnLeave, allowUnauthenticated: false);
         _server.MessageHandler.RegisterHandler<CrewAction>(OnAction, allowUnauthenticated: false);
+        _server.MessageHandler.RegisterHandler<CrewCommand>(Commands.OnCommand, allowUnauthenticated: false);
         _server.Disconnected.AddListener(OnDisconnected);
 
         _commandRegistered = TryRegisterServerCommand();
@@ -53,6 +57,7 @@ internal sealed class ServerSession : IDisposable
         _server.MessageHandler.UnregisterHandler<CrewJoinResponse>();
         _server.MessageHandler.UnregisterHandler<CrewLeaveRequest>();
         _server.MessageHandler.UnregisterHandler<CrewAction>();
+        _server.MessageHandler.UnregisterHandler<CrewCommand>();
 
         Clear();
 
@@ -72,6 +77,7 @@ internal sealed class ServerSession : IDisposable
         Crew.Clear();
         Requests.Clear();
         Economy.Clear();
+        Commands.Clear();
         _radarForwardedAt.Clear();
     }
 
@@ -86,6 +92,11 @@ internal sealed class ServerSession : IDisposable
         }
 
         return connection.TryGetPlayer(out player);
+    }
+
+    public void DispatchLocal(CrewCommand message)
+    {
+        Commands.OnCommand(_server.LocalPlayer, message);
     }
 
     public void Notify(Player player, string text)
@@ -228,6 +239,7 @@ internal sealed class ServerSession : IDisposable
     private void OnDisconnected(INetworkPlayer connection)
     {
         Remove(connection);
+        Commands.Forget(connection);
 
         if (connection.TryGetPlayer<Player>(out var player))
         {

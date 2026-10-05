@@ -1,3 +1,4 @@
+using Mirage;
 using Mirage.Serialization;
 using NoMulticrew.Seats;
 using UnityEngine;
@@ -282,5 +283,215 @@ internal struct CrewAction : IMessage<CrewAction>
         writer.WriteBoolean(Held);
         writer.WriteUInt32(TargetId.Id);
         writer.WriteVector3(Vector);
+    }
+}
+
+internal enum CrewCommandKind : byte
+{
+    FiringState = 0,
+    SingleFire = 1,
+    StoppedFiring = 2,
+    ClaimHit = 3,
+    LaunchMissile = 4,
+    TurretVector = 5,
+}
+
+internal struct CrewCommand : IMessage<CrewCommand>
+{
+    public CrewCommandKind Kind { get; private set; }
+
+    public PersistentID AircraftId { get; private set; }
+
+    public byte Station { get; private set; }
+
+    public bool Firing { get; private set; }
+
+    public PersistentID TargetId { get; private set; }
+
+    public Vector3Compressed Vector { get; private set; }
+
+    public Vector3Compressed Velocity { get; private set; }
+
+    public GlobalPosition Aimpoint { get; private set; }
+
+    private CrewCommand(CrewCommandKind kind, PersistentID aircraftId, byte station)
+    {
+        Kind = kind;
+        AircraftId = aircraftId;
+        Station = station;
+        TargetId = PersistentID.None;
+    }
+
+    public static CrewCommand FiringState(PersistentID aircraftId, byte station, bool firing)
+    {
+        return new CrewCommand(CrewCommandKind.FiringState, aircraftId, station) { Firing = firing };
+    }
+
+    public static CrewCommand SingleFire(PersistentID aircraftId, byte station)
+    {
+        return new CrewCommand(CrewCommandKind.SingleFire, aircraftId, station);
+    }
+
+    public static CrewCommand StoppedFiring(PersistentID aircraftId, byte station)
+    {
+        return new CrewCommand(CrewCommandKind.StoppedFiring, aircraftId, station);
+    }
+
+    public static CrewCommand ClaimHit(
+        PersistentID aircraftId,
+        byte station,
+        PersistentID hitId,
+        Vector3Compressed relativePos,
+        Vector3Compressed velocity
+    )
+    {
+        return new CrewCommand(CrewCommandKind.ClaimHit, aircraftId, station)
+        {
+            TargetId = hitId,
+            Vector = relativePos,
+            Velocity = velocity
+        };
+    }
+
+    public static CrewCommand LaunchMissile(
+        PersistentID aircraftId,
+        byte station,
+        PersistentID targetId,
+        GlobalPosition aimpoint
+    )
+    {
+        return new CrewCommand(CrewCommandKind.LaunchMissile, aircraftId, station)
+        {
+            TargetId = targetId,
+            Aimpoint = aimpoint
+        };
+    }
+
+    public static CrewCommand TurretVector(PersistentID aircraftId, byte station, Vector3Compressed direction)
+    {
+        return new CrewCommand(CrewCommandKind.TurretVector, aircraftId, station) { Vector = direction };
+    }
+
+    public void Read(NetworkReader reader)
+    {
+        Kind = (CrewCommandKind)reader.ReadByte();
+        AircraftId = new PersistentID { Id = reader.ReadUInt32() };
+        Station = reader.ReadByte();
+        TargetId = PersistentID.None;
+
+        switch (Kind)
+        {
+            case CrewCommandKind.FiringState:
+                Firing = reader.ReadBoolean();
+                break;
+            case CrewCommandKind.SingleFire:
+            case CrewCommandKind.StoppedFiring:
+                break;
+            case CrewCommandKind.ClaimHit:
+                TargetId = new PersistentID { Id = reader.ReadUInt32() };
+                Vector = reader.Read<Vector3Compressed>();
+                Velocity = reader.Read<Vector3Compressed>();
+                break;
+            case CrewCommandKind.LaunchMissile:
+                TargetId = new PersistentID { Id = reader.ReadUInt32() };
+                Aimpoint = reader.ReadGlobalPosition();
+                break;
+            case CrewCommandKind.TurretVector:
+                Vector = reader.Read<Vector3Compressed>();
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown crew command {Kind}");
+        }
+    }
+
+    public void Write(NetworkWriter writer)
+    {
+        writer.WriteByte((byte)Kind);
+        writer.WriteUInt32(AircraftId.Id);
+        writer.WriteByte(Station);
+
+        switch (Kind)
+        {
+            case CrewCommandKind.FiringState:
+                writer.WriteBoolean(Firing);
+                break;
+            case CrewCommandKind.ClaimHit:
+                writer.WriteUInt32(TargetId.Id);
+                writer.Write(Vector);
+                writer.Write(Velocity);
+                break;
+            case CrewCommandKind.LaunchMissile:
+                writer.WriteUInt32(TargetId.Id);
+                writer.WriteGlobalPosition(Aimpoint);
+                break;
+            case CrewCommandKind.TurretVector:
+                writer.Write(Vector);
+                break;
+        }
+    }
+}
+
+internal struct CrewTurretVector : IMessage<CrewTurretVector>
+{
+    public PersistentID AircraftId { get; private set; }
+
+    public byte Station { get; private set; }
+
+    public Vector3Compressed Direction { get; private set; }
+
+    public CrewTurretVector(PersistentID aircraftId, byte station, Vector3Compressed direction)
+    {
+        AircraftId = aircraftId;
+        Station = station;
+        Direction = direction;
+    }
+
+    public void Read(NetworkReader reader)
+    {
+        AircraftId = new PersistentID { Id = reader.ReadUInt32() };
+        Station = reader.ReadByte();
+        Direction = reader.Read<Vector3Compressed>();
+    }
+
+    public void Write(NetworkWriter writer)
+    {
+        writer.WriteUInt32(AircraftId.Id);
+        writer.WriteByte(Station);
+        writer.Write(Direction);
+    }
+}
+
+internal struct CrewLaunch : IMessage<CrewLaunch>
+{
+    public PersistentID AircraftId { get; private set; }
+
+    public byte Station { get; private set; }
+
+    public PersistentID TargetId { get; private set; }
+
+    public GlobalPosition Aimpoint { get; private set; }
+
+    public CrewLaunch(PersistentID aircraftId, byte station, PersistentID targetId, GlobalPosition aimpoint)
+    {
+        AircraftId = aircraftId;
+        Station = station;
+        TargetId = targetId;
+        Aimpoint = aimpoint;
+    }
+
+    public void Read(NetworkReader reader)
+    {
+        AircraftId = new PersistentID { Id = reader.ReadUInt32() };
+        Station = reader.ReadByte();
+        TargetId = new PersistentID { Id = reader.ReadUInt32() };
+        Aimpoint = reader.ReadGlobalPosition();
+    }
+
+    public void Write(NetworkWriter writer)
+    {
+        writer.WriteUInt32(AircraftId.Id);
+        writer.WriteByte(Station);
+        writer.WriteUInt32(TargetId.Id);
+        writer.WriteGlobalPosition(Aimpoint);
     }
 }

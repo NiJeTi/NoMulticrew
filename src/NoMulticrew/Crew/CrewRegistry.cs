@@ -165,6 +165,7 @@ internal sealed class CrewRegistry
         var roles = seats.Select(x => x.Role).ToArray();
 
         _session.SendToAllCapable(new CrewRoster(aircraftId, occupants, roles));
+        _session.Commands.Reconcile(aircraftId);
 
         if (UnitRegistry.TryGetUnit<Aircraft>(aircraftId, out var aircraft))
         {

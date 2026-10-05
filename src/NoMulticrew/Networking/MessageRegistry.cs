@@ -4,7 +4,7 @@ namespace NoMulticrew.Networking;
 
 internal static class MessageRegistry
 {
-    public const byte ProtocolVersion = 3;
+    public const byte ProtocolVersion = 4;
 
     public static void RegisterAll()
     {
@@ -17,6 +17,9 @@ internal static class MessageRegistry
         Register<CrewNotice>();
         Register<CrewLeaveRequest>();
         Register<CrewAction>();
+        Register<CrewCommand>();
+        Register<CrewTurretVector>();
+        Register<CrewLaunch>();
     }
 
     private static void Register<T>()
