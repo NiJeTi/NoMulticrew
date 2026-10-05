@@ -35,6 +35,8 @@ internal sealed class BackSeat : IDisposable
 
     public BackSeatWeapons Weapons { get; }
 
+    public CrewTargetCam TargetCam { get; } = new();
+
     public int SeatIndex { get; private set; } = -1;
 
     public int Station { get; private set; } = -1;
@@ -239,6 +241,7 @@ internal sealed class BackSeat : IDisposable
         }
 
         Aircraft = null;
+        TargetCam.Detach();
         SeatIndex = -1;
         Station = -1;
         Weapons.Clear();
@@ -325,6 +328,7 @@ internal sealed class BackSeat : IDisposable
         aircraft.cockpitViewPoint = _rearViewPoint.transform;
 
         SceneSingleton<CombatHUD>.i.SetAircraft(aircraft);
+        TargetCam.Attach(aircraft);
 
         var camera = SceneSingleton<CameraStateManager>.i;
         _camera = camera;
