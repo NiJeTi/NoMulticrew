@@ -89,7 +89,7 @@ internal sealed class CrewEconomy
             _claims[claimer.persistentID] = queue;
         }
 
-        queue.Enqueue((Sender, Time.timeSinceLevelLoad));
+        queue.Enqueue((Sender, Time.unscaledTime));
     }
 
     public bool EnterGunContext(PersistentID dealer)
@@ -99,7 +99,7 @@ internal sealed class CrewEconomy
             return false;
         }
 
-        var now = Time.timeSinceLevelLoad;
+        var now = Time.unscaledTime;
 
         while (queue.Count > 0)
         {

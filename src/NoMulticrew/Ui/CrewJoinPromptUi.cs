@@ -22,7 +22,7 @@ internal sealed class CrewJoinPromptUi
     {
         get
         {
-            var now = Time.timeSinceLevelLoad;
+            var now = Time.unscaledTime;
 
             foreach (var (prompt, expiresAt) in _prompts)
             {
@@ -38,7 +38,7 @@ internal sealed class CrewJoinPromptUi
 
     public void Show(CrewJoinPrompt prompt)
     {
-        _prompts.Add((prompt, Time.timeSinceLevelLoad + prompt.ExpiresInSeconds));
+        _prompts.Add((prompt, Time.unscaledTime + prompt.ExpiresInSeconds));
 
         ShowNotice($"{NameOf(prompt.JoinerPlayerIndex)} wants {SeatLabel(prompt)} — open the map to answer");
         Feedback.Play(CrewCue.WeaponSwitch);
@@ -55,7 +55,7 @@ internal sealed class CrewJoinPromptUi
         }
 
         _toast = text;
-        _toastUntil = Time.timeSinceLevelLoad + 5f;
+        _toastUntil = Time.unscaledTime + 5f;
     }
 
     public void Accept()
@@ -76,14 +76,14 @@ internal sealed class CrewJoinPromptUi
 
     public void Tick()
     {
-        var now = Time.timeSinceLevelLoad;
+        var now = Time.unscaledTime;
 
         _prompts.RemoveAll(x => now > x.ExpiresAt);
     }
 
     public void Draw()
     {
-        if (Time.timeSinceLevelLoad < _toastUntil)
+        if (Time.unscaledTime < _toastUntil)
         {
             GUI.Label(new Rect(20f, Screen.height - 60f, 600f, 24f), _toast);
         }

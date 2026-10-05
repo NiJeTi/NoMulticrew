@@ -47,7 +47,7 @@ internal sealed class BackSeat : IDisposable
     public int Station { get; private set; } = -1;
 
     public bool BailOutArmed =>
-        Aircraft != null && Time.timeSinceLevelLoad - _bailOutArmedAt <= BailOutConfirmSeconds;
+        Aircraft != null && Time.unscaledTime - _bailOutArmedAt <= BailOutConfirmSeconds;
 
     public BackSeat(ClientSession session, Controls controls)
     {
@@ -103,7 +103,7 @@ internal sealed class BackSeat : IDisposable
             return;
         }
 
-        _bailOutArmedAt = Time.timeSinceLevelLoad;
+        _bailOutArmedAt = Time.unscaledTime;
         _session.Prompt.ShowNotice("Press Eject again to bail out — your sortie earnings go to the pilot");
         Feedback.Play(CrewCue.WeaponSwitch);
     }

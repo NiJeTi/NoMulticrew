@@ -228,7 +228,7 @@ internal sealed class CrewScreen : IDisposable
 
     private SeatOffer[] Offers()
     {
-        var now = Time.timeSinceLevelLoad;
+        var now = Time.unscaledTime;
         if (now - _offersAt < OffersIntervalSeconds)
         {
             return _offers;

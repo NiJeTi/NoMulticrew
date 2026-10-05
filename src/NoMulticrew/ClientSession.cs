@@ -114,7 +114,7 @@ internal sealed class ClientSession : IDisposable
             return;
         }
 
-        _request = (aircraftId, seatIndex, Time.timeSinceLevelLoad);
+        _request = (aircraftId, seatIndex, Time.unscaledTime);
         Feedback.Play(CrewCue.Select);
     }
 
@@ -213,7 +213,7 @@ internal sealed class ClientSession : IDisposable
 
     public void Tick()
     {
-        if (_request is { } pending && Time.timeSinceLevelLoad - pending.SentAt > RequestTimeoutSeconds)
+        if (_request is { } pending && Time.unscaledTime - pending.SentAt > RequestTimeoutSeconds)
         {
             _request = null;
         }

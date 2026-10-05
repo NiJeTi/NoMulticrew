@@ -46,7 +46,6 @@ internal sealed class CrewState
     {
         _crews.Clear();
         _stationTargets.Clear();
-        _lastRefusal = float.NegativeInfinity;
     }
 
     public bool IsTaken(PersistentID aircraftId, int seatIndex)
@@ -164,9 +163,9 @@ internal sealed class CrewState
     {
         Plugin.Logger.LogDebug($"Suppressed: {text}");
 
-        if (Time.timeSinceLevelLoad - _lastRefusal >= RefusalIntervalSeconds)
+        if (Time.unscaledTime - _lastRefusal >= RefusalIntervalSeconds)
         {
-            _lastRefusal = Time.timeSinceLevelLoad;
+            _lastRefusal = Time.unscaledTime;
             SceneSingleton<AircraftActionsReport>.i.ReportText(text, RefusalIntervalSeconds);
         }
 

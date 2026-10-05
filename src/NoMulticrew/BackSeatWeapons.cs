@@ -122,12 +122,12 @@ internal sealed class BackSeatWeapons
         var vector = camera.transform.forward;
         turret.SetVector(vector);
 
-        if (Time.timeSinceLevelLoad - _aimSentAt <= AimIntervalSeconds)
+        if (Time.unscaledTime - _aimSentAt <= AimIntervalSeconds)
         {
             return;
         }
 
-        _aimSentAt = Time.timeSinceLevelLoad;
+        _aimSentAt = Time.unscaledTime;
         _session.SendCommand(
             CrewCommand.TurretVector(
                 aircraft.persistentID,

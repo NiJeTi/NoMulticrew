@@ -112,7 +112,7 @@ internal sealed class JoinRequests
             Joiner = joiner,
             Aircraft = aircraft,
             SeatIndex = message.SeatIndex,
-            ExpiresAt = Time.timeSinceLevelLoad + TimeoutSeconds
+            ExpiresAt = Time.unscaledTime + TimeoutSeconds
         };
 
         var prompt = new CrewJoinPrompt(request.Id, joiner.PlayerIndex, request.SeatIndex, TimeoutSeconds);
@@ -191,7 +191,7 @@ internal sealed class JoinRequests
 
     public void Tick()
     {
-        var now = Time.timeSinceLevelLoad;
+        var now = Time.unscaledTime;
 
         for (var i = _requests.Count - 1; i >= 0; i--)
         {
