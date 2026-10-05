@@ -269,7 +269,6 @@ internal struct CrewCommand : IMessage<CrewCommand>
         Kind = kind;
         AircraftId = aircraftId;
         Station = station;
-        TargetId = PersistentID.None;
         Targets = [];
     }
 
@@ -333,7 +332,6 @@ internal struct CrewCommand : IMessage<CrewCommand>
         Kind = (CrewCommandKind)reader.ReadByte();
         AircraftId = new PersistentID { Id = reader.ReadUInt32() };
         Station = reader.ReadByte();
-        TargetId = PersistentID.None;
         Targets = [];
 
         switch (Kind)

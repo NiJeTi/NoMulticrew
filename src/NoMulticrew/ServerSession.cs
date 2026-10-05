@@ -108,7 +108,7 @@ internal sealed class ServerSession : IDisposable
     {
         foreach (var player in _validPlayers.ToArray())
         {
-            SendToPlayer(player, message);
+            player.Send(message);
         }
     }
 

@@ -1,8 +1,7 @@
 namespace NoMulticrew.Seats;
 
-internal enum SeatRole : byte
+internal enum SeatRole
 {
-    None = 0,
-    Wso = 1,
-    Gunner = 2,
+    Wso,
+    Gunner,
 }

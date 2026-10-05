@@ -240,7 +240,7 @@ internal sealed class SeatTable
         var weapon = stations[stationIndex].WeaponInfo;
         var seats = SeatsFor(aircraft.definition.jsonKey);
 
-        return weapon != null && seatIndex >= 0 && seatIndex < seats.Count && seats[seatIndex].Operates(weapon.name);
+        return seatIndex >= 0 && seatIndex < seats.Count && seats[seatIndex].Operates(weapon.name);
     }
 
     public bool OwnsAny(Aircraft aircraft, int seatIndex)
@@ -348,7 +348,7 @@ internal sealed class SeatTable
             foreach (var set in aircraft.weaponManager.hardpointSets)
             {
                 var points = set.hardpoints
-                    .Where(x => x != null && x.transform != null)
+                    .Where(x => x != null)
                     .Select(x => cockpit.InverseTransformPoint(x.transform.position) - eye)
                     .ToList();
 

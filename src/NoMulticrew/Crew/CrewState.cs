@@ -61,10 +61,7 @@ internal sealed class CrewState
 
         foreach (var station in aircraft.weaponStations)
         {
-            if (station.HasTurret())
-            {
-                station.SetStationActive(aircraft, ReferenceEquals(station, current));
-            }
+            station.SetStationActive(aircraft, ReferenceEquals(station, current));
         }
     }
 

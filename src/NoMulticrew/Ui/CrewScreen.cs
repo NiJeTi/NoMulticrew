@@ -245,9 +245,7 @@ internal sealed class CrewScreen : IDisposable
                 var key = aircraft.definition.jsonKey;
                 var seats = Plugin.SeatTable.SeatsFor(key);
 
-                if (seats.Count == 0
-                    || !JoinRequests.CanBoard(aircraft, local, out _)
-                    || !JoinRequests.TryGetBoardingAirbase(aircraft, out var airbase))
+                if (seats.Count == 0 || !JoinRequests.CanBoard(aircraft, local, out var airbase, out _))
                 {
                     continue;
                 }

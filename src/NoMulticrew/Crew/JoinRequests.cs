@@ -31,8 +31,15 @@ internal sealed class JoinRequests
         _session = session;
     }
 
-    public static bool CanBoard(Aircraft aircraft, Player joiner, [NotNullWhen(false)] out string? reason)
+    public static bool CanBoard(
+        Aircraft aircraft,
+        Player joiner,
+        [NotNullWhen(true)] out Airbase? airbase,
+        [NotNullWhen(false)] out string? reason
+    )
     {
+        airbase = null;
+
         if (aircraft.disabled || aircraft.Player == null)
         {
             reason = "That aircraft has no pilot";
@@ -51,7 +58,7 @@ internal sealed class JoinRequests
             return false;
         }
 
-        if (!TryGetBoardingAirbase(aircraft, out _))
+        if (!TryGetBoardingAirbase(aircraft, out airbase))
         {
             reason = "The aircraft is not at an airbase";
             return false;
@@ -59,16 +66,6 @@ internal sealed class JoinRequests
 
         reason = null;
         return true;
-    }
-
-    public static bool TryGetBoardingAirbase(Aircraft aircraft, [NotNullWhen(true)] out Airbase? airbase)
-    {
-        airbase = null;
-
-        return aircraft.radarAlt < 5f
-            && aircraft.speed < BoardingSpeed
-            && aircraft.NetworkHQ != null
-            && aircraft.NetworkHQ.AnyNearAirbase(aircraft.transform.position, out airbase);
     }
 
     public static bool IsValidExit(Aircraft aircraft)
@@ -178,7 +175,7 @@ internal sealed class JoinRequests
 
         foreach (var aboard in _session.Crew.Occupants(request.Aircraft.persistentID).Append(request.Aircraft.Player))
         {
-            if (aboard != null && !ReferenceEquals(aboard, request.Joiner))
+            if (!ReferenceEquals(aboard, request.Joiner))
             {
                 _session.Notify(aboard, joined, CrewCue.Select);
             }
@@ -212,7 +209,7 @@ internal sealed class JoinRequests
 
     private bool CanSeat(Aircraft aircraft, Player joiner, byte seatIndex, [NotNullWhen(false)] out string? reason)
     {
-        if (!CanBoard(aircraft, joiner, out reason))
+        if (!CanBoard(aircraft, joiner, out _, out reason))
         {
             return false;
         }
@@ -243,5 +240,14 @@ internal sealed class JoinRequests
         }
 
         return true;
+    }
+
+    private static bool TryGetBoardingAirbase(Aircraft aircraft, [NotNullWhen(true)] out Airbase? airbase)
+    {
+        airbase = null;
+
+        return aircraft.radarAlt < 5f
+            && aircraft.speed < BoardingSpeed
+            && aircraft.NetworkHQ.AnyNearAirbase(aircraft.transform.position, out airbase);
     }
 }

@@ -94,12 +94,12 @@ internal sealed class CrewRegistry
         Broadcast(aircraft.persistentID);
     }
 
-    public bool Release(Player player)
+    public void Release(Player player)
     {
         var aircraftId = AircraftOf(player);
         if (aircraftId == null)
         {
-            return false;
+            return;
         }
 
         var seats = _crews[aircraftId.Value];
@@ -141,8 +141,6 @@ internal sealed class CrewRegistry
         Plugin.Logger.LogInfo($"{player.GetDisplayName(PlayerNameContext.Other)} left their seat in {aircraftId.Value}");
 
         Broadcast(aircraftId.Value);
-
-        return true;
     }
 
     public void Dissolve(PersistentID aircraftId)

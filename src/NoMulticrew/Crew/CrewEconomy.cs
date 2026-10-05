@@ -54,7 +54,7 @@ internal sealed class CrewEconomy
 
     public void OnLaunch(Unit owner, WeaponStation station)
     {
-        if (owner is not Aircraft aircraft || station.WeaponInfo == null)
+        if (owner is not Aircraft aircraft)
         {
             return;
         }
@@ -120,7 +120,6 @@ internal sealed class CrewEconomy
         var weapon = missile.GetWeaponInfo();
 
         return _contextCrew == null
-            && weapon != null
             && _launchers.TryGetValue((missile.ownerID, weapon), out var launcher)
             && Enter(missile.ownerID, launcher);
     }
@@ -193,7 +192,7 @@ internal sealed class CrewEconomy
         FactionHQ.RewardType type
     )
     {
-        if (_paying || player == null)
+        if (_paying)
         {
             return false;
         }
@@ -349,7 +348,7 @@ internal sealed class CrewEconomy
             {
                 if (value / grand >= CreditThreshold
                     && UnitRegistry.TryGetPersistentUnit(key, out var unit)
-                    && ReferenceEquals(unit?.player, pilot))
+                    && ReferenceEquals(unit.player, pilot))
                 {
                     total += value;
                     counted[key] = value;
@@ -414,7 +413,7 @@ internal sealed class CrewEconomy
         var participants = new List<Player>(occupants.Count + 1) { pilot };
         participants.AddRange(occupants);
 
-        var others = participants.Where(x => x != null && !ReferenceEquals(x, earner)).ToList();
+        var others = participants.Where(x => !ReferenceEquals(x, earner)).ToList();
         var share = ReferenceEquals(earner, pilot)
             ? Plugin.Settings.PilotOutboundShare.Value
             : Plugin.Settings.CrewOutboundShare.Value;
@@ -435,7 +434,7 @@ internal sealed class CrewEconomy
 
     private void Pay(FactionHQ hq, Player player, Unit? target, float allocation, float score, FactionHQ.RewardType type)
     {
-        if (player == null || (allocation <= 0f && score <= 0f))
+        if (allocation <= 0f && score <= 0f)
         {
             return;
         }
