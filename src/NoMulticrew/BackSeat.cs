@@ -13,8 +13,10 @@ internal sealed class BackSeat : IDisposable
     private static readonly System.Reflection.MethodInfo? HideSelectionMethod =
         AccessTools.Method(typeof(AircraftSelectionMenu), "HideSelection");
 
-    private static readonly System.Reflection.MethodInfo? RepeatSearchMethod =
-        AccessTools.Method(typeof(TargetDetector), "RepeatSearch");
+    private static readonly Func<TargetDetector, UniTask>? RepeatSearch =
+        AccessTools.Method(typeof(TargetDetector), "RepeatSearch") is { } method
+            ? AccessTools.MethodDelegate<Func<TargetDetector, UniTask>>(method)
+            : null;
 
     private static readonly AccessTools.FieldRef<Weapon, Hardpoint?> HardpointRef =
         AccessTools.FieldRefAccess<Weapon, Hardpoint?>("hardpoint");
@@ -111,7 +113,7 @@ internal sealed class BackSeat : IDisposable
             return;
         }
 
-        if (!Owns(Station))
+        if (!Plugin.SeatTable.Owns(Aircraft, SeatIndex, Station))
         {
             Select(Next(Station, 1));
         }
@@ -136,41 +138,38 @@ internal sealed class BackSeat : IDisposable
 
     private void Select(int station)
     {
-        if (station == Station || Aircraft == null)
+        if (station == Station)
         {
             return;
         }
+
+        var aircraft = Aircraft!;
 
         Station = station;
 
         if (station >= 0)
         {
-            Aircraft.weaponManager.currentWeaponStation = Aircraft.weaponStations[station];
+            aircraft.weaponManager.currentWeaponStation = aircraft.weaponStations[station];
             Weapons.PushTargets();
         }
 
         Plugin.Logger.LogDebug($"Back seat selected station {station}");
 
-        SceneSingleton<CombatHUD>.i.ShowWeaponStation(station >= 0 ? Aircraft.weaponStations[station] : null);
+        SceneSingleton<CombatHUD>.i.ShowWeaponStation(station >= 0 ? aircraft.weaponStations[station] : null);
 
         MoveView();
     }
 
     private void MoveView()
     {
-        if (Aircraft == null || _rearViewPoint == null)
+        if (_rearViewPoint == null)
         {
             return;
         }
 
-        var seats = Plugin.SeatTable.SeatsFor(Aircraft.definition.jsonKey);
-        if (SeatIndex < 0 || SeatIndex >= seats.Count)
-        {
-            return;
-        }
-
-        var seat = seats[SeatIndex];
-        var view = Station >= 0 ? seat.ViewFor(SetsOf(Aircraft, Aircraft.weaponStations[Station])) : seat.DefaultView;
+        var aircraft = Aircraft!;
+        var seat = Plugin.SeatTable.SeatsFor(aircraft.definition.jsonKey)[SeatIndex];
+        var view = Station >= 0 ? seat.ViewFor(SetsOf(aircraft, aircraft.weaponStations[Station])) : seat.DefaultView;
 
         _rearViewPoint.transform.localPosition = _viewBase + view.Offset;
 
@@ -203,12 +202,13 @@ internal sealed class BackSeat : IDisposable
 
     private int Next(int from, int direction)
     {
-        var count = Aircraft!.weaponStations.Count;
+        var aircraft = Aircraft!;
+        var count = aircraft.weaponStations.Count;
 
         for (var step = 1; step <= count; step++)
         {
             var candidate = ((from + direction * step) % count + count) % count;
-            if (Owns(candidate))
+            if (Plugin.SeatTable.Owns(aircraft, SeatIndex, candidate))
             {
                 return candidate;
             }
@@ -222,11 +222,6 @@ internal sealed class BackSeat : IDisposable
         return Aircraft != null && ReferenceEquals(unit, Aircraft) && Plugin.SeatTable.Owns(Aircraft, SeatIndex, station);
     }
 
-    private bool Owns(int station)
-    {
-        return Aircraft != null && Owns(Aircraft, station);
-    }
-
     private void Reattach()
     {
         if (Aircraft == null || _rearViewPoint == null)
@@ -235,7 +230,7 @@ internal sealed class BackSeat : IDisposable
         }
 
         var camera = SceneSingleton<CameraStateManager>.i;
-        if (camera == null || camera.followingUnit != null || CameraStateManager.cameraMode == CameraMode.selection)
+        if (camera.followingUnit != null || CameraStateManager.cameraMode == CameraMode.selection)
         {
             return;
         }
@@ -248,10 +243,8 @@ internal sealed class BackSeat : IDisposable
 
     private void OnSwitchCamera()
     {
-        var camera = _camera;
-        if (Aircraft == null
-            || camera == null
-            || camera.currentState != camera.cockpitState
+        var camera = _camera!;
+        if (camera.currentState != camera.cockpitState
             || !ReferenceEquals(camera.followingUnit, Aircraft)
             || DynamicMap.mapMaximized)
         {
@@ -402,7 +395,7 @@ internal sealed class BackSeat : IDisposable
             return;
         }
 
-        if (RepeatSearchMethod == null)
+        if (RepeatSearch == null)
         {
             Plugin.Logger.LogError(
                 "TargetDetector.RepeatSearch not found; the back seat sees only contacts the faction already knows"
@@ -422,11 +415,8 @@ internal sealed class BackSeat : IDisposable
                 continue;
             }
 
-            if (RepeatSearchMethod.Invoke(detector, []) is UniTask task)
-            {
-                task.Forget();
-                started++;
-            }
+            RepeatSearch(detector).Forget();
+            started++;
         }
 
         Plugin.Logger.LogDebug($"Started {started} scan loops");

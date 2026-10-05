@@ -24,11 +24,7 @@ internal sealed class BackSeatWeapons
 
     public void Tick(bool triggerHeld)
     {
-        var aircraft = _seat.Aircraft;
-        if (aircraft == null)
-        {
-            return;
-        }
+        var aircraft = _seat.Aircraft!;
 
         if (triggerHeld && _seat.Station < 0)
         {
@@ -50,26 +46,19 @@ internal sealed class BackSeatWeapons
 
     public void SetFiring(int station, bool firing)
     {
-        var aircraft = _seat.Aircraft;
-        if (aircraft == null || !firing || !_firing.Add((byte)station))
+        if (!firing || !_firing.Add((byte)station))
         {
             return;
         }
 
-        _session.SendCommand(CrewCommand.FiringState(aircraft.persistentID, (byte)station, true));
+        _session.SendCommand(CrewCommand.FiringState(_seat.Aircraft!.persistentID, (byte)station, true));
     }
 
     public void ClaimHit(Unit hitUnit, Vector3 relativePos, Vector3 bulletVelocity, byte station)
     {
-        var aircraft = _seat.Aircraft;
-        if (aircraft == null)
-        {
-            return;
-        }
-
         _session.SendCommand(
             CrewCommand.ClaimHit(
-                aircraft.persistentID,
+                _seat.Aircraft!.persistentID,
                 station,
                 hitUnit.persistentID,
                 NetworkFloatHelper.CompressIfValid(relativePos, logErrors: true, "relativePos"),
@@ -80,21 +69,17 @@ internal sealed class BackSeatWeapons
 
     public void SingleFire(byte station)
     {
-        var aircraft = _seat.Aircraft;
-        if (aircraft != null)
-        {
-            _session.SendCommand(CrewCommand.SingleFire(aircraft.persistentID, station));
-        }
+        _session.SendCommand(CrewCommand.SingleFire(_seat.Aircraft!.persistentID, station));
     }
 
     public void PushTargets()
     {
-        var aircraft = _seat.Aircraft;
-        if (aircraft == null || _seat.Station < 0)
+        if (_seat.Station < 0)
         {
             return;
         }
 
+        var aircraft = _seat.Aircraft!;
         var targets = aircraft.weaponManager.GetTargetList()
             .Where(x => x != null)
             .Take(128)
@@ -114,7 +99,7 @@ internal sealed class BackSeatWeapons
         }
 
         var camera = SceneSingleton<CameraStateManager>.i;
-        if (camera == null || camera.currentState != camera.cockpitState)
+        if (camera.currentState != camera.cockpitState)
         {
             return;
         }

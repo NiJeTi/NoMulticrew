@@ -87,11 +87,6 @@ internal sealed class ClientSession : IDisposable
             return false;
         }
 
-        if (!_client.IsConnected)
-        {
-            return false;
-        }
-
         _server.Send(message);
 
         return true;

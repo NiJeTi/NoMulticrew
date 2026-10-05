@@ -319,7 +319,7 @@ internal sealed class CrewScreen : IDisposable
             var usable = mine >= 0 ? owner == mine : owner < 0;
 
             stations.Add(
-                ($"{i}  {(weapon != null ? weapon.shortName : "-")}  {label}{(i == selected ? " >" : "")}", usable)
+                ($"{i}  {weapon.shortName}  {label}{(i == selected ? " >" : "")}", usable)
             );
         }
     }
@@ -455,22 +455,13 @@ internal sealed class CrewScreen : IDisposable
 
     private void ReleaseScreenSlot()
     {
-        if (_screenIndex < 0)
-        {
-            return;
-        }
-
         var screens = LeftScreensRef(_layout.Mfd);
-        if (_screenIndex < screens.Count && ReferenceEquals(screens[_screenIndex], _layout.Screen))
+        if (ReferenceEquals(screens[_screenIndex], _layout.Screen))
         {
             screens[_screenIndex] = null;
         }
 
-        var buttons = LeftButtonsRef(_layout.Mfd);
-        if (_screenIndex < buttons.Count)
-        {
-            buttons[_screenIndex].onClick = new Button.ButtonClickedEvent();
-        }
+        LeftButtonsRef(_layout.Mfd)[_screenIndex].onClick = new Button.ButtonClickedEvent();
 
         _layout.Mfd.SetupButtons();
     }

@@ -148,6 +148,7 @@ internal sealed class CrewMarks : IDisposable
 
         if (map != null
             && map.gameObject.activeInHierarchy
+            && map.mapImage.transform.localScale.x > 0f
             && _targets.Count > 0
             && _aircraft != null
             && map.TryGetIcon(_aircraft, out var from))
@@ -158,7 +159,7 @@ internal sealed class CrewMarks : IDisposable
 
             foreach (var id in _targets)
             {
-                if (scale <= 0f || !UnitRegistry.TryGetUnit(id, out var unit) || !map.TryGetIcon(unit, out var to))
+                if (!UnitRegistry.TryGetUnit(id, out var unit) || !map.TryGetIcon(unit, out var to))
                 {
                     continue;
                 }

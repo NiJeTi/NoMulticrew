@@ -12,18 +12,13 @@ internal static class Controls
 
     public static bool IsEjectDown()
     {
-        var player = GameManager.playerInput;
-
-        return !InputFieldChecker.InsideInputField && player != null && player.GetButtonDown(ActionEject);
+        return !InputFieldChecker.InsideInputField && GameManager.playerInput.GetButtonDown(ActionEject);
     }
 
     public static bool IsFireHeld()
     {
-        var player = GameManager.playerInput;
-
         return !InputFieldChecker.InsideInputField
-            && player != null
-            && player.GetButton(ActionFire)
+            && GameManager.playerInput.GetButton(ActionFire)
             && (!PlayerSettings.menuWeaponSafety || !Cursor.visible);
     }
 
@@ -39,10 +34,7 @@ internal static class Controls
 
     private static bool IsButtonClicked(string action)
     {
-        var player = GameManager.playerInput;
-
         return !InputFieldChecker.InsideInputField
-            && player != null
-            && player.GetButtonTimedPressUp(action, 0f, PlayerSettings.clickDelay);
+            && GameManager.playerInput.GetButtonTimedPressUp(action, 0f, PlayerSettings.clickDelay);
     }
 }

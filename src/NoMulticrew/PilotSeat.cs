@@ -31,7 +31,7 @@ internal sealed class PilotSeat
 
         for (var i = 0; i < stations.Count; i++)
         {
-            if (states.Get(i) && _session.Crew.BlocksStation(aircraft, i))
+            if (states.Get(i) && _session.Crew.OwnerSeat(aircraft, i) >= 0)
             {
                 stations[i].RemoteFireAuto(aircraft);
             }
@@ -41,7 +41,7 @@ internal sealed class PilotSeat
     private void KeepOffCrewStations(Aircraft aircraft)
     {
         var current = aircraft.weaponManager.currentWeaponStation;
-        if (current == null || !_session.Crew.BlocksStation(aircraft, current.Number))
+        if (current == null || _session.Crew.OwnerSeat(aircraft, current.Number) < 0)
         {
             return;
         }
@@ -51,7 +51,7 @@ internal sealed class PilotSeat
         for (var step = 1; step < count; step++)
         {
             var candidate = (current.Number + step) % count;
-            if (_session.Crew.BlocksStation(aircraft, candidate))
+            if (_session.Crew.OwnerSeat(aircraft, candidate) >= 0)
             {
                 continue;
             }
@@ -91,7 +91,6 @@ internal sealed class PilotSeat
     private Aircraft? Flown(PersistentID aircraftId, byte station)
     {
         if (UnitRegistry.TryGetUnit<Aircraft>(aircraftId, out var aircraft)
-            && GameManager.IsLocalAircraft(aircraft)
             && _session.Crew.BlocksStation(aircraft, station))
         {
             return aircraft;
