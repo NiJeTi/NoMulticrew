@@ -17,6 +17,10 @@ internal sealed class CrewMarks : IDisposable
         AccessTools.Method(typeof(HUDUnitMarker), "UpdateColor")
     );
 
+    private static readonly Action<HUDUnitMarker> SetMarkerFactionColor = AccessTools.MethodDelegate<Action<HUDUnitMarker>>(
+        AccessTools.Method(typeof(HUDUnitMarker), "SetFactionColor")
+    );
+
     private readonly ClientSession _session;
 
     private readonly HashSet<PersistentID> _targets = [];
@@ -82,6 +86,7 @@ internal sealed class CrewMarks : IDisposable
             {
                 try
                 {
+                    SetMarkerFactionColor(marker);
                     UpdateMarkerColor(marker);
                 }
                 catch (Exception e)
