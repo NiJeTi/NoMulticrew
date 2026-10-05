@@ -41,25 +41,3 @@ internal static class WeaponManager_Fire
         return crew.RefuseStation(AircraftRef(__instance), station.Number);
     }
 }
-
-[SuppressMessage("ReSharper", "InconsistentNaming")]
-[HarmonyPatch(typeof(WeaponManager), nameof(WeaponManager.TargetListChanged))]
-internal static class WeaponManager_TargetListChanged
-{
-    private static readonly AccessTools.FieldRef<WeaponManager, Aircraft> AircraftRef =
-        AccessTools.FieldRefAccess<WeaponManager, Aircraft>("aircraft");
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prefix(WeaponManager __instance)
-    {
-        var client = Plugin.Client;
-        if (client == null)
-        {
-            return true;
-        }
-
-        var aircraft = AircraftRef(__instance);
-
-        return !client.Crew.BlocksSensors(aircraft) && !ReferenceEquals(client.BackSeat.Aircraft, aircraft);
-    }
-}

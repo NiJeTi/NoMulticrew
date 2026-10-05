@@ -86,6 +86,23 @@ internal sealed class BackSeatWeapons
         }
     }
 
+    public void PushTargets()
+    {
+        var aircraft = _seat.Aircraft;
+        if (aircraft == null || _seat.Station < 0)
+        {
+            return;
+        }
+
+        var targets = aircraft.weaponManager.GetTargetList()
+            .Where(x => x != null)
+            .Take(128)
+            .Select(x => x.persistentID)
+            .ToArray();
+
+        _session.SendCommand(CrewCommand.SetStationTargets(aircraft.persistentID, (byte)_seat.Station, targets));
+    }
+
     public void Aim(Turret turret, Aircraft aircraft, WeaponStation station)
     {
         if (!ReferenceEquals(aircraft, _seat.Aircraft)

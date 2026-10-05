@@ -11,6 +11,7 @@ internal sealed class CrewState
     private const float RefusalIntervalSeconds = 2f;
 
     private readonly Dictionary<PersistentID, CrewRoster> _crews = [];
+    private readonly Dictionary<PersistentID, Dictionary<byte, PersistentID[]>> _stationTargets = [];
 
     private float _lastRefusal = float.NegativeInfinity;
 
@@ -45,6 +46,7 @@ internal sealed class CrewState
     public void Clear()
     {
         _crews.Clear();
+        _stationTargets.Clear();
         _lastRefusal = float.NegativeInfinity;
     }
 
@@ -124,9 +126,39 @@ internal sealed class CrewState
             && OwnerSeat(aircraft, stationIndex) >= 0;
     }
 
-    public bool BlocksSensors(Unit unit)
+    public void RecordTargets(Unit unit, byte station, ReadOnlySpan<PersistentID> targets)
     {
-        return GameManager.IsLocalAircraft(unit) && _crews.ContainsKey(unit.persistentID);
+        if (unit is not Aircraft aircraft || Plugin.SeatTable.SeatsFor(aircraft.definition.jsonKey).Count == 0)
+        {
+            return;
+        }
+
+        if (!_stationTargets.TryGetValue(aircraft.persistentID, out var stations))
+        {
+            stations = [];
+            _stationTargets[aircraft.persistentID] = stations;
+        }
+
+        stations[station] = targets.ToArray();
+    }
+
+    public void CollectCrewmateTargets(Aircraft aircraft, int localSeat, HashSet<PersistentID> into)
+    {
+        into.Clear();
+
+        if (!_crews.ContainsKey(aircraft.persistentID)
+            || !_stationTargets.TryGetValue(aircraft.persistentID, out var stations))
+        {
+            return;
+        }
+
+        foreach (var (station, targets) in stations)
+        {
+            if (OwnerSeat(aircraft, station) != localSeat)
+            {
+                into.UnionWith(targets);
+            }
+        }
     }
 
     public bool Refuse(string text)

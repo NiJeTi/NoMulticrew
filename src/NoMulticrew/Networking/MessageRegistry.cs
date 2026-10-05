@@ -4,7 +4,7 @@ namespace NoMulticrew.Networking;
 
 internal static class MessageRegistry
 {
-    public const byte ProtocolVersion = 5;
+    public const byte ProtocolVersion = 6;
 
     public static void RegisterAll()
     {

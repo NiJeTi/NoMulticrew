@@ -9,6 +9,8 @@ namespace NoMulticrew.Crew;
 
 internal sealed class CrewCommands
 {
+    private delegate void StationTargetsHalf(Unit unit, byte stationIndex, ReadOnlySpan<PersistentID> targetIds);
+
     private sealed class Limit(int refill, int maxTokens, int penalty)
     {
         public RateLimitBucket.RefillConfig Config { get; } =
@@ -23,6 +25,7 @@ internal sealed class CrewCommands
     private static readonly Limit ClaimLimit = new(20, 400, 5);
     private static readonly Limit LaunchLimit = new(15, 45, 2);
     private static readonly Limit TurretLimit = new(20, 100, 1);
+    private static readonly Limit TargetsLimit = new(10, 30, 2);
 
     private static readonly Action<Unit, byte>? SingleRemoteFire =
         Bind<Action<Unit, byte>>(typeof(Unit), "CmdSingleRemoteFire");
@@ -38,6 +41,9 @@ internal sealed class CrewCommands
 
     private static readonly Action<Aircraft, byte, Vector3Compressed>? SetTurretVector =
         Bind<Action<Aircraft, byte, Vector3Compressed>>(typeof(Aircraft), "CmdSetTurretVector");
+
+    private static readonly StationTargetsHalf? SetStationTargets =
+        Bind<StationTargetsHalf>(typeof(Unit), "CmdSetStationTargets");
 
     private readonly ServerSession _session;
     private readonly CrewRegistry _crew;
@@ -148,6 +154,19 @@ internal sealed class CrewCommands
         {
             aircraft.NetworkremoteWeaponStates = new WeaponMask(aircraft.NetworkremoteWeaponStates.Mask & ~dropped);
         }
+
+        if (dropped == 0 || aircraft == null || SetStationTargets == null)
+        {
+            return;
+        }
+
+        for (var i = 0; i < 32; i++)
+        {
+            if ((dropped & (1 << i)) != 0 && i < aircraft.weaponStations.Count)
+            {
+                SetStationTargets(aircraft, (byte)i, ReadOnlySpan<PersistentID>.Empty);
+            }
+        }
     }
 
     public void Forget(INetworkPlayer connection)
@@ -185,6 +204,7 @@ internal sealed class CrewCommands
             CrewCommandKind.ClaimHit => ClaimLimit,
             CrewCommandKind.LaunchMissile => LaunchLimit,
             CrewCommandKind.TurretVector => TurretLimit,
+            CrewCommandKind.SetStationTargets => TargetsLimit,
             _ => FireLimit,
         };
     }
@@ -255,6 +275,9 @@ internal sealed class CrewCommands
                     aircraft.Player.Owner,
                     new CrewTurretVector(aircraft.persistentID, message.Station, message.Vector)
                 );
+                break;
+            case CrewCommandKind.SetStationTargets:
+                SetStationTargets?.Invoke(aircraft, message.Station, message.Targets);
                 break;
         }
     }

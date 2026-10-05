@@ -20,6 +20,8 @@ internal sealed class PilotSeat
             return;
         }
 
+        KeepOffCrewStations(aircraft);
+
         var states = aircraft.NetworkremoteWeaponStates;
         if (states.Mask == 0)
         {
@@ -34,6 +36,30 @@ internal sealed class PilotSeat
             {
                 stations[i].RemoteFireAuto(aircraft);
             }
+        }
+    }
+
+    private void KeepOffCrewStations(Aircraft aircraft)
+    {
+        var current = aircraft.weaponManager.currentWeaponStation;
+        if (current == null || !_crew.BlocksStation(aircraft, current.Number))
+        {
+            return;
+        }
+
+        var count = aircraft.weaponStations.Count;
+
+        for (var step = 1; step < count; step++)
+        {
+            var candidate = (current.Number + step) % count;
+            if (_crew.BlocksStation(aircraft, candidate))
+            {
+                continue;
+            }
+
+            aircraft.SetActiveStation((byte)candidate);
+            SceneSingleton<CombatHUD>.i.ShowWeaponStation(aircraft.weaponStations[candidate]);
+            return;
         }
     }
 

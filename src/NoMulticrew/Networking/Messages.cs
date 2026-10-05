@@ -223,6 +223,7 @@ internal enum CrewCommandKind : byte
     ClaimHit = 3,
     LaunchMissile = 4,
     TurretVector = 5,
+    SetStationTargets = 6,
 }
 
 internal struct CrewCommand : IMessage<CrewCommand>
@@ -243,12 +244,15 @@ internal struct CrewCommand : IMessage<CrewCommand>
 
     public GlobalPosition Aimpoint { get; private set; }
 
+    public PersistentID[] Targets { get; private set; }
+
     private CrewCommand(CrewCommandKind kind, PersistentID aircraftId, byte station)
     {
         Kind = kind;
         AircraftId = aircraftId;
         Station = station;
         TargetId = PersistentID.None;
+        Targets = [];
     }
 
     public static CrewCommand FiringState(PersistentID aircraftId, byte station, bool firing)
@@ -301,12 +305,18 @@ internal struct CrewCommand : IMessage<CrewCommand>
         return new CrewCommand(CrewCommandKind.TurretVector, aircraftId, station) { Vector = direction };
     }
 
+    public static CrewCommand SetStationTargets(PersistentID aircraftId, byte station, PersistentID[] targets)
+    {
+        return new CrewCommand(CrewCommandKind.SetStationTargets, aircraftId, station) { Targets = targets };
+    }
+
     public void Read(NetworkReader reader)
     {
         Kind = (CrewCommandKind)reader.ReadByte();
         AircraftId = new PersistentID { Id = reader.ReadUInt32() };
         Station = reader.ReadByte();
         TargetId = PersistentID.None;
+        Targets = [];
 
         switch (Kind)
         {
@@ -327,6 +337,20 @@ internal struct CrewCommand : IMessage<CrewCommand>
                 break;
             case CrewCommandKind.TurretVector:
                 Vector = reader.Read<Vector3Compressed>();
+                break;
+            case CrewCommandKind.SetStationTargets:
+                var count = reader.ReadByte();
+                if (count > 128)
+                {
+                    throw new InvalidOperationException($"Crew target list of {count} exceeds 128");
+                }
+
+                Targets = new PersistentID[count];
+                for (var i = 0; i < count; i++)
+                {
+                    Targets[i] = new PersistentID { Id = reader.ReadUInt32() };
+                }
+
                 break;
             default:
                 throw new InvalidOperationException($"Unknown crew command {Kind}");
@@ -355,6 +379,14 @@ internal struct CrewCommand : IMessage<CrewCommand>
                 break;
             case CrewCommandKind.TurretVector:
                 writer.Write(Vector);
+                break;
+            case CrewCommandKind.SetStationTargets:
+                writer.WriteByte((byte)Targets.Length);
+                foreach (var target in Targets)
+                {
+                    writer.WriteUInt32(target.Id);
+                }
+
                 break;
         }
     }

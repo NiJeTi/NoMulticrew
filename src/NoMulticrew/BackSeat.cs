@@ -112,6 +112,12 @@ internal sealed class BackSeat : IDisposable
 
         Station = station;
 
+        if (station >= 0)
+        {
+            Aircraft.weaponManager.currentWeaponStation = Aircraft.weaponStations[station];
+            Weapons.PushTargets();
+        }
+
         Plugin.Logger.LogDebug($"Back seat selected station {station}");
 
         SceneSingleton<CombatHUD>.i.ShowWeaponStation(station >= 0 ? Aircraft.weaponStations[station] : null);
