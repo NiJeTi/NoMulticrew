@@ -219,7 +219,7 @@ internal sealed class BackSeat : IDisposable
 
     public bool Owns(Unit unit, int station)
     {
-        return Aircraft != null && ReferenceEquals(unit, Aircraft) && CrewState.Owns(Aircraft, SeatIndex, station);
+        return Aircraft != null && ReferenceEquals(unit, Aircraft) && Plugin.SeatTable.Owns(Aircraft, SeatIndex, station);
     }
 
     private bool Owns(int station)

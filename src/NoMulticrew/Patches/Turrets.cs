@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using HarmonyLib;
-using NoMulticrew.Crew;
 using UnityEngine;
 
 namespace NoMulticrew.Patches;
@@ -12,7 +11,7 @@ internal static class WeaponStation_SetStationActive
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prefix(WeaponStation __instance, Aircraft aircraft)
     {
-        if (aircraft == null || !CrewState.IsManned(aircraft, __instance))
+        if (aircraft == null || !IsManned(aircraft, __instance))
         {
             return true;
         }
@@ -23,6 +22,22 @@ internal static class WeaponStation_SetStationActive
         }
 
         return false;
+    }
+
+    public static bool IsManned(Aircraft aircraft, WeaponStation station)
+    {
+        if (!station.HasTurret())
+        {
+            return false;
+        }
+
+        var server = Plugin.Server;
+        if (server != null)
+        {
+            return server.Crew.OccupantOwning(aircraft, station.Number) != null;
+        }
+
+        return Plugin.Client?.Crew.OwnerSeat(aircraft, station.Number) >= 0;
     }
 }
 
@@ -52,7 +67,7 @@ internal static class Turret_FixedUpdate
             || ___aircraft == null
             || ___aircraft.disabled
             || ___currentWeaponStation == null
-            || !CrewState.IsManned(___aircraft, ___currentWeaponStation)
+            || !WeaponStation_SetStationActive.IsManned(___aircraft, ___currentWeaponStation)
             || ___target != null)
         {
             return true;

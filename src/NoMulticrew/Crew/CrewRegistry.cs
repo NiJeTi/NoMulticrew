@@ -40,7 +40,7 @@ internal sealed class CrewRegistry
 
         for (var i = 0; i < seats.Length; i++)
         {
-            if (seats[i] != null && CrewState.Owns(aircraft, i, stationIndex))
+            if (seats[i] != null && Plugin.SeatTable.Owns(aircraft, i, stationIndex))
             {
                 return seats[i];
             }

@@ -90,7 +90,7 @@ internal sealed class CrewCommands
             return;
         }
 
-        if (!CrewState.Owns(aircraft, seat.Value, message.Station))
+        if (!Plugin.SeatTable.Owns(aircraft, seat.Value, message.Station))
         {
             Plugin.Logger.LogWarning(
                 $"Crew {message.Kind} from {name} names station {message.Station} of {message.AircraftId}, "

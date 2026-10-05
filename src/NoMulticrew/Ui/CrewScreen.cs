@@ -258,7 +258,7 @@ internal sealed class CrewScreen : IDisposable
 
                 for (var i = 0; i < seats.Count; i++)
                 {
-                    if (_session.Crew.IsTaken(aircraft.persistentID, i) || !CrewState.OwnsAny(aircraft, i))
+                    if (_session.Crew.IsTaken(aircraft.persistentID, i) || !Plugin.SeatTable.OwnsAny(aircraft, i))
                     {
                         continue;
                     }

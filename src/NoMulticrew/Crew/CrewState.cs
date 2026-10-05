@@ -55,22 +55,6 @@ internal sealed class CrewState
             && crew.Occupants[seatIndex] >= 0;
     }
 
-    public static bool IsManned(Aircraft aircraft, WeaponStation station)
-    {
-        if (!station.HasTurret())
-        {
-            return false;
-        }
-
-        var server = Plugin.Server;
-        if (server != null)
-        {
-            return server.Crew.OccupantOwning(aircraft, station.Number) != null;
-        }
-
-        return Plugin.Client?.Crew.OwnerSeat(aircraft, station.Number) >= 0;
-    }
-
     public static void ApplyTurrets(Aircraft aircraft)
     {
         var current = aircraft.weaponManager.currentWeaponStation;
@@ -179,33 +163,6 @@ internal sealed class CrewState
         return Refuse($"{label} has this weapon");
     }
 
-    public static bool Owns(Aircraft aircraft, int seatIndex, int stationIndex)
-    {
-        var stations = aircraft.weaponStations;
-        if (stationIndex < 0 || stationIndex >= stations.Count)
-        {
-            return false;
-        }
-
-        var weapon = stations[stationIndex].WeaponInfo;
-        var seats = Plugin.SeatTable.SeatsFor(aircraft.definition.jsonKey);
-
-        return weapon != null && seatIndex >= 0 && seatIndex < seats.Count && seats[seatIndex].Operates(weapon.name);
-    }
-
-    public static bool OwnsAny(Aircraft aircraft, int seatIndex)
-    {
-        for (var i = 0; i < aircraft.weaponStations.Count; i++)
-        {
-            if (Owns(aircraft, seatIndex, i))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     public int OwnerSeat(Aircraft aircraft, int stationIndex)
     {
         if (!_crews.TryGetValue(aircraft.persistentID, out var crew))
@@ -215,7 +172,7 @@ internal sealed class CrewState
 
         for (var i = 0; i < crew.Occupants.Length; i++)
         {
-            if (crew.Occupants[i] >= 0 && Owns(aircraft, i, stationIndex))
+            if (crew.Occupants[i] >= 0 && Plugin.SeatTable.Owns(aircraft, i, stationIndex))
             {
                 return i;
             }

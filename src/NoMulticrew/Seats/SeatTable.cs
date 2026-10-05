@@ -229,6 +229,33 @@ internal sealed class SeatTable
         return $"{text} {seats.Take(seatIndex + 1).Count(x => x.Role == role)}";
     }
 
+    public bool Owns(Aircraft aircraft, int seatIndex, int stationIndex)
+    {
+        var stations = aircraft.weaponStations;
+        if (stationIndex < 0 || stationIndex >= stations.Count)
+        {
+            return false;
+        }
+
+        var weapon = stations[stationIndex].WeaponInfo;
+        var seats = SeatsFor(aircraft.definition.jsonKey);
+
+        return weapon != null && seatIndex >= 0 && seatIndex < seats.Count && seats[seatIndex].Operates(weapon.name);
+    }
+
+    public bool OwnsAny(Aircraft aircraft, int seatIndex)
+    {
+        for (var i = 0; i < aircraft.weaponStations.Count; i++)
+        {
+            if (Owns(aircraft, seatIndex, i))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public void Audit()
     {
         if (_audited)
