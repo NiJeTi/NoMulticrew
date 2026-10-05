@@ -243,6 +243,11 @@ internal sealed class BackSeat : IDisposable
         Station = -1;
         Weapons.Clear();
 
+        if (aircraft != null)
+        {
+            aircraft.weaponManager.GetTargetList().Clear();
+        }
+
         if (aircraft != null && _originalViewPoint != null)
         {
             aircraft.cockpitViewPoint = _originalViewPoint;
@@ -287,6 +292,8 @@ internal sealed class BackSeat : IDisposable
     {
         Aircraft = aircraft;
         SeatIndex = seatIndex;
+
+        aircraft.weaponManager.GetTargetList().Clear();
 
         var seats = Plugin.SeatTable.SeatsFor(aircraft.definition.jsonKey);
         if (seatIndex >= seats.Count)
