@@ -22,7 +22,6 @@ internal sealed class BackSeat : IDisposable
     private const float BailOutConfirmSeconds = 3f;
 
     private readonly ClientSession _session;
-    private readonly Controls _controls;
 
     private readonly HashSet<TargetDetector> _scanning = [];
 
@@ -48,10 +47,9 @@ internal sealed class BackSeat : IDisposable
     public bool BailOutArmed =>
         Aircraft != null && Time.unscaledTime - _bailOutArmedAt <= BailOutConfirmSeconds;
 
-    public BackSeat(ClientSession session, Controls controls)
+    public BackSeat(ClientSession session)
     {
         _session = session;
-        _controls = controls;
         Weapons = new BackSeatWeapons(session, this);
     }
 
@@ -118,22 +116,22 @@ internal sealed class BackSeat : IDisposable
             Select(Next(Station, 1));
         }
 
-        if (_controls.IsNextWeaponPressed())
+        if (Controls.IsNextWeaponPressed())
         {
             Select(Next(Station, 1));
         }
 
-        if (_controls.IsPreviousWeaponPressed())
+        if (Controls.IsPreviousWeaponPressed())
         {
             Select(Next(Station, -1));
         }
 
-        if (_controls.IsEjectDown())
+        if (Controls.IsEjectDown())
         {
             RequestLeave();
         }
 
-        Weapons.Tick(_controls.IsFireHeld());
+        Weapons.Tick(Controls.IsFireHeld());
     }
 
     private void Select(int station)

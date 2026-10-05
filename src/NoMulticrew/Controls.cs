@@ -3,21 +3,21 @@ using UnityEngine;
 
 namespace NoMulticrew;
 
-internal sealed class Controls
+internal static class Controls
 {
     private const string ActionFire = "Fire";
     private const string ActionNextWeapon = "Next Weapon";
     private const string ActionPreviousWeapon = "Previous Weapon";
     private const string ActionEject = "Eject";
 
-    public bool IsEjectDown()
+    public static bool IsEjectDown()
     {
         var player = GameManager.playerInput;
 
         return !InputFieldChecker.InsideInputField && player != null && player.GetButtonDown(ActionEject);
     }
 
-    public bool IsFireHeld()
+    public static bool IsFireHeld()
     {
         var player = GameManager.playerInput;
 
@@ -27,12 +27,12 @@ internal sealed class Controls
             && (!PlayerSettings.menuWeaponSafety || !Cursor.visible);
     }
 
-    public bool IsNextWeaponPressed()
+    public static bool IsNextWeaponPressed()
     {
         return IsButtonClicked(ActionNextWeapon);
     }
 
-    public bool IsPreviousWeaponPressed()
+    public static bool IsPreviousWeaponPressed()
     {
         return IsButtonClicked(ActionPreviousWeapon);
     }

@@ -35,13 +35,13 @@ internal sealed class ClientSession : IDisposable
 
     public CrewMarks Marks { get; }
 
-    public ClientSession(NetworkClient client, Controls controls)
+    public ClientSession(NetworkClient client)
     {
         _client = client;
         _advertised = Discovery.TakeCurrentLobbyState();
 
         Prompt = new CrewJoinPromptUi(this);
-        BackSeat = new BackSeat(this, controls);
+        BackSeat = new BackSeat(this);
         PilotSeat = new PilotSeat(this);
         Marks = new CrewMarks(this);
 

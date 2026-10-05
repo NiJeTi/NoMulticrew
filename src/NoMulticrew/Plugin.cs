@@ -23,11 +23,12 @@ internal sealed class Plugin : BaseUnityPlugin
 
     public static bool IsServer => Server != null;
 
+    private static readonly AccessTools.FieldRef<ResourcesAsyncLoader<NetworkManagerNuclearOption>>
+        NetworkManagerLoaderRef = AccessTools.StaticFieldRefAccess<ResourcesAsyncLoader<NetworkManagerNuclearOption>>(
+            AccessTools.Field(typeof(NetworkManagerNuclearOption), "loader")
+        );
+
     private static NetworkManagerNuclearOption? _manager;
-
-    private static bool _seatTableAudited;
-
-    private static readonly Controls _controls = new();
 
     private Harmony? _harmony;
 
@@ -79,7 +80,7 @@ internal sealed class Plugin : BaseUnityPlugin
 
     private static void Attach()
     {
-        var manager = NetworkManagerProvider.Current;
+        var manager = NetworkManagerLoaderRef().IsLoaded ? NetworkManagerNuclearOption.i : null;
         if (manager == null || ReferenceEquals(manager, _manager))
         {
             return;
@@ -107,7 +108,7 @@ internal sealed class Plugin : BaseUnityPlugin
     {
         DisposeClientSession();
 
-        Client = new ClientSession(client, _controls);
+        Client = new ClientSession(client);
         AuditSeatTable();
     }
 
@@ -125,13 +126,6 @@ internal sealed class Plugin : BaseUnityPlugin
 
     private static void AuditSeatTable()
     {
-        if (_seatTableAudited)
-        {
-            return;
-        }
-
-        _seatTableAudited = true;
-
         try
         {
             SeatTable.Audit();

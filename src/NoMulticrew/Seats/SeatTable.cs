@@ -195,6 +195,8 @@ internal sealed class SeatTable
 
     private readonly Dictionary<string, SeatDefinition[]> _config = [];
 
+    private bool _audited;
+
     public SeatTable()
     {
         foreach (var (name, seats) in Config)
@@ -229,6 +231,13 @@ internal sealed class SeatTable
 
     public void Audit()
     {
+        if (_audited)
+        {
+            return;
+        }
+
+        _audited = true;
+
         var known = Resources.FindObjectsOfTypeAll<WeaponInfo>().Select(x => x.name).ToHashSet();
 
         foreach (var (name, seats) in _config)
