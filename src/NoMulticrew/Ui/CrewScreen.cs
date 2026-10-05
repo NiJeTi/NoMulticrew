@@ -17,6 +17,7 @@ internal sealed class CrewScreen : IDisposable
         ScreenSection crew,
         ScreenSection stations,
         ScreenSection actions,
+        ScreenSection seats,
         MapOptions_ToggleButton rowTemplate
     )
     {
@@ -26,9 +27,25 @@ internal sealed class CrewScreen : IDisposable
         public ScreenSection Crew { get; } = crew;
         public ScreenSection Stations { get; } = stations;
         public ScreenSection Actions { get; } = actions;
+        public ScreenSection Seats { get; } = seats;
 
         public MapOptions_ToggleButton RowTemplate { get; } = rowTemplate;
     }
+
+    private enum OfferState
+    {
+        Request,
+        Waiting,
+        Blocked,
+    }
+
+    private readonly record struct SeatOffer(
+        string Airbase,
+        string Text,
+        PersistentID AircraftId,
+        byte SeatIndex,
+        OfferState State
+    );
 
     private sealed class Content(
         string[] crew,
@@ -37,7 +54,9 @@ internal sealed class CrewScreen : IDisposable
         bool isPilot,
         bool isBackSeat,
         bool acceptingRequests,
-        bool leaveArmed
+        bool leaveArmed,
+        bool boarding,
+        SeatOffer[] seats
     )
     {
         public string[] Crew { get; } = crew;
@@ -47,6 +66,8 @@ internal sealed class CrewScreen : IDisposable
         public bool IsBackSeat { get; } = isBackSeat;
         public bool AcceptingRequests { get; } = acceptingRequests;
         public bool LeaveArmed { get; } = leaveArmed;
+        public bool Boarding { get; } = boarding;
+        public SeatOffer[] Seats { get; } = seats;
 
         public bool Same(Content? other)
         {
@@ -57,7 +78,9 @@ internal sealed class CrewScreen : IDisposable
                 && IsPilot == other.IsPilot
                 && IsBackSeat == other.IsBackSeat
                 && AcceptingRequests == other.AcceptingRequests
-                && LeaveArmed == other.LeaveArmed;
+                && LeaveArmed == other.LeaveArmed
+                && Boarding == other.Boarding
+                && Seats.SequenceEqual(other.Seats);
         }
     }
 
@@ -68,6 +91,9 @@ internal sealed class CrewScreen : IDisposable
     private const string CrewTitle = "CREW";
     private const string StationsTitle = "STATIONS";
     private const string ActionsTitle = "ACTIONS";
+    private const string SeatsTitle = "SEATS";
+
+    private const float OffersIntervalSeconds = 0.5f;
 
     private static readonly AccessTools.FieldRef<VirtualMFD, List<Button>> LeftButtonsRef =
         AccessTools.FieldRefAccess<VirtualMFD, List<Button>>("leftButtons");
@@ -81,6 +107,9 @@ internal sealed class CrewScreen : IDisposable
     private readonly int _screenIndex;
 
     private readonly List<ScreenRow> _rows = [];
+
+    private SeatOffer[] _offers = [];
+    private float _offersAt = float.NegativeInfinity;
 
     private Content? _shown;
 
@@ -179,8 +208,10 @@ internal sealed class CrewScreen : IDisposable
         }
 
         var request = _session.Prompt.Pending is { } prompt
-            ? $"{CrewJoinPromptUi.NameOf(prompt.JoinerPlayerIndex)} WANTS SEAT {prompt.SeatIndex}"
+            ? $"{CrewJoinPromptUi.NameOf(prompt.JoinerPlayerIndex)} WANTS {CrewJoinPromptUi.SeatLabel(prompt).ToUpperInvariant()}"
             : null;
+
+        var boarding = backSeat == null && aircraft == null;
 
         return new Content(
             [.. crew],
@@ -189,8 +220,69 @@ internal sealed class CrewScreen : IDisposable
             isPilot: aircraft != null && backSeat == null,
             isBackSeat: backSeat != null,
             acceptingRequests: !Plugin.Settings.RejectAllRequests.Value,
-            leaveArmed: _session.BackSeat.BailOutArmed
+            leaveArmed: _session.BackSeat.BailOutArmed,
+            boarding: boarding,
+            seats: boarding ? Offers() : []
         );
+    }
+
+    private SeatOffer[] Offers()
+    {
+        var now = Time.timeSinceLevelLoad;
+        if (now - _offersAt < OffersIntervalSeconds)
+        {
+            return _offers;
+        }
+
+        _offersAt = now;
+
+        var offers = new List<SeatOffer>();
+
+        if (GameManager.GetLocalPlayer<Player>(out var local))
+        {
+            foreach (var aircraft in Object.FindObjectsOfType<Aircraft>())
+            {
+                var key = aircraft.definition.jsonKey;
+                var seats = Plugin.SeatTable.SeatsFor(key);
+
+                if (seats.Count == 0
+                    || !JoinRequests.CanBoard(aircraft, local, out _)
+                    || !JoinRequests.TryGetBoardingAirbase(aircraft, out var airbase))
+                {
+                    continue;
+                }
+
+                var name = airbase.SavedAirbase.DisplayName;
+                var airbaseName = (string.IsNullOrEmpty(name) ? airbase.name : name).ToUpperInvariant();
+                var pilot = aircraft.Player.GetDisplayName(PlayerNameContext.Other);
+
+                for (var i = 0; i < seats.Count; i++)
+                {
+                    if (_session.Crew.IsTaken(aircraft.persistentID, i) || !CrewState.OwnsAny(aircraft, i))
+                    {
+                        continue;
+                    }
+
+                    var state = _session.IsRequested(aircraft.persistentID, (byte)i)
+                        ? OfferState.Waiting
+                        : _session.HasRequest ? OfferState.Blocked : OfferState.Request;
+
+                    offers.Add(
+                        new SeatOffer(
+                            airbaseName,
+                            $"{aircraft.definition.unitName}  ·  {pilot}  {Plugin.SeatTable.Label(key, i).ToUpperInvariant()}",
+                            aircraft.persistentID,
+                            (byte)i,
+                            state
+                        )
+                    );
+                }
+            }
+        }
+
+        _offers = [.. offers.OrderBy(x => x.Airbase).ThenBy(x => x.Text)];
+
+        return _offers;
     }
 
     private void DescribeSeats(Aircraft aircraft, CrewRoster state, List<string> crew)
@@ -231,6 +323,18 @@ internal sealed class CrewScreen : IDisposable
     private void Rebuild(Content content)
     {
         DisposeRows();
+
+        _layout.Crew.SetVisible(!content.Boarding);
+        _layout.Stations.SetVisible(!content.Boarding);
+        _layout.Actions.SetVisible(!content.Boarding);
+        _layout.Seats.SetVisible(content.Boarding);
+
+        if (content.Boarding)
+        {
+            RebuildSeats(content);
+            _layout.Seats.Fit();
+            return;
+        }
 
         foreach (var line in content.Crew)
         {
@@ -284,6 +388,39 @@ internal sealed class CrewScreen : IDisposable
         _layout.Actions.Fit();
     }
 
+    private void RebuildSeats(Content content)
+    {
+        var container = _layout.Seats.Container;
+        var template = _layout.RowTemplate;
+
+        if (content.Seats.Length == 0)
+        {
+            _rows.Add(ScreenRow.CreateLabel(container, template, "NO SEATS AVAILABLE"));
+            return;
+        }
+
+        foreach (var group in content.Seats.GroupBy(x => x.Airbase))
+        {
+            _rows.Add(ScreenRow.CreateLabel(container, template, group.Key));
+
+            foreach (var offer in group)
+            {
+                var row = _layout.Seats.AddRow();
+
+                _rows.Add(ScreenRow.CreateLabel(row, template, offer.Text));
+                _rows.Add(
+                    ScreenRow.CreateToggle(
+                        row,
+                        template,
+                        offer.State == OfferState.Waiting ? "WAITING" : "REQUEST",
+                        () => offer.State == OfferState.Request,
+                        () => _session.RequestSeat(offer.AircraftId, offer.SeatIndex)
+                    )
+                );
+            }
+        }
+    }
+
     private void DisposeRows()
     {
         foreach (var row in _rows)
@@ -293,9 +430,12 @@ internal sealed class CrewScreen : IDisposable
 
         _rows.Clear();
 
-        foreach (var line in _layout.Actions.Container.Cast<Transform>().ToList())
+        foreach (var container in new[] { _layout.Actions.Container, _layout.Seats.Container })
         {
-            Object.DestroyImmediate(line.gameObject);
+            foreach (var line in container.Cast<Transform>().ToList())
+            {
+                Object.DestroyImmediate(line.gameObject);
+            }
         }
     }
 
@@ -365,8 +505,9 @@ internal sealed class CrewScreen : IDisposable
         var crew = ScreenSection.Claim(rowContainer, sectionHeading, CrewTitle);
         var stations = crew.Clone(StationsTitle);
         var actions = crew.Clone(ActionsTitle);
+        var seats = crew.Clone(SeatsTitle);
 
-        return new Layout(mfd, screen, crew, stations, actions, rowTemplate);
+        return new Layout(mfd, screen, crew, stations, actions, seats, rowTemplate);
     }
 
     private static void TakeRowTemplate(MapOptions_ToggleButton template, Transform holder)

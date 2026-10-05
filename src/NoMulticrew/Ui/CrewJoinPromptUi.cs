@@ -26,7 +26,7 @@ internal sealed class CrewJoinPromptUi
         _prompt = prompt;
         _expiresAt = Time.timeSinceLevelLoad + prompt.ExpiresInSeconds;
 
-        ShowNotice($"{NameOf(prompt.JoinerPlayerIndex)} wants a crew seat: answer on the CRW page");
+        ShowNotice($"{NameOf(prompt.JoinerPlayerIndex)} wants {SeatLabel(prompt)} — open the map to answer");
     }
 
     public void ShowNotice(string text)
@@ -80,6 +80,13 @@ internal sealed class CrewJoinPromptUi
         _prompt = null;
 
         _session.Send(new CrewJoinResponse(prompt.RequestId, accepted));
+    }
+
+    public static string SeatLabel(CrewJoinPrompt prompt)
+    {
+        return GameManager.GetLocalAircraft(out var own)
+            ? Plugin.SeatTable.Label(own.definition.jsonKey, prompt.SeatIndex)
+            : $"seat {prompt.SeatIndex}";
     }
 
     public static string NameOf(int playerIndex)

@@ -3,11 +3,14 @@ using NoMulticrew.Crew;
 using NoMulticrew.Marks;
 using NoMulticrew.Networking;
 using NoMulticrew.Ui;
+using UnityEngine;
 
 namespace NoMulticrew;
 
 internal sealed class ClientSession : IDisposable
 {
+    private const float RequestTimeoutSeconds = 12f;
+
     private readonly NetworkClient _client;
     private readonly bool _advertised;
 
@@ -16,13 +19,15 @@ internal sealed class ClientSession : IDisposable
     private VirtualMFD? _mfd;
     private CrewScreen? _crewScreen;
 
+    private (PersistentID AircraftId, byte SeatIndex, float SentAt)? _request;
+
     public bool Confirmed => _server != null;
 
     public CrewState Crew { get; } = new();
 
-    public CrewJoinPromptUi Prompt { get; }
+    public bool HasRequest => _request != null;
 
-    public CrewSeatList SeatList { get; }
+    public CrewJoinPromptUi Prompt { get; }
 
     public BackSeat BackSeat { get; }
 
@@ -36,7 +41,6 @@ internal sealed class ClientSession : IDisposable
         _advertised = Discovery.TakeCurrentLobbyState();
 
         Prompt = new CrewJoinPromptUi(this);
-        SeatList = new CrewSeatList(this);
         BackSeat = new BackSeat(this, controls);
         PilotSeat = new PilotSeat(Crew);
         Marks = new CrewMarks(this);
@@ -91,6 +95,21 @@ internal sealed class ClientSession : IDisposable
         _server.Send(message);
 
         return true;
+    }
+
+    public bool IsRequested(PersistentID aircraftId, byte seatIndex)
+    {
+        return _request is { } request && request.AircraftId == aircraftId && request.SeatIndex == seatIndex;
+    }
+
+    public void RequestSeat(PersistentID aircraftId, byte seatIndex)
+    {
+        if (_request != null || !Send(new CrewJoinRequest(aircraftId, seatIndex)))
+        {
+            return;
+        }
+
+        _request = (aircraftId, seatIndex, Time.timeSinceLevelLoad);
     }
 
     public void SendCommand(CrewCommand message)
@@ -165,6 +184,7 @@ internal sealed class ClientSession : IDisposable
             return;
         }
 
+        _request = null;
         Prompt.ShowNotice(message.Text);
     }
 
@@ -186,6 +206,11 @@ internal sealed class ClientSession : IDisposable
 
     public void Tick()
     {
+        if (_request is { } pending && Time.timeSinceLevelLoad - pending.SentAt > RequestTimeoutSeconds)
+        {
+            _request = null;
+        }
+
         Prompt.Tick();
         BackSeat.Tick();
         PilotSeat.Tick();

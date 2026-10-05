@@ -66,7 +66,6 @@ internal sealed class Plugin : BaseUnityPlugin
 
     private void OnGUI()
     {
-        Client?.SeatList.Draw();
         Client?.Prompt.Draw();
     }
 

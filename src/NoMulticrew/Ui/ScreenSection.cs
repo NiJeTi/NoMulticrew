@@ -62,6 +62,17 @@ internal sealed class ScreenSection
         return new ScreenSection(root, container, FindHeading(root)).Prepare(title);
     }
 
+    public void SetVisible(bool visible)
+    {
+        if (_root.gameObject.activeSelf == visible)
+        {
+            return;
+        }
+
+        _root.gameObject.SetActive(visible);
+        LayoutRebuilder.MarkLayoutForRebuild((RectTransform)_root.parent);
+    }
+
     public Transform AddRow()
     {
         var row = AddLine("Row", ScreenRow.Height);
