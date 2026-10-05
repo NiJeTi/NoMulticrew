@@ -66,7 +66,8 @@ internal static class Unit_RegisterHit
         {
             var station = __instance.weaponStations.FindIndex(x => x.WeaponInfo == weaponInfo);
 
-            if (client.Crew.BlocksStation(__instance, station))
+            if (client.Crew.BlocksStation(__instance, station)
+                && !(__instance.IsServer && IsServerAuthoritative(__instance.weaponStations[station])))
             {
                 return false;
             }
@@ -81,6 +82,11 @@ internal static class Unit_RegisterHit
         __state = __instance.IsServer && Plugin.Server?.Economy.EnterHitContext(__instance, weaponInfo) == true;
 
         return true;
+    }
+
+    private static bool IsServerAuthoritative(WeaponStation station)
+    {
+        return station.Weapons.Any(x => x is Gun { ForceServerAuthority: true });
     }
 
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
