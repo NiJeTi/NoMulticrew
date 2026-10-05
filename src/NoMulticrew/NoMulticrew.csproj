@@ -51,9 +51,6 @@
         <Reference Include="$(GameRefPath)/com.rlabrecque.steamworks.net.dll">
             <Private>false</Private>
         </Reference>
-        <Reference Include="$(GamePluginsPath)/InputFramework/ExtraInput/InputFramework.dll">
-            <Private>false</Private>
-        </Reference>
     </ItemGroup>
 
     <Target Name="Deploy" AfterTargets="Build">

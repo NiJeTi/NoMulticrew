@@ -170,16 +170,16 @@ internal sealed class ServerSession : IDisposable
             return;
         }
 
-        if (UnitRegistry.TryGetUnit(aircraftId.Value, out var unit)
-            && unit is Aircraft aircraft
-            && !JoinRequests.TryGetAirbase(aircraft, out _))
-        {
-            Notify(player, "The aircraft is not at an airbase");
-            return;
-        }
+        var valid = UnitRegistry.TryGetUnit<Aircraft>(aircraftId.Value, out var aircraft)
+            && JoinRequests.IsValidExit(aircraft);
+
+        Plugin.Logger.LogInfo(
+            $"{player.GetDisplayName(PlayerNameContext.Other)} leaves {aircraftId.Value} "
+            + (valid ? "with a valid exit" : "by bailing out")
+        );
 
         Crew.Release(player);
-        Notify(player, "Left the seat");
+        Notify(player, valid ? "Left the seat" : "Bailed out");
     }
 
     private void OnDisconnected(INetworkPlayer connection)

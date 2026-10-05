@@ -18,6 +18,7 @@ internal sealed class JoinRequests
     }
 
     private const float TimeoutSeconds = 10f;
+    private const float BoardingSpeed = 50f / 3.6f;
 
     private readonly List<Request> _requests = [];
 
@@ -52,7 +53,7 @@ internal sealed class JoinRequests
             return false;
         }
 
-        if (!TryGetAirbase(aircraft, out _))
+        if (!TryGetBoardingAirbase(aircraft, out _))
         {
             reason = "The aircraft is not at an airbase";
             return false;
@@ -62,13 +63,22 @@ internal sealed class JoinRequests
         return true;
     }
 
-    public static bool TryGetAirbase(Aircraft aircraft, [NotNullWhen(true)] out Airbase? airbase)
+    public static bool TryGetBoardingAirbase(Aircraft aircraft, [NotNullWhen(true)] out Airbase? airbase)
     {
         airbase = null;
 
-        return aircraft.IsLanded()
+        return aircraft.radarAlt < 5f
+            && aircraft.speed < BoardingSpeed
             && aircraft.NetworkHQ != null
             && aircraft.NetworkHQ.AnyNearAirbase(aircraft.transform.position, out airbase);
+    }
+
+    public static bool IsValidExit(Aircraft aircraft)
+    {
+        return aircraft.speed < 2f
+            && aircraft.NetworkHQ != null
+            && aircraft.NetworkHQ.AnyNearAirbase(aircraft.transform.position, out _)
+            && aircraft.transform.position.y > Datum.LocalSeaY;
     }
 
     public void OnRequest(INetworkPlayer connection, CrewJoinRequest message)

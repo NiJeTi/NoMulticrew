@@ -10,7 +10,6 @@ using NuclearOption.Networking;
 namespace NoMulticrew;
 
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
-[BepInDependency(Controls.GuidInputFramework)]
 internal sealed class Plugin : BaseUnityPlugin
 {
     public new static ManualLogSource Logger { get; private set; } = null!;
@@ -28,7 +27,7 @@ internal sealed class Plugin : BaseUnityPlugin
 
     private static bool _seatTableAudited;
 
-    private static Controls _controls = null!;
+    private static readonly Controls _controls = new();
 
     private Harmony? _harmony;
 
@@ -53,8 +52,6 @@ internal sealed class Plugin : BaseUnityPlugin
             Logger.LogError($"Failed to patch: {e}");
             return;
         }
-
-        _controls = Controls.Init();
 
         Logger.LogInfo("Patch successful");
     }

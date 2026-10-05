@@ -19,6 +19,9 @@ internal sealed class BackSeat : IDisposable
     private static readonly AccessTools.FieldRef<Weapon, Hardpoint?> HardpointRef =
         AccessTools.FieldRefAccess<Weapon, Hardpoint?>("hardpoint");
 
+    private const float BailOutConfirmSeconds = 3f;
+
+    private readonly ClientSession _session;
     private readonly CrewState _crew;
     private readonly Controls _controls;
 
@@ -31,6 +34,8 @@ internal sealed class BackSeat : IDisposable
 
     private Vector3 _viewBase;
 
+    private float _bailOutArmedAt = float.NegativeInfinity;
+
     public Aircraft? Aircraft { get; private set; }
 
     public BackSeatWeapons Weapons { get; }
@@ -41,8 +46,12 @@ internal sealed class BackSeat : IDisposable
 
     public int Station { get; private set; } = -1;
 
+    public bool BailOutArmed =>
+        Aircraft != null && Time.timeSinceLevelLoad - _bailOutArmedAt <= BailOutConfirmSeconds;
+
     public BackSeat(ClientSession session, Controls controls)
     {
+        _session = session;
         _crew = session.Crew;
         _controls = controls;
         Weapons = new BackSeatWeapons(session, this);
@@ -80,6 +89,24 @@ internal sealed class BackSeat : IDisposable
         Enter(aircraft, seatIndex);
     }
 
+    public void RequestLeave()
+    {
+        if (Aircraft == null)
+        {
+            return;
+        }
+
+        if (JoinRequests.IsValidExit(Aircraft) || BailOutArmed)
+        {
+            _bailOutArmedAt = float.NegativeInfinity;
+            _session.Send(new CrewLeaveRequest());
+            return;
+        }
+
+        _bailOutArmedAt = Time.timeSinceLevelLoad;
+        _session.Prompt.ShowNotice("Press Eject again to bail out — your sortie earnings go to the pilot");
+    }
+
     private void Employ()
     {
         if (Aircraft == null)
@@ -100,6 +127,11 @@ internal sealed class BackSeat : IDisposable
         if (_controls.IsPreviousWeaponPressed())
         {
             Select(Next(Station, -1));
+        }
+
+        if (_controls.IsEjectDown())
+        {
+            RequestLeave();
         }
 
         Weapons.Tick(_controls.IsFireHeld());
@@ -241,6 +273,7 @@ internal sealed class BackSeat : IDisposable
         }
 
         Aircraft = null;
+        _bailOutArmedAt = float.NegativeInfinity;
         TargetCam.Detach();
         SeatIndex = -1;
         Station = -1;

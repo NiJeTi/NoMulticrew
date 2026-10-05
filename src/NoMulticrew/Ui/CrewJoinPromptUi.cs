@@ -33,7 +33,7 @@ internal sealed class CrewJoinPromptUi
     {
         var hud = SceneSingleton<CombatHUD>.i;
         var report = SceneSingleton<AircraftActionsReport>.i;
-        if (hud != null && report != null && GameManager.GetLocalAircraft(out var own) && hud.aircraft == own)
+        if (hud != null && report != null && hud.aircraft != null)
         {
             report.ReportText(text, 5f);
             return;

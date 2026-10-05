@@ -48,7 +48,7 @@ internal sealed class CrewSeatList
 
             if (seats.Count == 0
                 || !JoinRequests.CanBoard(aircraft, localPlayer, out _)
-                || !JoinRequests.TryGetAirbase(aircraft, out var near)
+                || !JoinRequests.TryGetBoardingAirbase(aircraft, out var near)
                 || near != airbase)
             {
                 continue;

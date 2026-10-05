@@ -9,7 +9,6 @@ namespace NoMulticrew;
 internal sealed class ClientSession : IDisposable
 {
     private readonly NetworkClient _client;
-    private readonly Controls _controls;
     private readonly bool _advertised;
 
     private INetworkPlayer? _server;
@@ -34,7 +33,6 @@ internal sealed class ClientSession : IDisposable
     public ClientSession(NetworkClient client, Controls controls)
     {
         _client = client;
-        _controls = controls;
         _advertised = Discovery.TakeCurrentLobbyState();
 
         Prompt = new CrewJoinPromptUi(this);
@@ -197,8 +195,6 @@ internal sealed class ClientSession : IDisposable
             Marks.Tick();
         }
 
-        HandleInput();
-
         if (Confirmed && _crewScreen == null && _mfd != null && GameManager.gameState != GameState.SinglePlayer)
         {
             var mfd = _mfd;
@@ -215,28 +211,5 @@ internal sealed class ClientSession : IDisposable
         }
 
         _crewScreen?.Tick();
-    }
-
-    private void HandleInput()
-    {
-        if (!Confirmed)
-        {
-            return;
-        }
-
-        if (_controls.IsLeaveSeatDown())
-        {
-            Send(new CrewLeaveRequest());
-        }
-
-        if (_controls.IsAcceptRequestDown())
-        {
-            Prompt.Accept();
-        }
-
-        if (_controls.IsDeclineRequestDown())
-        {
-            Prompt.Decline();
-        }
     }
 }

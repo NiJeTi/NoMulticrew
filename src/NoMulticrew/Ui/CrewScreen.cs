@@ -36,7 +36,8 @@ internal sealed class CrewScreen : IDisposable
         string? request,
         bool isPilot,
         bool isBackSeat,
-        bool acceptingRequests
+        bool acceptingRequests,
+        bool leaveArmed
     )
     {
         public string[] Crew { get; } = crew;
@@ -45,6 +46,7 @@ internal sealed class CrewScreen : IDisposable
         public bool IsPilot { get; } = isPilot;
         public bool IsBackSeat { get; } = isBackSeat;
         public bool AcceptingRequests { get; } = acceptingRequests;
+        public bool LeaveArmed { get; } = leaveArmed;
 
         public bool Same(Content? other)
         {
@@ -54,7 +56,8 @@ internal sealed class CrewScreen : IDisposable
                 && Request == other.Request
                 && IsPilot == other.IsPilot
                 && IsBackSeat == other.IsBackSeat
-                && AcceptingRequests == other.AcceptingRequests;
+                && AcceptingRequests == other.AcceptingRequests
+                && LeaveArmed == other.LeaveArmed;
         }
     }
 
@@ -185,7 +188,8 @@ internal sealed class CrewScreen : IDisposable
             request,
             isPilot: aircraft != null && backSeat == null,
             isBackSeat: backSeat != null,
-            acceptingRequests: !Plugin.Settings.RejectAllRequests.Value
+            acceptingRequests: !Plugin.Settings.RejectAllRequests.Value,
+            leaveArmed: _session.BackSeat.BailOutArmed
         );
     }
 
@@ -266,7 +270,12 @@ internal sealed class CrewScreen : IDisposable
         if (content.IsBackSeat)
         {
             _rows.Add(
-                ScreenRow.CreateButton(actions, template, "LEAVE", () => _session.Send(new CrewLeaveRequest()))
+                ScreenRow.CreateButton(
+                    actions,
+                    template,
+                    content.LeaveArmed ? "CONFIRM BAIL OUT" : "LEAVE",
+                    _session.BackSeat.RequestLeave
+                )
             );
         }
 
