@@ -131,6 +131,14 @@ internal sealed class Plugin : BaseUnityPlugin
         }
 
         _seatTableAudited = true;
-        SeatTable.Audit();
+
+        try
+        {
+            SeatTable.Audit();
+        }
+        catch (Exception e)
+        {
+            Logger.LogError($"Seat table audit failed: {e}");
+        }
     }
 }
