@@ -124,7 +124,7 @@ internal sealed class BackSeat : IDisposable
 
         if (!_session.Crew.CanSelect(Aircraft, SeatIndex, Station))
         {
-            if (Station >= 0)
+            if (Station >= 0 && Plugin.SeatTable.IsShared(Aircraft))
             {
                 _session.Crew.RefuseStation(Aircraft, Station);
             }

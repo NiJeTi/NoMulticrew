@@ -136,7 +136,10 @@ internal sealed class BackSeatWeapons
 
     private void Fire(Aircraft aircraft, WeaponStation station)
     {
-        if (station.SafetyIsOn(aircraft) || !station.Ready() || station.SalvoInProgress)
+        if (!_seat.Owns(aircraft, station.Number)
+            || station.SafetyIsOn(aircraft)
+            || !station.Ready()
+            || station.SalvoInProgress)
         {
             return;
         }
@@ -167,7 +170,7 @@ internal sealed class BackSeatWeapons
         {
             for (var i = 0; i < targets.Count; i++)
             {
-                if (!ReferenceEquals(_seat.Aircraft, aircraft))
+                if (!ReferenceEquals(_seat.Aircraft, aircraft) || !_seat.Owns(aircraft, station.Number))
                 {
                     return;
                 }
