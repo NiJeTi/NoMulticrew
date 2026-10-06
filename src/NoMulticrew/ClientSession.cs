@@ -2,6 +2,7 @@ using Mirage;
 using NoMulticrew.Crew;
 using NoMulticrew.Marks;
 using NoMulticrew.Networking;
+using NoMulticrew.Screens;
 using NoMulticrew.Ui;
 using UnityEngine;
 
@@ -37,6 +38,8 @@ internal sealed class ClientSession : IDisposable
 
     public CrewMarks Marks { get; }
 
+    public CrewScreens Screens { get; } = new();
+
     public ClientSession(NetworkClient client)
     {
         _client = client;
@@ -61,6 +64,7 @@ internal sealed class ClientSession : IDisposable
     public void Dispose()
     {
         BackSeat.Dispose();
+        Screens.Clear();
         Marks.Dispose();
         _crewScreen?.Dispose();
         _client.Authenticated.RemoveListener(OnAuthenticated);
@@ -106,6 +110,7 @@ internal sealed class ClientSession : IDisposable
     public void EndMission()
     {
         BackSeat.Leave(showMap: false);
+        Screens.Clear();
         Crew.Clear();
         Kills.Clear();
         Prompt.Clear();

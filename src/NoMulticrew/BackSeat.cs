@@ -285,6 +285,7 @@ internal sealed class BackSeat : IDisposable
 
         Aircraft = null;
         _bailOutArmedAt = float.NegativeInfinity;
+        _session.Screens.Leave();
         TargetCam.Detach();
         SeatIndex = -1;
         Station = -1;
@@ -379,6 +380,8 @@ internal sealed class BackSeat : IDisposable
         camera.onSwitchCamera += OnSwitchCamera;
         camera.SetFollowingUnit(aircraft);
         camera.SwitchState(camera.cockpitState);
+
+        _session.Screens.Board(aircraft);
 
         SceneSingleton<DynamicMap>.i.Minimize();
 
