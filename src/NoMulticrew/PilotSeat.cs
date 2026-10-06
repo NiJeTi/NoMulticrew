@@ -57,6 +57,7 @@ internal sealed class PilotSeat
                 continue;
             }
 
+            _session.Crew.RefuseStation(aircraft, current.Number);
             aircraft.SetActiveStation((byte)candidate);
             SceneSingleton<CombatHUD>.i.ShowWeaponStation(aircraft.weaponStations[candidate]);
             return;
