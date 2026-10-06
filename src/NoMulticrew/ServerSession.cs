@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Mirage;
 using NoMulticrew.Crew;
 using NoMulticrew.Networking;
+using NoMulticrew.Seats;
 using NuclearOption.DedicatedServer.Commands;
 using NuclearOption.Networking;
 using UnityEngine;
@@ -36,14 +37,12 @@ internal sealed class ServerSession : IDisposable
         _server.MessageHandler.RegisterHandler<CrewJoinResponse>((c, m) => Requests.OnResponse(c, m), allowUnauthenticated: false);
         _server.MessageHandler.RegisterHandler<CrewLeaveRequest>(OnLeave, allowUnauthenticated: false);
         _server.MessageHandler.RegisterHandler<CrewCommand>((c, m) => Commands.OnCommand(c, m), allowUnauthenticated: false);
-        _server.Disconnected.AddListener(OnDisconnected);
 
         _commandRegistered = TryRegisterServerCommand();
     }
 
     public void Dispose()
     {
-        _server.Disconnected.RemoveListener(OnDisconnected);
         _server.MessageHandler.UnregisterHandler<MulticrewHello>();
         _server.MessageHandler.UnregisterHandler<CrewJoinRequest>();
         _server.MessageHandler.UnregisterHandler<CrewJoinResponse>();
@@ -154,6 +153,35 @@ internal sealed class ServerSession : IDisposable
         }
     }
 
+    public void OnDisconnected(INetworkPlayer connection)
+    {
+        Remove(connection);
+
+        if (connection.TryGetPlayer<Player>(out var player))
+        {
+            var seatedIn = Crew.AircraftOf(player);
+            var name = player.GetDisplayName(PlayerNameContext.Other);
+
+            Plugin.Logger.LogInfo(
+                seatedIn is { } aircraftId && Crew.SeatOf(player, aircraftId) is { } seat
+                    ? $"{name} disconnected, freeing {SeatTable.Label(seat)} of {aircraftId}"
+                    : $"{name} disconnected, in no crew seat"
+            );
+
+            Requests.Forget(player);
+
+            if (seatedIn is { } freed)
+            {
+                Economy.Settle(player, freed, forfeit: true);
+            }
+
+            Crew.Release(player);
+            Crew.DissolvePilotedBy(player);
+        }
+
+        Commands.Forget(connection);
+    }
+
     private void StartMission()
     {
         Crew = new CrewRegistry(this);
@@ -223,26 +251,6 @@ internal sealed class ServerSession : IDisposable
         Economy.Settle(player, aircraftId.Value, forfeit: !valid);
         Crew.Release(player);
         Notify(player, valid ? "Left the seat" : "Bailed out", CrewCue.Deselect);
-    }
-
-    private void OnDisconnected(INetworkPlayer connection)
-    {
-        Remove(connection);
-
-        if (connection.TryGetPlayer<Player>(out var player))
-        {
-            Requests.Forget(player);
-
-            if (Crew.AircraftOf(player) is { } seatedIn)
-            {
-                Economy.Settle(player, seatedIn, forfeit: true);
-            }
-
-            Crew.Release(player);
-            Crew.DissolvePilotedBy(player);
-        }
-
-        Commands.Forget(connection);
     }
 
     private bool TryRegisterServerCommand()
