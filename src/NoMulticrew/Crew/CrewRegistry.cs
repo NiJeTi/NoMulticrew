@@ -91,6 +91,11 @@ internal sealed class CrewRegistry
 
         seats[seatIndex] = player;
 
+        _pilotStations.TryAdd(
+            aircraft.persistentID,
+            aircraft.weaponManager.currentWeaponStation is { } current ? current.Number : SeatTable.NoStation
+        );
+
         Plugin.Logger.LogInfo(
             $"{player.GetDisplayName(PlayerNameContext.Other)} took seat {seatIndex} "
             + $"({SeatTable.Label(seatIndex)}) of {key} {aircraft.persistentID}"
@@ -110,10 +115,27 @@ internal sealed class CrewRegistry
     {
         _pilotStations[aircraft.persistentID] = station;
 
-        if (IsCrewed(aircraft.persistentID))
+        if (IsCrewed(aircraft.persistentID) && Plugin.SeatTable.IsShared(aircraft))
         {
             SendRoster(aircraft.persistentID);
         }
+    }
+
+    public void LoadoutChanged(Aircraft aircraft)
+    {
+        _pilotStations[aircraft.persistentID] = aircraft.weaponStations.Count > 0 ? (byte)0 : SeatTable.NoStation;
+
+        if (!_crews.TryGetValue(aircraft.persistentID, out var seats))
+        {
+            return;
+        }
+
+        foreach (var occupant in seats.Where(x => x != null))
+        {
+            _stations.Remove(occupant!);
+        }
+
+        Broadcast(aircraft.persistentID);
     }
 
     public void Release(Player player)

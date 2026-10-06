@@ -52,3 +52,20 @@ internal static class Aircraft_RpcSetActiveStation
         Plugin.Server?.Crew.RecordPilotStation(__instance, stationIndex);
     }
 }
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[HarmonyPatch(typeof(WeaponManager), "OrganizeWeaponStations")]
+internal static class WeaponManager_OrganizeWeaponStations
+{
+    private static readonly AccessTools.FieldRef<WeaponManager, Aircraft> AircraftRef =
+        AccessTools.FieldRefAccess<WeaponManager, Aircraft>("aircraft");
+
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static void Postfix(WeaponManager __instance)
+    {
+        var aircraft = AircraftRef(__instance);
+
+        Plugin.Server?.Crew.LoadoutChanged(aircraft);
+        Plugin.Client?.BackSeat.LoadoutChanged(aircraft);
+    }
+}

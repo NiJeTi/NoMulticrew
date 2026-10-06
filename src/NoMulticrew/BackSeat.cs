@@ -107,6 +107,14 @@ internal sealed class BackSeat : IDisposable
         Feedback.Play(CrewCue.WeaponSwitch);
     }
 
+    public void LoadoutChanged(Aircraft aircraft)
+    {
+        if (ReferenceEquals(aircraft, Aircraft))
+        {
+            Station = -1;
+        }
+    }
+
     private void Employ()
     {
         if (Aircraft == null)
