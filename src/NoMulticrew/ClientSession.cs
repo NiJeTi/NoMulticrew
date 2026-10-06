@@ -126,6 +126,7 @@ internal sealed class ClientSession : IDisposable
         }
 
         _request = (aircraftId, seatIndex, Time.unscaledTime);
+        Feedback.Play(CrewCue.Select);
     }
 
     public void SendCommand(CrewCommand message)

@@ -64,6 +64,7 @@ internal sealed class CrewJoinPromptUi
         if (Pending is { } prompt)
         {
             Respond(prompt, accepted: true);
+            Feedback.Play(CrewCue.WeaponSwitch);
         }
     }
 
@@ -72,6 +73,7 @@ internal sealed class CrewJoinPromptUi
         if (Pending is { } prompt)
         {
             Respond(prompt, accepted: false);
+            Feedback.Play(CrewCue.Deselect);
         }
     }
 
