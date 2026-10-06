@@ -77,7 +77,7 @@ internal sealed class ScreenSection
     {
         var row = AddLine("Row", ScreenRow.Height);
 
-        Stack<HorizontalLayoutGroup>(row.gameObject, ColumnSpacing);
+        Stack<HorizontalLayoutGroup>(row.gameObject, ColumnSpacing).childForceExpandWidth = false;
 
         return row;
     }

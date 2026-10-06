@@ -48,6 +48,7 @@ internal sealed class ScreenRow : IDisposable
         var button = Clone(container, template, $"Toggle: {label}");
 
         Style(LabelRef(button), label, TextAlignmentOptions.Center, LabelInset);
+        Size(button.gameObject, 0f, 0f, 1f);
         Bind(button, getState(), onToggle);
 
         return new ScreenRow(button.gameObject, button, getState);
@@ -73,19 +74,18 @@ internal sealed class ScreenRow : IDisposable
         rect.sizeDelta = new Vector2(rect.sizeDelta.x, Height);
 
         Style(label, text, TextAlignmentOptions.Left, LabelInset);
+        Size(label.gameObject, 0f, -1f, 1f);
         label.gameObject.SetActive(true);
 
         return new ScreenRow(label.gameObject, null);
     }
 
-    public ScreenRow FitToText()
+    public ScreenRow FitToText(params string[] texts)
     {
         var label = LabelRef(_button!);
-        var width = label.GetPreferredValues(label.text).x + 2 * LabelInset;
+        var width = texts.Max(x => label.GetPreferredValues(x).x) + 2 * LabelInset;
 
-        var layout = _root.AddComponent<LayoutElement>();
-        layout.minWidth = width;
-        layout.preferredWidth = width;
+        Size(_root, width, width, 0f);
 
         return this;
     }
@@ -120,6 +120,21 @@ internal sealed class ScreenRow : IDisposable
         text.text = content;
         text.alignment = alignment;
         text.margin = new Vector4(inset, 0f, inset, 0f);
+        text.enableWordWrapping = false;
+        text.overflowMode = TextOverflowModes.Ellipsis;
+    }
+
+    private static void Size(GameObject target, float minWidth, float preferredWidth, float flexibleWidth)
+    {
+        var layout = target.GetComponent<LayoutElement>();
+        if (layout == null)
+        {
+            layout = target.AddComponent<LayoutElement>();
+        }
+
+        layout.minWidth = minWidth;
+        layout.preferredWidth = preferredWidth;
+        layout.flexibleWidth = flexibleWidth;
     }
 
     private static void Bind(MapOptions_ToggleButton button, bool state, Action onToggle)
