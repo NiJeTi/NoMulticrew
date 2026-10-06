@@ -156,7 +156,7 @@ internal sealed class CrewEconomy
 
         var index = aircraft.weaponStations.FindIndex(x => x.WeaponInfo == weapon);
 
-        return index >= 0 && Enter(aircraft.persistentID, _session.Crew.OccupantOwning(aircraft, index));
+        return index >= 0 && Enter(aircraft.persistentID, _session.Crew.Holder(aircraft, index));
     }
 
     public void ExitContext()

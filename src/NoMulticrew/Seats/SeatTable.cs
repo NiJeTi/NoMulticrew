@@ -4,6 +4,10 @@ namespace NoMulticrew.Seats;
 
 internal sealed class SeatTable
 {
+    public const int Pilot = -1;
+    public const int Wso = 0;
+    public const byte NoStation = 255;
+
     private static readonly SeatDefinition[] EmptySeats = [];
 
     private static readonly Dictionary<string, SeatDefinition[]> Config = new()
@@ -11,7 +15,6 @@ internal sealed class SeatTable
         ["COIN"] =
         [
             new SeatDefinition(
-                SeatRole.Wso,
                 weapons:
                 [
                     "info_AGM1",
@@ -19,8 +22,7 @@ internal sealed class SeatTable
                     "info_AGM_scanner1",
                     "info_bomb_125_1",
                     "info_bomb_250_1",
-                    "info_rocket1",
-                    "info_rocket2",
+                    "Gun20mm_Rotary_Turret",
                 ],
                 views: [new SeatView(new Vector3(0f, 0f, -0.95f))]
             ),
@@ -28,7 +30,6 @@ internal sealed class SeatTable
         ["trainer"] =
         [
             new SeatDefinition(
-                SeatRole.Wso,
                 weapons:
                 [
                     "info_AGM1",
@@ -42,8 +43,6 @@ internal sealed class SeatTable
                     "info_bomb_glide1",
                     "info_nuclearBomb1",
                     "info_nuclearBomb1_strategic",
-                    "info_rocket1",
-                    "info_rocket2",
                 ],
                 views: [new SeatView(new Vector3(0f, -0.02f, -1.28f))]
             ),
@@ -51,7 +50,6 @@ internal sealed class SeatTable
         ["VTOLTrainer1"] =
         [
             new SeatDefinition(
-                SeatRole.Wso,
                 weapons:
                 [
                     "info_AGM1",
@@ -64,8 +62,6 @@ internal sealed class SeatTable
                     "info_bomb_glide1",
                     "info_nuclearBomb1",
                     "info_nuclearBomb1_strategic",
-                    "info_rocket1",
-                    "info_rocket2",
                 ],
                 views: [new SeatView(new Vector3(0f, 0.16f, -1.30f))]
             ),
@@ -73,13 +69,9 @@ internal sealed class SeatTable
         ["UtilityHelo1"] =
         [
             new SeatDefinition(
-                SeatRole.Gunner,
-                weapons: ["Grenade_40mm", "Gun12.7mm", "Gun25mm_Autocannon"],
+                weapons: ["info_AGM1", "info_AGM_scanner1", "GTG1_info", "Grenade_40mm", "Gun12.7mm"],
                 views:
                 [
-                    new SeatView(["Left Fuselage Pylon"], new Vector3(-0.83f, -0.82f, -1.87f)),
-                    new SeatView(["Right Fuselage Pylon"], new Vector3(1.42f, -0.82f, -1.87f)),
-                    new SeatView(["Left Fuselage Pylon", "Right Fuselage Pylon"], new Vector3(0f, -0.67f, -1.87f)),
                     new SeatView(["Door guns"], new Vector3(0.29f, -0.47f, -1.19f)),
                     new SeatView(new Vector3(-0.45f, 0f, -1.20f)),
                 ]
@@ -88,39 +80,29 @@ internal sealed class SeatTable
         ["AttackHelo1"] =
         [
             new SeatDefinition(
-                SeatRole.Gunner,
-                weapons: ["Gun25mm_Autocannon"],
-                views:
-                [
-                    new SeatView(["Stub Pylons"], new Vector3(0f, -1.11f, -2.44f)),
-                    new SeatView(new Vector3(0f, -0.43f, 1.40f)),
-                ]
+                weapons: ["info_AGM1", "info_AGM2", "info_AGM_heavy", "info_AGM_scanner1", "Gun30mm_Rotary_Turret"],
+                views: [new SeatView(new Vector3(0f, -0.43f, 1.40f))]
             ),
         ],
         ["QuadVTOL1"] =
         [
             new SeatDefinition(
-                SeatRole.Wso,
-                weapons: ["info_AGM1", "info_AGM_scanner1", "info_bomb_demolition"],
-                views: [new SeatView(new Vector3(0f, 0f, -1.48f))]
-            ),
-            new SeatDefinition(
-                SeatRole.Gunner,
-                weapons: ["Gun12.7mm_Rotary", "Gun25mm_Autocannon"],
+                weapons:
+                [
+                    "info_AGM1",
+                    "info_AGM_scanner1",
+                    "info_bomb_demolition",
+                    "Gun12.7mm_Rotary",
+                    "Gun25mm_Autocannon",
+                    "Gun57mm_Aerial",
+                    "Gun76mm_Guided",
+                ],
                 views:
                 [
                     new SeatView(["Floor Turret Mount"], new Vector3(0.40f, -1.90f, -2.60f)),
                     new SeatView(["Left Sponson Pylon"], new Vector3(-1.54f, -2.04f, -7.02f)),
                     new SeatView(["Right Sponson Pylon"], new Vector3(2.34f, -2.04f, -7.02f)),
                     new SeatView(["Left Sponson Pylon", "Right Sponson Pylon"], new Vector3(0f, -1.89f, -7.02f)),
-                    new SeatView(new Vector3(0f, 0f, -1.48f)),
-                ]
-            ),
-            new SeatDefinition(
-                SeatRole.Gunner,
-                weapons: ["Gun57mm_Aerial", "Gun76mm_Guided"],
-                views:
-                [
                     new SeatView(["Cargo Bay (Front)"], new Vector3(0.40f, -2.07f, -9.72f)),
                     new SeatView(new Vector3(0f, 0f, -1.48f)),
                 ]
@@ -129,12 +111,11 @@ internal sealed class SeatTable
         ["EW1"] =
         [
             new SeatDefinition(
-                SeatRole.Wso,
                 weapons:
                 [
+                    "JammingPod1",
                     "ARM1_info",
                     "AShM2_info",
-                    "JammingPod1",
                     "info_bomb_250_glide",
                     "info_bomb_500_glide",
                     "info_bomb_glide1",
@@ -144,41 +125,19 @@ internal sealed class SeatTable
         ],
         ["Darkreach"] =
         [
-            new SeatDefinition(
-                SeatRole.Wso,
-                weapons:
-                [
-                    "AShM2_info",
-                    "AShM3_info",
-                    "ballisticMissile1_info",
-                    "ballisticMissile1_tacNuke_info",
-                    "info_AShM1",
-                    "info_CruiseMissile1",
-                    "info_CruiseMissile20kt",
-                    "info_blastFrag500",
-                    "info_bomb_250_1",
-                    "info_bomb_250_glide",
-                    "info_bomb_500_glide",
-                    "info_bomb_demolition",
-                    "info_bomb_penetrator1",
-                    "info_nuclearBomb1",
-                    "info_nuclearBomb1_strategic",
-                ],
-                views: [new SeatView(new Vector3(0.99f, 0f, 0f))]
-            ),
+            SeatDefinition.Shared(views: [new SeatView(new Vector3(0.99f, 0f, 0f))]),
         ],
         ["FastBomber1"] =
         [
             new SeatDefinition(
-                SeatRole.Wso,
                 weapons:
                 [
+                    "JammingPod1",
                     "ARM1_info",
                     "AShM3_info",
-                    "JammingPod1",
+                    "info_AShM1",
                     "ballisticMissile1_info",
                     "ballisticMissile1_tacNuke_info",
-                    "info_AShM1",
                     "info_blastFrag500",
                     "info_bomb_250_1",
                     "info_bomb_250_glide",
@@ -205,55 +164,74 @@ internal sealed class SeatTable
         }
     }
 
+    public static string Label(int seat)
+    {
+        return seat == Pilot ? "Pilot" : "WSO";
+    }
+
+    public static int StationIndex(byte station)
+    {
+        return station == NoStation ? -1 : station;
+    }
+
     public IReadOnlyList<SeatDefinition> SeatsFor(string name)
     {
         return _config.GetValueOrDefault(name, EmptySeats);
     }
 
-    public string Label(string name, int seatIndex)
+    public bool IsShared(Aircraft aircraft)
     {
-        var seats = SeatsFor(name);
-        if (seatIndex < 0 || seatIndex >= seats.Count)
-        {
-            return "Crew";
-        }
+        var seats = SeatsFor(aircraft.definition.jsonKey);
 
-        var role = seats[seatIndex].Role;
-        var text = role == SeatRole.Wso ? "WSO" : role.ToString();
-
-        if (seats.Count(x => x.Role == role) < 2)
-        {
-            return text;
-        }
-
-        return $"{text} {seats.Take(seatIndex + 1).Count(x => x.Role == role)}";
+        return seats.Count > 0 && seats[Wso].IsShared;
     }
 
-    public bool Owns(Aircraft aircraft, int seatIndex, int stationIndex)
+    public bool Offered(Aircraft aircraft, int seatIndex)
     {
-        var stations = aircraft.weaponStations;
-        if (stationIndex < 0 || stationIndex >= stations.Count)
+        var seats = SeatsFor(aircraft.definition.jsonKey);
+        if (seatIndex < 0 || seatIndex >= seats.Count)
         {
             return false;
         }
 
-        var weapon = stations[stationIndex].WeaponInfo;
-        var seats = SeatsFor(aircraft.definition.jsonKey);
+        var seat = seats[seatIndex];
 
-        return seatIndex >= 0 && seatIndex < seats.Count && seats[seatIndex].Operates(weapon.name);
+        return seat.IsShared
+            ? aircraft.weaponStations.Count > 0
+            : aircraft.weaponStations.Any(x => seat.Operates(x.WeaponInfo.name));
     }
 
-    public bool OwnsAny(Aircraft aircraft, int seatIndex)
+    public int Holder(Aircraft aircraft, int station, SeatState state)
     {
-        for (var i = 0; i < aircraft.weaponStations.Count; i++)
+        var seats = SeatsFor(aircraft.definition.jsonKey);
+        if (!state.WsoAboard || seats.Count == 0 || station < 0 || station >= aircraft.weaponStations.Count)
         {
-            if (Owns(aircraft, seatIndex, i))
-            {
-                return true;
-            }
+            return Pilot;
         }
 
-        return false;
+        var seat = seats[Wso];
+        var held = seat.IsShared
+            ? state.WsoStation == station
+            : seat.Operates(aircraft.weaponStations[station].WeaponInfo.name);
+
+        return held ? Wso : Pilot;
+    }
+
+    public bool CanSelect(Aircraft aircraft, int seat, int station, SeatState state)
+    {
+        if (station < 0 || station >= aircraft.weaponStations.Count)
+        {
+            return false;
+        }
+
+        var holder = Holder(aircraft, station, state);
+
+        if (seat == Pilot || !IsShared(aircraft))
+        {
+            return holder == seat;
+        }
+
+        return holder == Wso || state.PilotStation != station;
     }
 
     public void Audit()
@@ -269,11 +247,11 @@ internal sealed class SeatTable
 
         foreach (var (name, seats) in _config)
         {
-            for (var i = 0; i < seats.Length; i++)
+            foreach (var seat in seats)
             {
-                foreach (var weapon in seats[i].Weapons.Where(x => !known.Contains(x)))
+                foreach (var weapon in seat.Weapons.Where(x => !known.Contains(x)))
                 {
-                    Plugin.Logger.LogError($"Seat {i} of {name} lists '{weapon}', which matches no WeaponInfo");
+                    Plugin.Logger.LogError($"The WSO of {name} lists '{weapon}', which matches no WeaponInfo");
                 }
             }
         }
@@ -283,42 +261,26 @@ internal sealed class SeatTable
 
     private static SeatDefinition[] Checked(string name, SeatDefinition[] seats)
     {
-        var claimed = new Dictionary<string, int>();
-        var result = new SeatDefinition[seats.Length];
-
-        for (var i = 0; i < seats.Length; i++)
+        if (seats.Length > 1)
         {
-            var seat = seats[i];
+            Plugin.Logger.LogError($"{name} lists {seats.Length} crew seats; only the first is used");
+        }
 
+        var result = seats.Take(1).ToArray();
+
+        foreach (var seat in result)
+        {
             if (!seat.HasOneDefaultView)
             {
-                Plugin.Logger.LogError($"Seat {i} of {name} needs exactly one default view");
+                Plugin.Logger.LogError($"The WSO of {name} needs exactly one default view");
             }
 
-            if (seat.Weapons.Count == 0)
+            if (!seat.IsShared && seat.Weapons.Count == 0)
             {
-                Plugin.Logger.LogError($"Seat {i} of {name} lists no weapons");
+                Plugin.Logger.LogError($"The WSO of {name} lists no weapons");
             }
 
-            var duplicates = seat.Weapons.Where(claimed.ContainsKey).ToList();
-
-            foreach (var weapon in duplicates)
-            {
-                Plugin.Logger.LogError(
-                    $"'{weapon}' is listed by seats {claimed[weapon]} and {i} of {name}; seat {claimed[weapon]} keeps it"
-                );
-            }
-
-            foreach (var weapon in seat.Weapons.Except(duplicates))
-            {
-                claimed[weapon] = i;
-            }
-
-            result[i] = duplicates.Count == 0
-                ? seat
-                : new SeatDefinition(seat.Role, [.. seat.Weapons.Except(duplicates)], [.. seat.Views]);
-
-            Plugin.Logger.LogDebug($"Seat {i} of {name}: {result[i]}");
+            Plugin.Logger.LogDebug($"Seat of {name}: {seat}");
         }
 
         return result;
@@ -339,9 +301,6 @@ internal sealed class SeatTable
 
             var cockpit = aircraft.cockpit.transform;
             var eye = cockpit.InverseTransformPoint(aircraft.cockpitViewPoint.position);
-
-            var gunner = new SortedSet<string>();
-            var wso = new SortedSet<string>();
 
             Plugin.Logger.LogDebug($"=== Seat authoring: {definition.jsonKey} ({definition.unitName}) ===");
 
@@ -368,32 +327,13 @@ internal sealed class SeatTable
                     }
 
                     var info = mount.info;
-                    var ground = info.effectiveness.antiSurface + info.effectiveness.antiRadar;
-                    var air = info.effectiveness.antiAir + info.effectiveness.antiMissile;
 
                     Plugin.Logger.LogDebug(
                         $"  '{info.name}' ({info.weaponName}) mount={mount.jsonKey} turret={mount.turret} "
-                        + $"gun={info.gun} jammer={info.jammer} ground={ground:F2} air={air:F2}"
+                        + $"gun={info.gun} laser={info.laserGuided} bomb={info.bomb} jammer={info.jammer}"
                     );
-
-                    if (mount.turret)
-                    {
-                        gunner.Add(info.name);
-                    }
-                    else if (!info.gun && !info.cargo && !info.troops && !info.sling && (info.jammer || ground > air))
-                    {
-                        wso.Add(info.name);
-                    }
                 }
             }
-
-            Plugin.Logger.LogDebug($"suggested Gunner weapons: {Quote(gunner)}");
-            Plugin.Logger.LogDebug($"suggested Wso weapons: {Quote(wso)}");
         }
-    }
-
-    private static string Quote(IEnumerable<string> names)
-    {
-        return string.Join(", ", names.Select(x => $"\"{x}\""));
     }
 }

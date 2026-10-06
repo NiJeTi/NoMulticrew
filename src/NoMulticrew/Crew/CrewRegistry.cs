@@ -1,5 +1,6 @@
 using Mirage;
 using NoMulticrew.Networking;
+using NoMulticrew.Seats;
 using NuclearOption.Networking;
 
 namespace NoMulticrew.Crew;
@@ -32,22 +33,18 @@ internal sealed class CrewRegistry
         return _crews.ContainsKey(aircraftId);
     }
 
-    public Player? OccupantOwning(Aircraft aircraft, int stationIndex)
+    public SeatState StateOf(Aircraft aircraft)
     {
-        if (!_crews.TryGetValue(aircraft.persistentID, out var seats))
-        {
-            return null;
-        }
+        var aboard = _crews.TryGetValue(aircraft.persistentID, out var seats) && seats[SeatTable.Wso] != null;
 
-        for (var i = 0; i < seats.Length; i++)
-        {
-            if (seats[i] != null && Plugin.SeatTable.Owns(aircraft, i, stationIndex))
-            {
-                return seats[i];
-            }
-        }
+        return new SeatState(aboard, -1, -1);
+    }
 
-        return null;
+    public Player? Holder(Aircraft aircraft, int stationIndex)
+    {
+        return Plugin.SeatTable.Holder(aircraft, stationIndex, StateOf(aircraft)) == SeatTable.Wso
+            ? _crews[aircraft.persistentID][SeatTable.Wso]
+            : null;
     }
 
     public List<Player> Occupants(PersistentID aircraftId)
@@ -89,7 +86,7 @@ internal sealed class CrewRegistry
 
         Plugin.Logger.LogInfo(
             $"{player.GetDisplayName(PlayerNameContext.Other)} took seat {seatIndex} "
-            + $"({Plugin.SeatTable.Label(key, seatIndex)}) of {key} {aircraft.persistentID}"
+            + $"({SeatTable.Label(seatIndex)}) of {key} {aircraft.persistentID}"
         );
 
         Broadcast(aircraft.persistentID);
@@ -113,10 +110,7 @@ internal sealed class CrewRegistry
         {
             if (ReferenceEquals(seats[i], player))
             {
-                if (aircraft != null)
-                {
-                    label = Plugin.SeatTable.Label(aircraft.definition.jsonKey, i);
-                }
+                label = SeatTable.Label(i);
 
                 seats[i] = null;
             }

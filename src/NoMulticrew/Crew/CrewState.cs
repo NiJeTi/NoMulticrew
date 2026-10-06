@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using NoMulticrew.Networking;
+using NoMulticrew.Seats;
 using NuclearOption.Networking;
 using UnityEngine;
 
@@ -102,7 +103,7 @@ internal sealed class CrewState
     {
         return unit is Aircraft aircraft
             && GameManager.IsLocalAircraft(aircraft)
-            && OwnerSeat(aircraft, stationIndex) >= 0;
+            && Holder(aircraft, stationIndex) != SeatTable.Pilot;
     }
 
     public void RecordTargets(Unit unit, byte station, ReadOnlySpan<PersistentID> targets)
@@ -133,7 +134,7 @@ internal sealed class CrewState
 
         foreach (var (station, targets) in stations)
         {
-            if (OwnerSeat(aircraft, station) != localSeat)
+            if (Holder(aircraft, station) != localSeat)
             {
                 into.UnionWith(targets);
             }
@@ -155,26 +156,24 @@ internal sealed class CrewState
 
     public bool RefuseStation(Aircraft aircraft, int stationIndex)
     {
-        var label = Plugin.SeatTable.Label(aircraft.definition.jsonKey, OwnerSeat(aircraft, stationIndex));
-
-        return Refuse($"{label} has this weapon");
+        return Refuse($"{SeatTable.Label(Holder(aircraft, stationIndex))} has this weapon");
     }
 
-    public int OwnerSeat(Aircraft aircraft, int stationIndex)
+    public SeatState StateOf(Aircraft aircraft)
     {
-        if (!_crews.TryGetValue(aircraft.persistentID, out var crew))
-        {
-            return -1;
-        }
+        var own = GameManager.IsLocalAircraft(aircraft) ? aircraft.weaponManager.currentWeaponStation?.Number ?? -1 : -1;
+        var aboard = _crews.TryGetValue(aircraft.persistentID, out var crew) && crew.Occupants[SeatTable.Wso] >= 0;
 
-        for (var i = 0; i < crew.Occupants.Length; i++)
-        {
-            if (crew.Occupants[i] >= 0 && Plugin.SeatTable.Owns(aircraft, i, stationIndex))
-            {
-                return i;
-            }
-        }
+        return new SeatState(aboard, -1, own);
+    }
 
-        return -1;
+    public int Holder(Aircraft aircraft, int station)
+    {
+        return Plugin.SeatTable.Holder(aircraft, station, StateOf(aircraft));
+    }
+
+    public bool CanSelect(Aircraft aircraft, int seat, int station)
+    {
+        return Plugin.SeatTable.CanSelect(aircraft, seat, station, StateOf(aircraft));
     }
 }

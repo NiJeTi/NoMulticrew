@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Mirage;
 using NoMulticrew.Networking;
+using NoMulticrew.Seats;
 using NuclearOption.Networking;
 using UnityEngine;
 
@@ -170,7 +171,7 @@ internal sealed class JoinRequests
 
         _session.Crew.Seat(request.Aircraft, request.SeatIndex, request.Joiner);
 
-        var label = Plugin.SeatTable.Label(request.Aircraft.definition.jsonKey, request.SeatIndex);
+        var label = SeatTable.Label(request.SeatIndex);
         var joined = $"{request.Joiner.GetDisplayName(PlayerNameContext.Other)} joined as {label}";
 
         foreach (var aboard in _session.Crew.Occupants(request.Aircraft.persistentID).Append(request.Aircraft.Player))
@@ -221,7 +222,7 @@ internal sealed class JoinRequests
             return false;
         }
 
-        if (!Plugin.SeatTable.OwnsAny(aircraft, seatIndex))
+        if (!Plugin.SeatTable.Offered(aircraft, seatIndex))
         {
             reason = "That seat has no weapons in this loadout";
             return false;

@@ -1,4 +1,5 @@
 using NoMulticrew.Networking;
+using NoMulticrew.Seats;
 using NuclearOption.Networking;
 using UnityEngine;
 
@@ -104,9 +105,7 @@ internal sealed class CrewJoinPromptUi
 
     public static string SeatLabel(CrewJoinPrompt prompt)
     {
-        return GameManager.GetLocalAircraft(out var own)
-            ? Plugin.SeatTable.Label(own.definition.jsonKey, prompt.SeatIndex)
-            : $"seat {prompt.SeatIndex}";
+        return SeatTable.Label(prompt.SeatIndex);
     }
 
     public static string NameOf(int playerIndex)

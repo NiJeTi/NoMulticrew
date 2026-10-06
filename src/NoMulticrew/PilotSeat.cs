@@ -1,4 +1,5 @@
 using NoMulticrew.Networking;
+using NoMulticrew.Seats;
 using UnityEngine;
 
 namespace NoMulticrew;
@@ -31,7 +32,7 @@ internal sealed class PilotSeat
 
         for (var i = 0; i < stations.Count; i++)
         {
-            if (states.Get(i) && _session.Crew.OwnerSeat(aircraft, i) >= 0)
+            if (states.Get(i) && _session.Crew.Holder(aircraft, i) != SeatTable.Pilot)
             {
                 stations[i].RemoteFireAuto(aircraft);
             }
@@ -41,7 +42,7 @@ internal sealed class PilotSeat
     private void KeepOffCrewStations(Aircraft aircraft)
     {
         var current = aircraft.weaponManager.currentWeaponStation;
-        if (current == null || _session.Crew.OwnerSeat(aircraft, current.Number) < 0)
+        if (current == null || _session.Crew.Holder(aircraft, current.Number) == SeatTable.Pilot)
         {
             return;
         }
@@ -51,7 +52,7 @@ internal sealed class PilotSeat
         for (var step = 1; step < count; step++)
         {
             var candidate = (current.Number + step) % count;
-            if (_session.Crew.OwnerSeat(aircraft, candidate) >= 0)
+            if (_session.Crew.Holder(aircraft, candidate) != SeatTable.Pilot)
             {
                 continue;
             }

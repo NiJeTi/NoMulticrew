@@ -2,6 +2,8 @@ using UnityEngine;
 
 namespace NoMulticrew.Seats;
 
+internal readonly record struct SeatState(bool WsoAboard, int WsoStation, int PilotStation);
+
 internal sealed class SeatView
 {
     public IReadOnlyCollection<string> HardpointSets { get; }
@@ -31,7 +33,7 @@ internal sealed class SeatDefinition
 {
     private readonly HashSet<string> _weapons;
 
-    public SeatRole Role { get; }
+    public bool IsShared { get; }
 
     public IReadOnlyCollection<string> Weapons => _weapons;
 
@@ -41,9 +43,14 @@ internal sealed class SeatDefinition
 
     public bool HasOneDefaultView { get; }
 
-    public SeatDefinition(SeatRole role, string[] weapons, SeatView[] views)
+    public SeatDefinition(string[] weapons, SeatView[] views)
+        : this(false, weapons, views)
     {
-        Role = role;
+    }
+
+    private SeatDefinition(bool shared, string[] weapons, SeatView[] views)
+    {
+        IsShared = shared;
         _weapons = [.. weapons];
         Views = views;
 
@@ -51,6 +58,11 @@ internal sealed class SeatDefinition
 
         HasOneDefaultView = defaults.Count == 1;
         DefaultView = defaults.FirstOrDefault() ?? new SeatView(Vector3.zero);
+    }
+
+    public static SeatDefinition Shared(SeatView[] views)
+    {
+        return new SeatDefinition(true, [], views);
     }
 
     public bool Operates(string weaponName)
@@ -66,6 +78,8 @@ internal sealed class SeatDefinition
 
     public override string ToString()
     {
-        return $"{Role} operating [{string.Join(", ", _weapons)}], views {string.Join("; ", Views)}";
+        var weapons = IsShared ? "sharing every station" : $"operating [{string.Join(", ", _weapons)}]";
+
+        return $"WSO {weapons}, views {string.Join("; ", Views)}";
     }
 }

@@ -1,6 +1,7 @@
 using HarmonyLib;
 using NoMulticrew.Crew;
 using NoMulticrew.Networking;
+using NoMulticrew.Seats;
 using NuclearOption.Networking;
 using TMPro;
 using UnityEngine;
@@ -256,7 +257,7 @@ internal sealed class CrewScreen : IDisposable
 
                 for (var i = 0; i < seats.Count; i++)
                 {
-                    if (_session.Crew.IsTaken(aircraft.persistentID, i) || !Plugin.SeatTable.OwnsAny(aircraft, i))
+                    if (_session.Crew.IsTaken(aircraft.persistentID, i) || !Plugin.SeatTable.Offered(aircraft, i))
                     {
                         continue;
                     }
@@ -268,7 +269,7 @@ internal sealed class CrewScreen : IDisposable
                     offers.Add(
                         new SeatOffer(
                             airbaseName,
-                            $"{aircraft.definition.unitName}  ·  {pilot}  {Plugin.SeatTable.Label(key, i).ToUpperInvariant()}",
+                            $"{aircraft.definition.unitName}  ·  {pilot}  {SeatTable.Label(i).ToUpperInvariant()}",
                             aircraft.persistentID,
                             (byte)i,
                             state
@@ -293,7 +294,7 @@ internal sealed class CrewScreen : IDisposable
                 ? " <"
                 : "";
 
-            crew.Add($"{Plugin.SeatTable.Label(aircraft.definition.jsonKey, seat).ToUpperInvariant()}  {name}{here}");
+            crew.Add($"{SeatTable.Label(seat).ToUpperInvariant()}  {name}{here}");
         }
 
         var mine = ReferenceEquals(_session.BackSeat.Aircraft, aircraft) ? _session.BackSeat.SeatIndex : -1;
@@ -305,18 +306,21 @@ internal sealed class CrewScreen : IDisposable
 
     private void DescribeStations(Aircraft aircraft, List<(string, bool)> stations)
     {
-        var key = aircraft.definition.jsonKey;
-        var mine = ReferenceEquals(_session.BackSeat.Aircraft, aircraft) ? _session.BackSeat.SeatIndex : -1;
-        var selected = mine >= 0
+        var mine = ReferenceEquals(_session.BackSeat.Aircraft, aircraft) ? _session.BackSeat.SeatIndex : SeatTable.Pilot;
+        var selected = mine != SeatTable.Pilot
             ? _session.BackSeat.Station
             : aircraft.weaponManager.currentWeaponStation?.Number ?? -1;
+        var state = _session.Crew.StateOf(aircraft);
+        var shared = Plugin.SeatTable.IsShared(aircraft);
 
         for (var i = 0; i < aircraft.weaponStations.Count; i++)
         {
             var weapon = aircraft.weaponStations[i].WeaponInfo;
-            var owner = _session.Crew.OwnerSeat(aircraft, i);
-            var label = owner < 0 ? "PILOT" : Plugin.SeatTable.Label(key, owner).ToUpperInvariant();
-            var usable = mine >= 0 ? owner == mine : owner < 0;
+            var holder = Plugin.SeatTable.Holder(aircraft, i, state);
+            var label = shared && holder == SeatTable.Pilot && state.PilotStation != i
+                ? ""
+                : SeatTable.Label(holder).ToUpperInvariant();
+            var usable = Plugin.SeatTable.CanSelect(aircraft, mine, i, state);
 
             stations.Add(
                 ($"{i}  {weapon.shortName}  {label}{(i == selected ? " >" : "")}", usable)

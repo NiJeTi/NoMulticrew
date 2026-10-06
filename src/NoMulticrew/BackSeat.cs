@@ -113,7 +113,7 @@ internal sealed class BackSeat : IDisposable
             return;
         }
 
-        if (!Plugin.SeatTable.Owns(Aircraft, SeatIndex, Station))
+        if (!_session.Crew.CanSelect(Aircraft, SeatIndex, Station))
         {
             Select(Next(Station, 1));
         }
@@ -208,7 +208,7 @@ internal sealed class BackSeat : IDisposable
         for (var step = 1; step <= count; step++)
         {
             var candidate = ((from + direction * step) % count + count) % count;
-            if (Plugin.SeatTable.Owns(aircraft, SeatIndex, candidate))
+            if (_session.Crew.CanSelect(aircraft, SeatIndex, candidate))
             {
                 return candidate;
             }
@@ -219,7 +219,7 @@ internal sealed class BackSeat : IDisposable
 
     public bool Owns(Unit unit, int station)
     {
-        return Aircraft != null && ReferenceEquals(unit, Aircraft) && Plugin.SeatTable.Owns(Aircraft, SeatIndex, station);
+        return Aircraft != null && ReferenceEquals(unit, Aircraft) && _session.Crew.Holder(Aircraft, station) == SeatIndex;
     }
 
     private void Reattach()

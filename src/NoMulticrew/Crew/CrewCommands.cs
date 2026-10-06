@@ -90,11 +90,11 @@ internal sealed class CrewCommands
             return;
         }
 
-        if (!Plugin.SeatTable.Owns(aircraft, seat.Value, message.Station))
+        if (!ReferenceEquals(_session.Crew.Holder(aircraft, message.Station), sender))
         {
             Plugin.Logger.LogWarning(
                 $"Crew {message.Kind} from {name} names station {message.Station} of {message.AircraftId}, "
-                + "which their seat does not own"
+                + "which their seat does not hold"
             );
             connection.SetError(NoAuthorityCost, PlayerErrorFlags.NoAuthority);
             return;
@@ -136,7 +136,7 @@ internal sealed class CrewCommands
         {
             for (var i = 0; i < aircraft.weaponStations.Count && i < 32; i++)
             {
-                if (_session.Crew.OccupantOwning(aircraft, i) != null)
+                if (_session.Crew.Holder(aircraft, i) != null)
                 {
                     owned |= 1 << i;
                 }
