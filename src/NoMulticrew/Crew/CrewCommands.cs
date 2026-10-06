@@ -92,13 +92,14 @@ internal sealed class CrewCommands
             return;
         }
 
+        if (!TryUseToken(connection, message.Kind))
+        {
+            return;
+        }
+
         if (message.Kind == CrewCommandKind.SelectStation)
         {
-            if (TryUseToken(connection, message.Kind))
-            {
-                SelectStation(connection, aircraft, sender, seat.Value, message.Station, name);
-            }
-
+            SelectStation(connection, aircraft, sender, seat.Value, message.Station, name);
             return;
         }
 
@@ -118,11 +119,6 @@ internal sealed class CrewCommands
                 + "which their seat does not hold"
             );
             connection.SetError(NoAuthorityCost, PlayerErrorFlags.NoAuthority);
-            return;
-        }
-
-        if (!TryUseToken(connection, message.Kind))
-        {
             return;
         }
 
