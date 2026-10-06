@@ -4,6 +4,8 @@ namespace NoMulticrew.Seats;
 
 internal readonly record struct SeatState(bool WsoAboard, int WsoStation, int PilotStation);
 
+internal sealed record ScreenPlacement(Vector3 Centre, Vector3 Normal, Vector2 Size, Rect Uv);
+
 internal sealed class SeatView
 {
     public IReadOnlyCollection<string> HardpointSets { get; }
@@ -43,16 +45,19 @@ internal sealed class SeatDefinition
 
     public bool HasOneDefaultView { get; }
 
-    public SeatDefinition(string[] weapons, SeatView[] views)
-        : this(false, weapons, views)
+    public ScreenPlacement? Screen { get; }
+
+    public SeatDefinition(string[] weapons, SeatView[] views, ScreenPlacement? screen = null)
+        : this(false, weapons, views, screen)
     {
     }
 
-    private SeatDefinition(bool shared, string[] weapons, SeatView[] views)
+    private SeatDefinition(bool shared, string[] weapons, SeatView[] views, ScreenPlacement? screen)
     {
         IsShared = shared;
         _weapons = [.. weapons];
         Views = views;
+        Screen = screen;
 
         var defaults = views.Where(x => x.HardpointSets.Count == 0).ToList();
 
@@ -62,7 +67,7 @@ internal sealed class SeatDefinition
 
     public static SeatDefinition Shared(SeatView[] views)
     {
-        return new SeatDefinition(true, [], views);
+        return new SeatDefinition(true, [], views, null);
     }
 
     public bool Operates(string weaponName)

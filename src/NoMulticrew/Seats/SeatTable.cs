@@ -24,7 +24,13 @@ internal sealed class SeatTable
                     "info_bomb_250_1",
                     "Gun20mm_Rotary_Turret",
                 ],
-                views: [new SeatView(new Vector3(0f, 0f, -0.95f))]
+                views: [new SeatView(new Vector3(0f, 0f, -0.95f))],
+                screen: new ScreenPlacement(
+                    new Vector3(0f, 0.874f, -0.887f),
+                    new Vector3(0f, 0.342f, -0.94f),
+                    new Vector2(0.159f, 0.106f),
+                    new Rect(0.001f, 0f, 0.79f, 1f)
+                )
             ),
         ],
         ["trainer"] =
@@ -44,7 +50,13 @@ internal sealed class SeatTable
                     "info_nuclearBomb1",
                     "info_nuclearBomb1_strategic",
                 ],
-                views: [new SeatView(new Vector3(0f, -0.02f, -1.28f))]
+                views: [new SeatView(new Vector3(0f, -0.02f, -1.28f))],
+                screen: new ScreenPlacement(
+                    new Vector3(0f, 0.825f, -1.173f),
+                    new Vector3(0f, 0.259f, -0.966f),
+                    new Vector2(0.212f, 0.141f),
+                    new Rect(0f, 0.291f, 0.999f, 0.709f)
+                )
             ),
         ],
         ["VTOLTrainer1"] =
@@ -63,7 +75,13 @@ internal sealed class SeatTable
                     "info_nuclearBomb1",
                     "info_nuclearBomb1_strategic",
                 ],
-                views: [new SeatView(new Vector3(0f, 0.16f, -1.30f))]
+                views: [new SeatView(new Vector3(0f, 0.16f, -1.30f))],
+                screen: new ScreenPlacement(
+                    new Vector3(0f, 0.32f, -1.099f),
+                    new Vector3(0f, 0.342f, -0.94f),
+                    new Vector2(0.264f, 0.176f),
+                    new Rect(0.001f, 0.287f, 0.999f, 0.712f)
+                )
             ),
         ],
         ["UtilityHelo1"] =
@@ -74,14 +92,26 @@ internal sealed class SeatTable
                 [
                     new SeatView(["Door guns"], new Vector3(0.29f, -0.47f, -1.19f)),
                     new SeatView(new Vector3(-0.45f, 0f, -1.20f)),
-                ]
+                ],
+                screen: new ScreenPlacement(
+                    new Vector3(-0.94f, 0.542f, -1.051f),
+                    new Vector3(0f, 0.342f, -0.94f),
+                    new Vector2(0.134f, 0.089f),
+                    new Rect(0f, 0.249f, 0.525f, 0.751f)
+                )
             ),
         ],
         ["AttackHelo1"] =
         [
             new SeatDefinition(
                 weapons: ["info_AGM1", "info_AGM2", "info_AGM_heavy", "info_AGM_scanner1", "Gun30mm_Rotary_Turret"],
-                views: [new SeatView(new Vector3(0f, -0.43f, 1.40f))]
+                views: [new SeatView(new Vector3(0f, -0.43f, 1.40f))],
+                screen: new ScreenPlacement(
+                    new Vector3(0f, 0.023f, 1.929f),
+                    new Vector3(0f, 0.423f, -0.906f),
+                    new Vector2(0.3f, 0.2f),
+                    new Rect(0f, 0.252f, 0.75f, 0.748f)
+                )
             ),
         ],
         ["QuadVTOL1"] =
@@ -105,7 +135,13 @@ internal sealed class SeatTable
                     new SeatView(["Left Sponson Pylon", "Right Sponson Pylon"], new Vector3(0f, -1.89f, -7.02f)),
                     new SeatView(["Cargo Bay (Front)"], new Vector3(0.40f, -2.07f, -9.72f)),
                     new SeatView(new Vector3(0f, 0f, -1.48f)),
-                ]
+                ],
+                screen: new ScreenPlacement(
+                    new Vector3(-0.67f, 0.344f, -0.043f),
+                    new Vector3(0f, 0.342f, -0.94f),
+                    new Vector2(0.317f, 0.211f),
+                    new Rect(0.001f, 0.277f, 0.499f, 0.718f)
+                )
             ),
         ],
         ["EW1"] =

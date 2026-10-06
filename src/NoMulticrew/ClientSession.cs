@@ -255,6 +255,7 @@ internal sealed class ClientSession : IDisposable
         Prompt.Tick();
         BackSeat.Tick();
         PilotSeat.Tick();
+        Screens.Tick();
 
         if (Confirmed)
         {

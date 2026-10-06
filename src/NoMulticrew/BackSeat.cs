@@ -381,7 +381,12 @@ internal sealed class BackSeat : IDisposable
         camera.SetFollowingUnit(aircraft);
         camera.SwitchState(camera.cockpitState);
 
-        _session.Screens.Board(aircraft);
+        _session.Screens.Board(
+            aircraft,
+            seats[seatIndex],
+            _rearViewPoint.transform,
+            _viewBase + seats[seatIndex].DefaultView.Offset
+        );
 
         SceneSingleton<DynamicMap>.i.Minimize();
 

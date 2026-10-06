@@ -1,5 +1,6 @@
 using System.Reflection;
 using HarmonyLib;
+using NoMulticrew.Seats;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -15,6 +16,9 @@ internal sealed class CrewScreens
     private static readonly AccessTools.FieldRef<Cockpit, GameObject?> PrefabRef =
         AccessTools.FieldRefAccess<Cockpit, GameObject?>("tacScreenUIPrefab");
 
+    private static readonly AccessTools.FieldRef<TargetCam, Renderer?> ScreenRendererRef =
+        AccessTools.FieldRefAccess<TargetCam, Renderer?>("targetScreenRenderer");
+
     private static readonly AccessTools.FieldRef<MissileWarningLight, MissileWarning?> MissileWarningRef =
         AccessTools.FieldRefAccess<MissileWarningLight, MissileWarning?>("missileWarning");
 
@@ -27,10 +31,13 @@ internal sealed class CrewScreens
     private static readonly MethodInfo? LightWarning =
         AccessTools.Method(typeof(MissileWarningLight), "MissileWarningLights_OnMissileWarning");
 
+    private static readonly int EmissionMap = Shader.PropertyToID("_EmissionMap");
+
     private Aircraft? _seated;
     private TacScreen? _own;
     private MFDAppManager[] _apps = [];
     private MissileWarningLight[] _lights = [];
+    private ScreenQuad? _quad;
 
     public static GameObject? PrefabOf(Aircraft aircraft, out Cockpit? cockpit)
     {
@@ -39,7 +46,14 @@ internal sealed class CrewScreens
         return cockpit != null ? PrefabRef(cockpit) : null;
     }
 
-    public void Board(Aircraft aircraft)
+    public static Renderer? ScreenRendererOf(Aircraft aircraft)
+    {
+        var cam = aircraft.GetComponentInChildren<TargetCam>(true);
+
+        return cam != null ? ScreenRendererRef(cam) : null;
+    }
+
+    public void Board(Aircraft aircraft, SeatDefinition seat, Transform viewPoint, Vector3 eye)
     {
         Leave();
         _seated = aircraft;
@@ -78,6 +92,11 @@ internal sealed class CrewScreens
         }
 
         Plugin.Logger.LogDebug($"Built the WSO's tactical screen on {aircraft.definition.jsonKey}");
+
+        if (seat.Screen != null)
+        {
+            BuildQuad(aircraft, seat.Screen, viewPoint, eye);
+        }
     }
 
     public void Leave()
@@ -89,12 +108,78 @@ internal sealed class CrewScreens
         }
 
         _seated = null;
+
+        _quad?.Dispose();
+        _quad = null;
+
         DestroyOwn(aircraft);
     }
 
     public void Clear()
     {
         Leave();
+    }
+
+    public void Tick()
+    {
+        _quad?.Show(InCockpitOf(_seated));
+    }
+
+    private void BuildQuad(Aircraft aircraft, ScreenPlacement placement, Transform viewPoint, Vector3 eye)
+    {
+        var material = MaterialRef(_own!);
+        var source = ScreenRendererOf(aircraft);
+        if (material == null || source == null)
+        {
+            Plugin.Logger.LogError($"{aircraft.definition.jsonKey} has no screen material or renderer; the WSO gets no screen quad");
+            return;
+        }
+
+        var uv = placement.Uv;
+        var texture = material.GetTexture(EmissionMap);
+        var aspect = texture != null
+            ? uv.width * texture.width / (uv.height * texture.height)
+            : placement.Size.x / placement.Size.y;
+
+        var width = Mathf.Min(placement.Size.x, placement.Size.y * aspect);
+        var height = width / aspect;
+
+        var normal = placement.Normal.normalized;
+        var rotation = Quaternion.LookRotation(-normal, Vector3.up);
+        var centre = placement.Centre - eye;
+        var right = rotation * Vector3.right * (width / 2f);
+        var up = rotation * Vector3.up * (height / 2f);
+
+        _quad = new ScreenQuad(
+            "NoMulticrew.WsoScreen",
+            viewPoint,
+            source.gameObject.layer,
+            material,
+            [centre - right + up, centre + right + up, centre + right - up, centre - right - up],
+            [
+                new Vector2(uv.xMin, uv.yMax),
+                new Vector2(uv.xMax, uv.yMax),
+                new Vector2(uv.xMax, uv.yMin),
+                new Vector2(uv.xMin, uv.yMin),
+            ],
+            normal
+        );
+
+        _quad.Show(false);
+
+        Plugin.Logger.LogDebug(
+            $"WSO screen quad {width:F3} x {height:F3} m at {centre:F3} from the eye, uv {uv}"
+        );
+    }
+
+    private static bool InCockpitOf(Aircraft? aircraft)
+    {
+        var camera = SceneSingleton<CameraStateManager>.i;
+
+        return aircraft != null
+            && camera != null
+            && camera.currentState == camera.cockpitState
+            && ReferenceEquals(camera.followingUnit, aircraft);
     }
 
     private void DestroyOwn(Aircraft aircraft)
