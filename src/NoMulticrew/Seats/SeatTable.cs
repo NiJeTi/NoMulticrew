@@ -28,7 +28,6 @@ internal sealed class SeatTable
                 screen: new ScreenPlacement(
                     new Vector3(0f, 0.874f, -0.887f),
                     new Vector3(0f, 0.342f, -0.94f),
-                    new Vector2(0.159f, 0.106f),
                     new Rect(0.001f, 0f, 0.79f, 1f)
                 )
             ),
@@ -54,8 +53,7 @@ internal sealed class SeatTable
                 screen: new ScreenPlacement(
                     new Vector3(0f, 0.825f, -1.173f),
                     new Vector3(0f, 0.259f, -0.966f),
-                    new Vector2(0.212f, 0.141f),
-                    new Rect(0f, 0.291f, 0.999f, 0.709f)
+                    new Rect(0f, 0.291f, 0.615f, 0.709f)
                 )
             ),
         ],
@@ -79,8 +77,7 @@ internal sealed class SeatTable
                 screen: new ScreenPlacement(
                     new Vector3(0f, 0.32f, -1.099f),
                     new Vector3(0f, 0.342f, -0.94f),
-                    new Vector2(0.264f, 0.176f),
-                    new Rect(0.001f, 0.287f, 0.999f, 0.712f)
+                    new Rect(0.001f, 0.287f, 0.614f, 0.712f)
                 )
             ),
         ],
@@ -108,7 +105,6 @@ internal sealed class SeatTable
                 screen: new ScreenPlacement(
                     new Vector3(0f, 0.023f, 1.929f),
                     new Vector3(0f, 0.423f, -0.906f),
-                    new Vector2(0.3f, 0.2f),
                     new Rect(0f, 0.252f, 0.75f, 0.748f)
                 )
             ),

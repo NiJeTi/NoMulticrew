@@ -8,6 +8,9 @@ namespace NoMulticrew.Screens;
 
 internal sealed class CrewScreens
 {
+    private const float QuadHeightDegrees = 22f;
+    private const float QuadMaxWidthDegrees = 40f;
+
     public static readonly AccessTools.FieldRef<TacScreen, Material?> MaterialRef =
         AccessTools.FieldRefAccess<TacScreen, Material?>("screenMaterial");
 
@@ -192,24 +195,24 @@ internal sealed class CrewScreens
     {
         var material = MaterialRef(_own!);
         var source = ScreenRendererOf(aircraft);
-        if (material == null || source == null)
+        var texture = material != null ? material.GetTexture(EmissionMap) : null;
+        if (material == null || source == null || texture == null)
         {
             Plugin.Logger.LogError($"{aircraft.definition.jsonKey} has no screen material or renderer; the WSO gets no screen quad");
             return;
         }
 
         var uv = placement.Uv;
-        var texture = material.GetTexture(EmissionMap);
-        var aspect = texture != null
-            ? uv.width * texture.width / (uv.height * texture.height)
-            : placement.Size.x / placement.Size.y;
+        var aspect = uv.width * texture.width / (uv.height * texture.height);
 
-        var width = Mathf.Min(placement.Size.x, placement.Size.y * aspect);
-        var height = width / aspect;
+        var centre = placement.Centre - eye;
+        var distance = centre.magnitude;
+        var height = 2f * distance * Mathf.Tan(QuadHeightDegrees * 0.5f * Mathf.Deg2Rad);
+        var width = Mathf.Min(height * aspect, 2f * distance * Mathf.Tan(QuadMaxWidthDegrees * 0.5f * Mathf.Deg2Rad));
+        height = width / aspect;
 
         var normal = placement.Normal.normalized;
         var rotation = Quaternion.LookRotation(-normal, Vector3.up);
-        var centre = placement.Centre - eye;
         var right = rotation * Vector3.right * (width / 2f);
         var up = rotation * Vector3.up * (height / 2f);
 
@@ -231,7 +234,7 @@ internal sealed class CrewScreens
         _quad.Show(false);
 
         Plugin.Logger.LogDebug(
-            $"WSO screen quad {width:F3} x {height:F3} m at {centre:F3} from the eye, uv {uv}"
+            $"WSO screen quad {width:F3} x {height:F3} m at {centre:F3} ({distance:F3} m) from the eye, uv {uv}"
         );
     }
 

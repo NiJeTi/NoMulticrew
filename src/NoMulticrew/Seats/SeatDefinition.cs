@@ -4,7 +4,7 @@ namespace NoMulticrew.Seats;
 
 internal readonly record struct SeatState(bool WsoAboard, int WsoStation, int PilotStation);
 
-internal sealed record ScreenPlacement(Vector3 Centre, Vector3 Normal, Vector2 Size, Rect Uv);
+internal sealed record ScreenPlacement(Vector3 Centre, Vector3 Normal, Rect Uv);
 
 internal sealed record PanelPlacement(
     Vector3 TopLeft,
