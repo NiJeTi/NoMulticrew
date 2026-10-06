@@ -16,6 +16,8 @@ internal sealed class CrewScreens
 
     public static readonly MethodInfo? CamToggle = AccessTools.Method(typeof(TacScreen), "TacScreen_OnCamToggle");
 
+    private static readonly FieldInfo? RadarOnField = AccessTools.Field(typeof(TacScreen), "radarOn");
+
     private static readonly AccessTools.FieldRef<Cockpit, GameObject?> PrefabRef =
         AccessTools.FieldRefAccess<Cockpit, GameObject?>("tacScreenUIPrefab");
 
@@ -65,6 +67,22 @@ internal sealed class CrewScreens
         return cam != null ? ScreenRendererRef(cam) : null;
     }
 
+    public static void SyncRadar(TacScreen screen, Aircraft aircraft)
+    {
+        if (aircraft.radar == null)
+        {
+            return;
+        }
+
+        if (RadarOnField == null)
+        {
+            Plugin.Logger.LogError("TacScreen.radarOn not found; a crew screen built while the radar is off shows it on");
+            return;
+        }
+
+        RadarOnField.SetValue(screen, !aircraft.radar.activated);
+    }
+
     public void Board(Aircraft aircraft, SeatDefinition seat, Transform viewPoint, Vector3 eye)
     {
         Clear();
@@ -95,6 +113,7 @@ internal sealed class CrewScreens
             _apps = _own.GetComponentsInChildren<MFDAppManager>(true);
             _lights = _own.GetComponentsInChildren<MissileWarningLight>(true);
             _own.Initialize(aircraft, cockpit);
+            SyncRadar(_own, aircraft);
         }
         catch (Exception e)
         {

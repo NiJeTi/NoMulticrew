@@ -243,6 +243,7 @@ internal sealed class CrewmateScreen : IDisposable
 
         _holder.SetActive(true);
         _screen.Initialize(Aircraft, cockpit);
+        CrewScreens.SyncRadar(_screen, Aircraft);
 
         _toggle = AccessTools.MethodDelegate<Action<TargetCam.OnCamToggle>>(CrewScreens.CamToggle, _screen);
         targetCam.onCamToggle -= _toggle;
