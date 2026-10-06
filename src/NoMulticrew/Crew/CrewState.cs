@@ -32,9 +32,10 @@ internal sealed class CrewState
             + string.Join(
                 ", ",
                 message.Occupants.Select(
-                    (id, i) => $"seat {i}={(id < 0 ? "empty" : id.ToString())}"
+                    (id, i) => $"seat {i}={(id < 0 ? "empty" : id.ToString())} station {message.Selected[i]}"
                 )
             )
+            + $", pilot station {message.PilotStation}"
         );
 
         if (UnitRegistry.TryGetUnit<Aircraft>(message.AircraftId, out var aircraft))
@@ -161,10 +162,19 @@ internal sealed class CrewState
 
     public SeatState StateOf(Aircraft aircraft)
     {
-        var own = GameManager.IsLocalAircraft(aircraft) ? aircraft.weaponManager.currentWeaponStation?.Number ?? -1 : -1;
-        var aboard = _crews.TryGetValue(aircraft.persistentID, out var crew) && crew.Occupants[SeatTable.Wso] >= 0;
+        var local = GameManager.IsLocalAircraft(aircraft);
+        var own = local ? aircraft.weaponManager.currentWeaponStation?.Number ?? -1 : -1;
 
-        return new SeatState(aboard, -1, own);
+        if (!_crews.TryGetValue(aircraft.persistentID, out var crew))
+        {
+            return new SeatState(false, -1, own);
+        }
+
+        return new SeatState(
+            crew.Occupants[SeatTable.Wso] >= 0,
+            SeatTable.StationIndex(crew.Selected[SeatTable.Wso]),
+            local ? own : SeatTable.StationIndex(crew.PilotStation)
+        );
     }
 
     public int Holder(Aircraft aircraft, int station)

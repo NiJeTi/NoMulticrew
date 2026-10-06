@@ -2,6 +2,7 @@ using HarmonyLib;
 using Mirage;
 using Mirage.SocketLayer;
 using NoMulticrew.Networking;
+using NoMulticrew.Seats;
 using NuclearOption.Networking;
 using UnityEngine;
 
@@ -27,6 +28,7 @@ internal sealed class CrewCommands
     private static readonly Limit LaunchLimit = new(15, 45, 2);
     private static readonly Limit TurretLimit = new(20, 100, 1);
     private static readonly Limit TargetsLimit = new(10, 30, 2);
+    private static readonly Limit SelectLimit = new(10, 30, 2);
 
     private static readonly Action<Unit, byte>? SingleRemoteFire =
         Bind<Action<Unit, byte>>(typeof(Unit), "CmdSingleRemoteFire");
@@ -90,8 +92,27 @@ internal sealed class CrewCommands
             return;
         }
 
+        if (message.Kind == CrewCommandKind.SelectStation)
+        {
+            if (TryUseToken(connection, message.Kind))
+            {
+                SelectStation(connection, aircraft, sender, seat.Value, message.Station, name);
+            }
+
+            return;
+        }
+
         if (!ReferenceEquals(_session.Crew.Holder(aircraft, message.Station), sender))
         {
+            if (Plugin.SeatTable.IsShared(aircraft))
+            {
+                Plugin.Logger.LogDebug(
+                    $"Dropped crew {message.Kind} from {name} for station {message.Station} of {message.AircraftId}, "
+                    + "which their seat no longer holds"
+                );
+                return;
+            }
+
             Plugin.Logger.LogWarning(
                 $"Crew {message.Kind} from {name} names station {message.Station} of {message.AircraftId}, "
                 + "which their seat does not hold"
@@ -208,6 +229,7 @@ internal sealed class CrewCommands
             CrewCommandKind.LaunchMissile => LaunchLimit,
             CrewCommandKind.TurretVector => TurretLimit,
             CrewCommandKind.SetStationTargets => TargetsLimit,
+            CrewCommandKind.SelectStation => SelectLimit,
             _ => FireLimit,
         };
     }
@@ -303,6 +325,42 @@ internal sealed class CrewCommands
                 new CrewLaunch(aircraft.persistentID, message.Station, message.TargetId, message.Aimpoint)
             );
         }
+    }
+
+    private void SelectStation(
+        INetworkPlayer connection,
+        Aircraft aircraft,
+        Player sender,
+        int seat,
+        byte station,
+        string name
+    )
+    {
+        if (station != SeatTable.NoStation && station >= aircraft.weaponStations.Count)
+        {
+            Plugin.Logger.LogWarning($"Crew station {station} from {name} is out of bounds for {aircraft.persistentID}");
+            connection.SetError(1, NuclearOptionPlayerErrorFlags.OutOfBounds);
+            return;
+        }
+
+        if (station != SeatTable.NoStation
+            && !Plugin.SeatTable.CanSelect(aircraft, seat, station, _session.Crew.StateOf(aircraft)))
+        {
+            if (!Plugin.SeatTable.IsShared(aircraft))
+            {
+                Plugin.Logger.LogWarning(
+                    $"Crew station {station} from {name} is not their seat's on {aircraft.persistentID}"
+                );
+                connection.SetError(NoAuthorityCost, PlayerErrorFlags.NoAuthority);
+                return;
+            }
+
+            Plugin.Logger.LogDebug($"Refused station {station} of {aircraft.persistentID} to {name}: the pilot has it");
+            _session.Crew.SendRoster(aircraft.persistentID);
+            return;
+        }
+
+        _session.Crew.Select(sender, aircraft.persistentID, station);
     }
 
     private void SetFiring(Aircraft aircraft, byte station, bool firing)

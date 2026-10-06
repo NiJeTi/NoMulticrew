@@ -44,6 +44,18 @@ internal sealed class BackSeatWeapons
         _aimSentAt = float.NegativeInfinity;
     }
 
+    public void ReleaseAll()
+    {
+        var aircraft = _seat.Aircraft!;
+
+        foreach (var station in _firing)
+        {
+            Stop(aircraft, station);
+        }
+
+        _firing.Clear();
+    }
+
     public void SetFiring(int station, bool firing)
     {
         if (!firing || !_firing.Add((byte)station))
@@ -210,8 +222,13 @@ internal sealed class BackSeatWeapons
             }
 
             _firing.Remove(station);
-            _session.SendCommand(CrewCommand.FiringState(aircraft.persistentID, station, false));
-            _session.SendCommand(CrewCommand.StoppedFiring(aircraft.persistentID, station));
+            Stop(aircraft, station);
         }
+    }
+
+    private void Stop(Aircraft aircraft, byte station)
+    {
+        _session.SendCommand(CrewCommand.FiringState(aircraft.persistentID, station, false));
+        _session.SendCommand(CrewCommand.StoppedFiring(aircraft.persistentID, station));
     }
 }

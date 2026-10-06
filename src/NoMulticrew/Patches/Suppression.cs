@@ -41,3 +41,14 @@ internal static class WeaponManager_Fire
         return crew.RefuseStation(AircraftRef(__instance), station.Number);
     }
 }
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[HarmonyPatch(typeof(Aircraft), "RpcSetActiveStation")]
+internal static class Aircraft_RpcSetActiveStation
+{
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static void Prefix(Aircraft __instance, byte stationIndex)
+    {
+        Plugin.Server?.Crew.RecordPilotStation(__instance, stationIndex);
+    }
+}

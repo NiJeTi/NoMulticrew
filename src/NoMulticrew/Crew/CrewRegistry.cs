@@ -8,6 +8,8 @@ namespace NoMulticrew.Crew;
 internal sealed class CrewRegistry
 {
     private readonly Dictionary<PersistentID, Player?[]> _crews = [];
+    private readonly Dictionary<Player, byte> _stations = [];
+    private readonly Dictionary<PersistentID, byte> _pilotStations = [];
 
     private readonly ServerSession _session;
 
@@ -35,9 +37,14 @@ internal sealed class CrewRegistry
 
     public SeatState StateOf(Aircraft aircraft)
     {
-        var aboard = _crews.TryGetValue(aircraft.persistentID, out var seats) && seats[SeatTable.Wso] != null;
+        var wso = _crews.TryGetValue(aircraft.persistentID, out var seats) ? seats[SeatTable.Wso] : null;
+        var pilot = _pilotStations.GetValueOrDefault(aircraft.persistentID, SeatTable.NoStation);
 
-        return new SeatState(aboard, -1, -1);
+        return new SeatState(
+            wso != null,
+            wso != null ? SeatTable.StationIndex(_stations.GetValueOrDefault(wso, SeatTable.NoStation)) : -1,
+            SeatTable.StationIndex(pilot)
+        );
     }
 
     public Player? Holder(Aircraft aircraft, int stationIndex)
@@ -92,6 +99,23 @@ internal sealed class CrewRegistry
         Broadcast(aircraft.persistentID);
     }
 
+    public void Select(Player player, PersistentID aircraftId, byte station)
+    {
+        _stations[player] = station;
+
+        Broadcast(aircraftId);
+    }
+
+    public void RecordPilotStation(Aircraft aircraft, byte station)
+    {
+        _pilotStations[aircraft.persistentID] = station;
+
+        if (IsCrewed(aircraft.persistentID))
+        {
+            SendRoster(aircraft.persistentID);
+        }
+    }
+
     public void Release(Player player)
     {
         var aircraftId = AircraftOf(player);
@@ -112,6 +136,7 @@ internal sealed class CrewRegistry
             {
                 label = SeatTable.Label(i);
 
+                _stations.Remove(player);
                 seats[i] = null;
             }
         }
@@ -147,6 +172,7 @@ internal sealed class CrewRegistry
 
         foreach (var occupant in seats.Where(x => x != null))
         {
+            _stations.Remove(occupant!);
             _session.Economy.Settle(occupant!, aircraftId, forfeit: false);
             _session.Commands.Released(occupant!, aircraftId);
         }
@@ -193,7 +219,12 @@ internal sealed class CrewRegistry
         var occupants = seats.Select(x => x != null ? x.PlayerIndex : -1).ToArray();
         var pending = seats.Select(x => x != null ? _session.Economy.PendingOf(x) : 0f).ToArray();
 
-        return new CrewRoster(aircraftId, occupants, pending);
+        var selected = seats
+            .Select(x => x != null ? _stations.GetValueOrDefault(x, SeatTable.NoStation) : SeatTable.NoStation)
+            .ToArray();
+        var pilot = _pilotStations.GetValueOrDefault(aircraftId, SeatTable.NoStation);
+
+        return new CrewRoster(aircraftId, occupants, pending, selected, pilot);
     }
 
     private void Broadcast(PersistentID aircraftId)

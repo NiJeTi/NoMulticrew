@@ -2,6 +2,7 @@ using Cysharp.Threading.Tasks;
 using HarmonyLib;
 using NoMulticrew.Crew;
 using NoMulticrew.Networking;
+using NoMulticrew.Seats;
 using NuclearOption.Networking;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -115,7 +116,14 @@ internal sealed class BackSeat : IDisposable
 
         if (!_session.Crew.CanSelect(Aircraft, SeatIndex, Station))
         {
-            Select(Next(Station, 1));
+            if (Station >= 0)
+            {
+                _session.Crew.RefuseStation(Aircraft, Station);
+            }
+
+            var confirmed = _session.Crew.StateOf(Aircraft).WsoStation;
+
+            Select(_session.Crew.CanSelect(Aircraft, SeatIndex, confirmed) ? confirmed : Next(Station, 1));
         }
 
         if (Controls.IsNextWeaponPressed())
@@ -145,7 +153,12 @@ internal sealed class BackSeat : IDisposable
 
         var aircraft = Aircraft!;
 
+        Weapons.ReleaseAll();
         Station = station;
+
+        _session.SendCommand(
+            CrewCommand.SelectStation(aircraft.persistentID, station >= 0 ? (byte)station : SeatTable.NoStation)
+        );
 
         if (station >= 0)
         {

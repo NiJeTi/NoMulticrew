@@ -69,11 +69,17 @@ internal struct CrewRoster : IMessage<CrewRoster>
 
     public float[] Pending { get; private set; }
 
-    public CrewRoster(PersistentID aircraftId, int[] occupants, float[] pending)
+    public byte[] Selected { get; private set; }
+
+    public byte PilotStation { get; private set; }
+
+    public CrewRoster(PersistentID aircraftId, int[] occupants, float[] pending, byte[] selected, byte pilotStation)
     {
         AircraftId = aircraftId;
         Occupants = occupants;
         Pending = pending;
+        Selected = selected;
+        PilotStation = pilotStation;
     }
 
     public void Read(NetworkReader reader)
@@ -84,12 +90,16 @@ internal struct CrewRoster : IMessage<CrewRoster>
 
         Occupants = new int[count];
         Pending = new float[count];
+        Selected = new byte[count];
 
         for (var i = 0; i < count; i++)
         {
             Occupants[i] = reader.ReadPackedInt32();
             Pending[i] = reader.ReadSingleConverter();
+            Selected[i] = reader.ReadByte();
         }
+
+        PilotStation = reader.ReadByte();
     }
 
     public void Write(NetworkWriter writer)
@@ -101,7 +111,10 @@ internal struct CrewRoster : IMessage<CrewRoster>
         {
             writer.WritePackedInt32(Occupants[i]);
             writer.WriteSingleConverter(Pending[i]);
+            writer.WriteByte(Selected[i]);
         }
+
+        writer.WriteByte(PilotStation);
     }
 }
 
@@ -242,6 +255,7 @@ internal enum CrewCommandKind : byte
     LaunchMissile = 4,
     TurretVector = 5,
     SetStationTargets = 6,
+    SelectStation = 7,
 }
 
 internal struct CrewCommand : IMessage<CrewCommand>
@@ -327,6 +341,11 @@ internal struct CrewCommand : IMessage<CrewCommand>
         return new CrewCommand(CrewCommandKind.SetStationTargets, aircraftId, station) { Targets = targets };
     }
 
+    public static CrewCommand SelectStation(PersistentID aircraftId, byte station)
+    {
+        return new CrewCommand(CrewCommandKind.SelectStation, aircraftId, station);
+    }
+
     public void Read(NetworkReader reader)
     {
         Kind = (CrewCommandKind)reader.ReadByte();
@@ -341,6 +360,7 @@ internal struct CrewCommand : IMessage<CrewCommand>
                 break;
             case CrewCommandKind.SingleFire:
             case CrewCommandKind.StoppedFiring:
+            case CrewCommandKind.SelectStation:
                 break;
             case CrewCommandKind.ClaimHit:
                 TargetId = new PersistentID { Id = reader.ReadUInt32() };
