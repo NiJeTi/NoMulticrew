@@ -1,6 +1,8 @@
 using HarmonyLib;
+using NoMulticrew.Crew;
 using NoMulticrew.Seats;
 using UnityEngine;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 namespace NoMulticrew.Screens;
@@ -15,12 +17,23 @@ internal sealed class CrewmateScreen : IDisposable
 
     private static readonly Color Tint = new(1f, 0f, 1f);
 
+    private static readonly AccessTools.FieldRef<TacScreen, GameObject?> TargetDisplayRef =
+        AccessTools.FieldRefAccess<TacScreen, GameObject?>("targetCamDisplay");
+
+    private static readonly AccessTools.FieldRef<TacScreen, GameObject?> LandingDisplayRef =
+        AccessTools.FieldRefAccess<TacScreen, GameObject?>("landingCamDisplay");
+
+    private readonly List<Unit> _targets = [];
+
     private GameObject? _holder;
     private TacScreen? _screen;
     private RenderTexture? _texture;
     private Material? _material;
     private Renderer? _source;
     private ScreenQuad? _overlay;
+    private CrewmateCam? _camera;
+    private Action<TargetCam.OnCamToggle>? _toggle;
+    private bool _shown;
 
     public Aircraft Aircraft { get; }
 
@@ -55,15 +68,44 @@ internal sealed class CrewmateScreen : IDisposable
         return screen;
     }
 
-    public void Tick()
+    public void Tick(CrewState crew)
     {
         _overlay?.Show(_source != null && _source.enabled);
+
+        if (_camera == null || _toggle == null || _screen == null)
+        {
+            return;
+        }
+
+        var state = crew.StateOf(Aircraft);
+        var station = Seat == SeatTable.Pilot ? state.PilotStation : state.WsoStation;
+
+        _targets.Clear();
+
+        foreach (var id in crew.TargetsOf(Aircraft, station))
+        {
+            if (UnitRegistry.TryGetUnit(id, out var unit) && unit != null && !unit.disabled)
+            {
+                _targets.Add(unit);
+            }
+        }
+
+        var active = _camera.Tick(_targets);
+        if (active == _shown)
+        {
+            return;
+        }
+
+        _shown = active;
+        _toggle(new TargetCam.OnCamToggle { enabled = active, camMode = TargetCam.CamMode.targetForward });
     }
 
     public void Dispose()
     {
         _overlay?.Dispose();
         _overlay = null;
+
+        _camera?.Dispose();
 
         if (_holder != null)
         {
@@ -80,6 +122,13 @@ internal sealed class CrewmateScreen : IDisposable
             Object.Destroy(_texture);
         }
 
+        if (_camera?.Texture != null)
+        {
+            Object.Destroy(_camera.Texture);
+        }
+
+        _camera = null;
+        _toggle = null;
         _holder = null;
         _screen = null;
         _material = null;
@@ -107,6 +156,7 @@ internal sealed class CrewmateScreen : IDisposable
         }
 
         _source = source;
+        _camera = CrewmateCam.Create(Aircraft);
 
         _holder = new GameObject("NoMulticrew.CrewmateScreen");
         _holder.SetActive(false);
@@ -125,6 +175,22 @@ internal sealed class CrewmateScreen : IDisposable
         Strip<PylonIndicator>(instance);
         Strip<EngineTelemetry>(instance);
         Strip<MissileWarningLight>(instance);
+
+        if (_camera?.Texture != null)
+        {
+            foreach (var display in new[] { TargetDisplayRef(_screen), LandingDisplayRef(_screen) })
+            {
+                if (display == null)
+                {
+                    continue;
+                }
+
+                foreach (var image in display.GetComponentsInChildren<RawImage>(true))
+                {
+                    image.texture = _camera.Texture;
+                }
+            }
+        }
 
         foreach (var camera in instance.GetComponentsInChildren<Camera>(true))
         {
@@ -168,8 +234,8 @@ internal sealed class CrewmateScreen : IDisposable
         _holder.SetActive(true);
         _screen.Initialize(Aircraft, cockpit);
 
-        targetCam.onCamToggle -=
-            AccessTools.MethodDelegate<Action<TargetCam.OnCamToggle>>(CrewScreens.CamToggle, _screen);
+        _toggle = AccessTools.MethodDelegate<Action<TargetCam.OnCamToggle>>(CrewScreens.CamToggle, _screen);
+        targetCam.onCamToggle -= _toggle;
     }
 
     private ScreenQuad Overlay(PanelPlacement panel, Renderer source, Material material)

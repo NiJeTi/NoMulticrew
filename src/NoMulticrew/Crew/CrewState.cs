@@ -142,6 +142,15 @@ internal sealed class CrewState
         }
     }
 
+    public IReadOnlyList<PersistentID> TargetsOf(Aircraft aircraft, int station)
+    {
+        return station >= 0
+            && _stationTargets.TryGetValue(aircraft.persistentID, out var stations)
+            && stations.TryGetValue((byte)station, out var targets)
+                ? targets
+                : Array.Empty<PersistentID>();
+    }
+
     public bool Refuse(string text)
     {
         Plugin.Logger.LogDebug($"Suppressed: {text}");

@@ -48,6 +48,12 @@
         <Reference Include="$(GameRefPath)/Unity.TextMeshPro.dll">
             <Private>false</Private>
         </Reference>
+        <Reference Include="$(GameRefPath)/Unity.RenderPipelines.Core.Runtime.dll">
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="$(GameRefPath)/Unity.RenderPipelines.Universal.Runtime.dll">
+            <Private>false</Private>
+        </Reference>
         <Reference Include="$(GameRefPath)/com.rlabrecque.steamworks.net.dll">
             <Private>false</Private>
         </Reference>

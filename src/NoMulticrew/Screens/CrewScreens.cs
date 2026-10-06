@@ -64,7 +64,7 @@ internal sealed class CrewScreens
 
     public void Board(Aircraft aircraft, SeatDefinition seat, Transform viewPoint, Vector3 eye)
     {
-        Leave();
+        Clear();
         _seated = aircraft;
 
         if (CamToggle == null || AppDisable == null || LightDisable == null || LightWarning == null)
@@ -150,7 +150,7 @@ internal sealed class CrewScreens
             TickPilot();
         }
 
-        _crewmate?.Tick();
+        _crewmate?.Tick(_session.Crew);
     }
 
     private void TickPilot()

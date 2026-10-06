@@ -115,7 +115,8 @@ internal sealed class CrewRegistry
     {
         _pilotStations[aircraft.persistentID] = station;
 
-        if (IsCrewed(aircraft.persistentID) && Plugin.SeatTable.IsShared(aircraft))
+        if (IsCrewed(aircraft.persistentID)
+            && (Plugin.SeatTable.IsShared(aircraft) || Plugin.SeatTable.PanelOf(aircraft) != null))
         {
             SendRoster(aircraft.persistentID);
         }
