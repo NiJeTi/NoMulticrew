@@ -10,6 +10,7 @@ using NuclearOption.Networking;
 namespace NoMulticrew;
 
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
+[BepInDependency("NoWingmen", BepInDependency.DependencyFlags.SoftDependency)]
 internal sealed class Plugin : BaseUnityPlugin
 {
     public new static ManualLogSource Logger { get; private set; } = null!;
