@@ -34,6 +34,7 @@ internal sealed class CrewEconomy
     private bool _paying;
     private bool _missileScope;
     private Player? _sender;
+    private (PersistentID Target, Player Author)? _killAuthor;
 
     public CrewEconomy(ServerSession session)
     {
@@ -192,6 +193,65 @@ internal sealed class CrewEconomy
     {
         _contextAircraft = PersistentID.None;
         _contextCrew = null;
+    }
+
+    public bool HoldKillAuthor(Unit target)
+    {
+        var credit = DamageCreditRef(target);
+        if (_killAuthor != null || credit == null)
+        {
+            return false;
+        }
+
+        var grand = credit.Values.Sum();
+        var most = 0f;
+        var top = PersistentID.None;
+
+        foreach (var (key, value) in credit)
+        {
+            if (!UnitRegistry.TryGetPersistentUnit(key, out _) || value / grand < CreditThreshold)
+            {
+                continue;
+            }
+
+            if (value >= most)
+            {
+                most = value;
+                top = key;
+            }
+        }
+
+        if (!_ledger.TryGetValue((target.persistentID, top), out var ledger) || ledger.Crew.Count == 0)
+        {
+            return false;
+        }
+
+        var pilotOwn = most - ledger.Crew.Values.Sum();
+        var (member, amount) = ledger.Crew.Aggregate((best, next) => next.Value > best.Value ? next : best);
+
+        if (amount <= pilotOwn)
+        {
+            return false;
+        }
+
+        Plugin.Logger.LogDebug(
+            $"Kill of {target.persistentID} authored by {member.GetDisplayName(PlayerNameContext.Other)}: "
+            + $"{amount:F1} against the pilot's {pilotOwn:F1}"
+        );
+
+        _killAuthor = (target.persistentID, member);
+
+        return true;
+    }
+
+    public void ReleaseKillAuthor()
+    {
+        _killAuthor = null;
+    }
+
+    public Player? KillAuthorOf(PersistentID killedId)
+    {
+        return _killAuthor is { } held && held.Target == killedId ? held.Author : null;
     }
 
     public void OnDamage(Unit target, PersistentID dealer, float amount)
@@ -464,7 +524,14 @@ internal sealed class CrewEconomy
 
         foreach (var other in others)
         {
-            Pay(hq, other, target, allocation * share / others.Count, score * share / others.Count, type);
+            Pay(
+                hq,
+                other,
+                target,
+                allocation * share / others.Count,
+                score * share / others.Count,
+                FactionHQ.RewardType.None
+            );
         }
     }
 

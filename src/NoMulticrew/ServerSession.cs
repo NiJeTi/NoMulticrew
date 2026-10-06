@@ -112,6 +112,26 @@ internal sealed class ServerSession : IDisposable
         }
     }
 
+    public void AnnounceKillAuthor(PersistentID killedId)
+    {
+        if (Economy.KillAuthorOf(killedId) is not { } author)
+        {
+            return;
+        }
+
+        var message = new CrewKillAuthor(killedId, author.PlayerIndex);
+
+        foreach (var player in _validPlayers.ToArray())
+        {
+            if (!ReferenceEquals(player, _server.LocalPlayer))
+            {
+                player.Send(message);
+            }
+        }
+
+        Plugin.Client?.Kills.Record(killedId, author.PlayerIndex);
+    }
+
     public void OnSceneReady(INetworkPlayer player)
     {
         if (_validPlayers.Contains(player))

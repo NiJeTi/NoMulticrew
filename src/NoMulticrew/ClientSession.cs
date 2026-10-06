@@ -25,6 +25,8 @@ internal sealed class ClientSession : IDisposable
 
     public CrewState Crew { get; } = new();
 
+    public CrewKillFeed Kills { get; } = new();
+
     public bool HasRequest => _request != null;
 
     public CrewJoinPromptUi Prompt { get; }
@@ -51,6 +53,7 @@ internal sealed class ClientSession : IDisposable
         _client.MessageHandler.RegisterHandler<CrewNotice>(OnNotice, allowUnauthenticated: false);
         _client.MessageHandler.RegisterHandler<CrewTurretVector>(OnTurretVector, allowUnauthenticated: false);
         _client.MessageHandler.RegisterHandler<CrewLaunch>(OnLaunch, allowUnauthenticated: false);
+        _client.MessageHandler.RegisterHandler<CrewKillAuthor>(OnKillAuthor, allowUnauthenticated: false);
         _client.Authenticated.AddListener(OnAuthenticated);
     }
 
@@ -66,6 +69,7 @@ internal sealed class ClientSession : IDisposable
         _client.MessageHandler.UnregisterHandler<CrewNotice>();
         _client.MessageHandler.UnregisterHandler<CrewTurretVector>();
         _client.MessageHandler.UnregisterHandler<CrewLaunch>();
+        _client.MessageHandler.UnregisterHandler<CrewKillAuthor>();
     }
 
     public void AttachMfd(VirtualMFD mfd)
@@ -101,6 +105,7 @@ internal sealed class ClientSession : IDisposable
     {
         BackSeat.Leave(showMap: false);
         Crew.Clear();
+        Kills.Clear();
         Prompt.Clear();
         _request = null;
     }
@@ -206,6 +211,14 @@ internal sealed class ClientSession : IDisposable
         if (Confirmed)
         {
             PilotSeat.OnLaunch(message);
+        }
+    }
+
+    private void OnKillAuthor(INetworkPlayer player, CrewKillAuthor message)
+    {
+        if (Confirmed)
+        {
+            Kills.Record(message.KilledId, message.PlayerIndex);
         }
     }
 
