@@ -9,7 +9,7 @@ namespace NoMulticrew.Patches;
 internal static class NoWingmen
 {
     private static readonly Assembly? Assembly =
-        Chainloader.PluginInfos.TryGetValue("NoWingmen", out var plugin) ? plugin.Instance.GetType().Assembly : null;
+        Chainloader.PluginInfos.TryGetValue("NoWingmen", out var plugin) ? plugin.Instance?.GetType().Assembly : null;
 
     public static bool Installed => Assembly != null;
 

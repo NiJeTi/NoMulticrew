@@ -217,7 +217,7 @@ internal sealed class CrewScreens
         var texture = material != null ? material.GetTexture(EmissionMap) : null;
         if (material == null || source == null || texture == null)
         {
-            Plugin.Logger.LogError($"{aircraft.definition.jsonKey} has no screen material or renderer; the WSO gets no screen quad");
+            Plugin.Logger.LogError($"{aircraft.definition.jsonKey} has no screen material, renderer or texture; the WSO gets no screen quad");
             return;
         }
 

@@ -278,6 +278,8 @@ internal static class CameraCockpitState_FixedUpdateState
 
     private static AccessTools.FieldRef<T>? FeedbackRef<T>(string name)
     {
-        return AccessTools.Field(typeof(AoAFeedback), name) is { } field ? AccessTools.StaticFieldRefAccess<T>(field) : null;
+        return AccessTools.Field(typeof(AoAFeedback), name) is { } field && field.FieldType == typeof(T)
+            ? AccessTools.StaticFieldRefAccess<T>(field)
+            : null;
     }
 }
