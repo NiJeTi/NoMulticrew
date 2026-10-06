@@ -205,7 +205,24 @@ internal sealed class JoinRequests
 
     public void Forget(Player player)
     {
-        _requests.RemoveAll(x => ReferenceEquals(x.Joiner, player));
+        for (var i = _requests.Count - 1; i >= 0; i--)
+        {
+            var request = _requests[i];
+            var toPilot = request.Aircraft != null && ReferenceEquals(request.Aircraft.Player, player);
+
+            if (!toPilot && !ReferenceEquals(request.Joiner, player))
+            {
+                continue;
+            }
+
+            _requests.RemoveAt(i);
+            Plugin.Logger.LogInfo($"Crew request {request.Id} dropped: {player.GetDisplayName(PlayerNameContext.Other)} disconnected");
+
+            if (toPilot)
+            {
+                _session.Notify(request.Joiner, "The pilot left", CrewCue.Deselect);
+            }
+        }
     }
 
     private bool CanSeat(Aircraft aircraft, Player joiner, byte seatIndex, [NotNullWhen(false)] out string? reason)
