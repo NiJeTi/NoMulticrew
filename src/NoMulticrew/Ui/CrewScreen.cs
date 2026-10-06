@@ -424,7 +424,7 @@ internal sealed class CrewScreen : IDisposable
                         offer.State == OfferState.Waiting ? "WAITING" : "REQUEST",
                         () => offer.State == OfferState.Request,
                         () => _session.RequestSeat(offer.AircraftId, offer.SeatIndex)
-                    )
+                    ).FitToText()
                 );
             }
         }

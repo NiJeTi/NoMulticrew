@@ -2,6 +2,7 @@ using HarmonyLib;
 using NuclearOption.UIStyleSystem;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 namespace NoMulticrew.Ui;
@@ -75,6 +76,18 @@ internal sealed class ScreenRow : IDisposable
         label.gameObject.SetActive(true);
 
         return new ScreenRow(label.gameObject, null);
+    }
+
+    public ScreenRow FitToText()
+    {
+        var label = LabelRef(_button!);
+        var width = label.GetPreferredValues(label.text).x + 2 * LabelInset;
+
+        var layout = _root.AddComponent<LayoutElement>();
+        layout.minWidth = width;
+        layout.preferredWidth = width;
+
+        return this;
     }
 
     public void Dispose()
