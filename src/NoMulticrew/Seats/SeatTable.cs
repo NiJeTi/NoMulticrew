@@ -156,12 +156,32 @@ internal sealed class SeatTable
                     "info_bomb_500_glide",
                     "info_bomb_glide1",
                 ],
-                views: [new SeatView(new Vector3(0.80f, 0f, 0f))]
+                views: [new SeatView(new Vector3(0.80f, 0f, 0f))],
+                panel: new PanelPlacement(
+                    new Vector3(-0.6383f, 0.344f, 0.4951f),
+                    new Vector3(-0.3463f, 0.344f, 0.4951f),
+                    new Vector3(-0.346f, 0.1801f, 0.4134f),
+                    new Vector3(-0.6382f, 0.1797f, 0.4132f),
+                    new Vector2(0f, 1f),
+                    new Vector2(0.56f, 0.254f),
+                    new Vector3(0f, 0.446f, -0.895f)
+                )
             ),
         ],
         ["Darkreach"] =
         [
-            SeatDefinition.Shared(views: [new SeatView(new Vector3(0.99f, 0f, 0f))]),
+            SeatDefinition.Shared(
+                views: [new SeatView(new Vector3(0.99f, 0f, 0f))],
+                panel: new PanelPlacement(
+                    new Vector3(-0.5794f, 1.1629f, 1.6931f),
+                    new Vector3(-0.2416f, 1.1628f, 1.6934f),
+                    new Vector3(-0.2412f, 0.9616f, 1.6268f),
+                    new Vector3(-0.5792f, 0.9612f, 1.6264f),
+                    new Vector2(0f, 1f),
+                    new Vector2(0.574f, 0.28f),
+                    new Vector3(0f, 0.314f, -0.949f)
+                )
+            ),
         ],
         ["FastBomber1"] =
         [
@@ -183,7 +203,16 @@ internal sealed class SeatTable
                     "info_nuclearBomb1",
                     "info_nuclearBomb1_strategic",
                 ],
-                views: [new SeatView(new Vector3(0.84f, 0f, 0f))]
+                views: [new SeatView(new Vector3(0.84f, 0f, 0f))],
+                panel: new PanelPlacement(
+                    new Vector3(-0.666f, 0.0694f, 0.5823f),
+                    new Vector3(-0.2767f, 0.0695f, 0.5823f),
+                    new Vector3(-0.2767f, -0.1572f, 0.5527f),
+                    new Vector3(-0.666f, -0.1572f, 0.5527f),
+                    new Vector2(0.003f, 0.954f),
+                    new Vector2(0.572f, 0.285f),
+                    new Vector3(0f, 0.13f, -0.992f)
+                )
             ),
         ],
     };
@@ -220,6 +249,13 @@ internal sealed class SeatTable
         var seats = SeatsFor(aircraft.definition.jsonKey);
 
         return seats.Count > 0 && seats[Wso].IsShared;
+    }
+
+    public PanelPlacement? PanelOf(Aircraft aircraft)
+    {
+        var seats = SeatsFor(aircraft.definition.jsonKey);
+
+        return seats.Count > 0 ? seats[Wso].Panel : null;
     }
 
     public bool Offered(Aircraft aircraft, int seatIndex)

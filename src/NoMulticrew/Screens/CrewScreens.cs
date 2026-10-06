@@ -33,11 +33,20 @@ internal sealed class CrewScreens
 
     private static readonly int EmissionMap = Shader.PropertyToID("_EmissionMap");
 
+    private readonly ClientSession _session;
+
     private Aircraft? _seated;
     private TacScreen? _own;
     private MFDAppManager[] _apps = [];
     private MissileWarningLight[] _lights = [];
     private ScreenQuad? _quad;
+    private CrewmateScreen? _crewmate;
+    private Aircraft? _attempted;
+
+    public CrewScreens(ClientSession session)
+    {
+        _session = session;
+    }
 
     public static GameObject? PrefabOf(Aircraft aircraft, out Cockpit? cockpit)
     {
@@ -97,6 +106,11 @@ internal sealed class CrewScreens
         {
             BuildQuad(aircraft, seat.Screen, viewPoint, eye);
         }
+
+        if (seat.Panel != null)
+        {
+            _crewmate = CrewmateScreen.Create(aircraft, SeatTable.Pilot, seat.Panel);
+        }
     }
 
     public void Leave()
@@ -109,6 +123,9 @@ internal sealed class CrewScreens
 
         _seated = null;
 
+        _crewmate?.Dispose();
+        _crewmate = null;
+
         _quad?.Dispose();
         _quad = null;
 
@@ -118,11 +135,57 @@ internal sealed class CrewScreens
     public void Clear()
     {
         Leave();
+
+        _crewmate?.Dispose();
+        _crewmate = null;
+        _attempted = null;
     }
 
     public void Tick()
     {
         _quad?.Show(InCockpitOf(_seated));
+
+        if (_seated is null)
+        {
+            TickPilot();
+        }
+
+        _crewmate?.Tick();
+    }
+
+    private void TickPilot()
+    {
+        var aircraft = CrewedLocalAircraft();
+
+        if (_crewmate != null && !ReferenceEquals(_crewmate.Aircraft, aircraft))
+        {
+            _crewmate.Dispose();
+            _crewmate = null;
+        }
+
+        if (aircraft == null)
+        {
+            _attempted = null;
+            return;
+        }
+
+        if (_crewmate != null || ReferenceEquals(_attempted, aircraft))
+        {
+            return;
+        }
+
+        _attempted = aircraft;
+        _crewmate = CrewmateScreen.Create(aircraft, SeatTable.Wso, Plugin.SeatTable.PanelOf(aircraft)!);
+    }
+
+    private Aircraft? CrewedLocalAircraft()
+    {
+        if (!_session.Confirmed || !GameManager.GetLocalAircraft(out var aircraft) || aircraft == null || aircraft.disabled)
+        {
+            return null;
+        }
+
+        return Plugin.SeatTable.PanelOf(aircraft) != null && _session.Crew.StateOf(aircraft).WsoAboard ? aircraft : null;
     }
 
     private void BuildQuad(Aircraft aircraft, ScreenPlacement placement, Transform viewPoint, Vector3 eye)

@@ -38,7 +38,7 @@ internal sealed class ClientSession : IDisposable
 
     public CrewMarks Marks { get; }
 
-    public CrewScreens Screens { get; } = new();
+    public CrewScreens Screens { get; }
 
     public ClientSession(NetworkClient client)
     {
@@ -49,6 +49,7 @@ internal sealed class ClientSession : IDisposable
         BackSeat = new BackSeat(this);
         PilotSeat = new PilotSeat(this);
         Marks = new CrewMarks(this);
+        Screens = new CrewScreens(this);
 
         _client.MessageHandler.RegisterHandler<MulticrewWelcome>(OnWelcome, allowUnauthenticated: false);
         _client.MessageHandler.RegisterHandler<CrewRoster>(OnState, allowUnauthenticated: false);

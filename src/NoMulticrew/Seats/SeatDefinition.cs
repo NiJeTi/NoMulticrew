@@ -6,6 +6,16 @@ internal readonly record struct SeatState(bool WsoAboard, int WsoStation, int Pi
 
 internal sealed record ScreenPlacement(Vector3 Centre, Vector3 Normal, Vector2 Size, Rect Uv);
 
+internal sealed record PanelPlacement(
+    Vector3 TopLeft,
+    Vector3 TopRight,
+    Vector3 BottomRight,
+    Vector3 BottomLeft,
+    Vector2 UvTopLeft,
+    Vector2 UvBottomRight,
+    Vector3 Normal
+);
+
 internal sealed class SeatView
 {
     public IReadOnlyCollection<string> HardpointSets { get; }
@@ -47,17 +57,31 @@ internal sealed class SeatDefinition
 
     public ScreenPlacement? Screen { get; }
 
-    public SeatDefinition(string[] weapons, SeatView[] views, ScreenPlacement? screen = null)
-        : this(false, weapons, views, screen)
+    public PanelPlacement? Panel { get; }
+
+    public SeatDefinition(
+        string[] weapons,
+        SeatView[] views,
+        ScreenPlacement? screen = null,
+        PanelPlacement? panel = null
+    )
+        : this(false, weapons, views, screen, panel)
     {
     }
 
-    private SeatDefinition(bool shared, string[] weapons, SeatView[] views, ScreenPlacement? screen)
+    private SeatDefinition(
+        bool shared,
+        string[] weapons,
+        SeatView[] views,
+        ScreenPlacement? screen,
+        PanelPlacement? panel
+    )
     {
         IsShared = shared;
         _weapons = [.. weapons];
         Views = views;
         Screen = screen;
+        Panel = panel;
 
         var defaults = views.Where(x => x.HardpointSets.Count == 0).ToList();
 
@@ -65,9 +89,9 @@ internal sealed class SeatDefinition
         DefaultView = defaults.FirstOrDefault() ?? new SeatView(Vector3.zero);
     }
 
-    public static SeatDefinition Shared(SeatView[] views)
+    public static SeatDefinition Shared(SeatView[] views, PanelPlacement? panel = null)
     {
-        return new SeatDefinition(true, [], views, null);
+        return new SeatDefinition(true, [], views, null, panel);
     }
 
     public bool Operates(string weaponName)

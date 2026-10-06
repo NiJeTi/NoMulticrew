@@ -6,21 +6,26 @@ internal sealed class Settings
 {
     private const string SectionCrew = "Crew";
     private const string SectionEconomy = "Economy";
+    private const string SectionDebug = "Debug";
 
     public ConfigEntry<bool> RejectAllRequests { get; }
 
     public ConfigEntry<float> PilotOutboundShare { get; }
     public ConfigEntry<float> CrewOutboundShare { get; }
 
+    public ConfigEntry<bool> TintCrewmatePanel { get; }
+
     private Settings(
         ConfigEntry<bool> rejectAllRequests,
         ConfigEntry<float> pilotOutboundShare,
-        ConfigEntry<float> crewOutboundShare
+        ConfigEntry<float> crewOutboundShare,
+        ConfigEntry<bool> tintCrewmatePanel
     )
     {
         RejectAllRequests = rejectAllRequests;
         PilotOutboundShare = pilotOutboundShare;
         CrewOutboundShare = crewOutboundShare;
+        TintCrewmatePanel = tintCrewmatePanel;
     }
 
     public static Settings Init(ConfigFile config)
@@ -52,6 +57,13 @@ internal sealed class Settings
             )
         );
 
-        return new Settings(rejectAllRequests, pilotOutboundShare, crewOutboundShare);
+        var tintCrewmatePanel = config.Bind(
+            SectionDebug,
+            "TintCrewmatePanel",
+            false,
+            "Fill the crewmate's half of a side-by-side panel with solid magenta instead of their screen, to check where it sits"
+        );
+
+        return new Settings(rejectAllRequests, pilotOutboundShare, crewOutboundShare, tintCrewmatePanel);
     }
 }
