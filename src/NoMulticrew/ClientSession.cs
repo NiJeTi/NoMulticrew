@@ -4,6 +4,7 @@ using NoMulticrew.Marks;
 using NoMulticrew.Networking;
 using NoMulticrew.Screens;
 using NoMulticrew.Ui;
+using NuclearOption.Networking;
 using UnityEngine;
 
 namespace NoMulticrew;
@@ -21,6 +22,8 @@ internal sealed class ClientSession : IDisposable
     private CrewScreen? _crewScreen;
 
     private (PersistentID AircraftId, byte SeatIndex, float SentAt)? _request;
+
+    private int[] _closedPilots = [];
 
     public bool Confirmed => _server != null;
 
@@ -59,6 +62,8 @@ internal sealed class ClientSession : IDisposable
         _client.MessageHandler.RegisterHandler<CrewLaunch>(OnLaunch, allowUnauthenticated: false);
         _client.MessageHandler.RegisterHandler<CrewKillAuthor>(OnKillAuthor, allowUnauthenticated: false);
         _client.MessageHandler.RegisterHandler<CrewHit>(OnHit, allowUnauthenticated: false);
+        _client.MessageHandler.RegisterHandler<CrewClosedPilots>(OnClosedPilots, allowUnauthenticated: false);
+        Plugin.Settings.RejectAllRequests.SettingChanged += OnRejectAllRequestsChanged;
         _client.Authenticated.AddListener(OnAuthenticated);
     }
 
@@ -77,6 +82,8 @@ internal sealed class ClientSession : IDisposable
         _client.MessageHandler.UnregisterHandler<CrewLaunch>();
         _client.MessageHandler.UnregisterHandler<CrewKillAuthor>();
         _client.MessageHandler.UnregisterHandler<CrewHit>();
+        _client.MessageHandler.UnregisterHandler<CrewClosedPilots>();
+        Plugin.Settings.RejectAllRequests.SettingChanged -= OnRejectAllRequestsChanged;
     }
 
     public void AttachMfd(VirtualMFD mfd)
@@ -106,6 +113,11 @@ internal sealed class ClientSession : IDisposable
     public bool IsRequested(PersistentID aircraftId, byte seatIndex)
     {
         return _request is { } request && request.AircraftId == aircraftId && request.SeatIndex == seatIndex;
+    }
+
+    public bool TakesCrew(Player pilot)
+    {
+        return !_closedPilots.Contains(pilot.PlayerIndex);
     }
 
     public void EndMission()
@@ -166,6 +178,29 @@ internal sealed class ClientSession : IDisposable
         _server = player;
 
         Plugin.Logger.LogInfo($"Server confirmed multicrew support, protocol {message.ProtocolVersion}");
+
+        SendAvailability();
+    }
+
+    private void OnRejectAllRequestsChanged(object? sender, EventArgs e)
+    {
+        SendAvailability();
+    }
+
+    private void SendAvailability()
+    {
+        if (Confirmed)
+        {
+            Send(new CrewAvailability(!Plugin.Settings.RejectAllRequests.Value));
+        }
+    }
+
+    private void OnClosedPilots(INetworkPlayer player, CrewClosedPilots message)
+    {
+        if (Confirmed)
+        {
+            _closedPilots = message.PlayerIndices;
+        }
     }
 
     private void OnState(INetworkPlayer player, CrewRoster message)

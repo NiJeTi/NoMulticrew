@@ -14,6 +14,9 @@ internal sealed class ServerSession : IDisposable
     private const string ServerCommandName = "multicrew";
 
     private readonly HashSet<INetworkPlayer> _validPlayers = [];
+    private readonly HashSet<INetworkPlayer> _closedPilots = [];
+
+    private int[] _closedSent = [];
 
     private readonly NetworkServer _server;
     private readonly bool _commandRegistered;
@@ -37,6 +40,7 @@ internal sealed class ServerSession : IDisposable
         _server.MessageHandler.RegisterHandler<CrewJoinResponse>((c, m) => Requests.OnResponse(c, m), allowUnauthenticated: false);
         _server.MessageHandler.RegisterHandler<CrewLeaveRequest>(OnLeave, allowUnauthenticated: false);
         _server.MessageHandler.RegisterHandler<CrewCommand>((c, m) => Commands.OnCommand(c, m), allowUnauthenticated: false);
+        _server.MessageHandler.RegisterHandler<CrewAvailability>(OnAvailability, allowUnauthenticated: false);
 
         _commandRegistered = TryRegisterServerCommand();
     }
@@ -48,6 +52,7 @@ internal sealed class ServerSession : IDisposable
         _server.MessageHandler.UnregisterHandler<CrewJoinResponse>();
         _server.MessageHandler.UnregisterHandler<CrewLeaveRequest>();
         _server.MessageHandler.UnregisterHandler<CrewCommand>();
+        _server.MessageHandler.UnregisterHandler<CrewAvailability>();
 
         if (_commandRegistered)
         {
@@ -58,6 +63,7 @@ internal sealed class ServerSession : IDisposable
     public void Tick()
     {
         Requests.Tick();
+        SendClosedPilots();
     }
 
     public void EndMission()
@@ -77,6 +83,11 @@ internal sealed class ServerSession : IDisposable
         }
 
         return connection.TryGetPlayer(out player);
+    }
+
+    public bool TakesCrew(Player pilot)
+    {
+        return !_closedPilots.Contains(pilot.Owner);
     }
 
     public void DispatchLocal(CrewCommand message)
@@ -150,12 +161,14 @@ internal sealed class ServerSession : IDisposable
         if (_validPlayers.Contains(player))
         {
             Crew.SendRosters(player);
+            player.Send(new CrewClosedPilots(_closedSent));
         }
     }
 
     public void OnDisconnected(INetworkPlayer connection)
     {
         Remove(connection);
+        _closedPilots.Remove(connection);
 
         if (connection.TryGetPlayer<Player>(out var player))
         {
@@ -251,6 +264,42 @@ internal sealed class ServerSession : IDisposable
         Economy.Settle(player, aircraftId.Value, forfeit: !valid);
         Crew.Release(player);
         Notify(player, valid ? "Left the seat" : "Bailed out", CrewCue.Deselect);
+    }
+
+    private void OnAvailability(INetworkPlayer connection, CrewAvailability message)
+    {
+        if (!_validPlayers.Contains(connection))
+        {
+            return;
+        }
+
+        var changed = message.Accepting ? _closedPilots.Remove(connection) : _closedPilots.Add(connection);
+        if (changed)
+        {
+            Plugin.Logger.LogInfo($"{connection} {(message.Accepting ? "takes crew again" : "stopped taking crew")}");
+        }
+    }
+
+    private void SendClosedPilots()
+    {
+        if (_closedPilots.Count == 0 && _closedSent.Length == 0)
+        {
+            return;
+        }
+
+        var indices = _closedPilots
+            .Select(x => x.TryGetPlayer<Player>(out var player) ? player.PlayerIndex : 0)
+            .Where(x => x > 0)
+            .OrderBy(x => x)
+            .ToArray();
+
+        if (indices.SequenceEqual(_closedSent))
+        {
+            return;
+        }
+
+        _closedSent = indices;
+        SendToAllCapable(new CrewClosedPilots(indices));
     }
 
     private bool TryRegisterServerCommand()

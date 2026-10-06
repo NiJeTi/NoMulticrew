@@ -232,6 +232,12 @@ internal sealed class JoinRequests
             return false;
         }
 
+        if (!_session.TakesCrew(aircraft.Player))
+        {
+            reason = "The pilot is not taking crew";
+            return false;
+        }
+
         var seats = Plugin.SeatTable.SeatsFor(aircraft.definition.jsonKey);
         if (seatIndex >= seats.Count)
         {

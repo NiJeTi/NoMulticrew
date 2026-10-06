@@ -542,3 +542,59 @@ internal struct CrewHit : IMessage<CrewHit>
         writer.Write(RelativePos);
     }
 }
+
+internal struct CrewAvailability : IMessage<CrewAvailability>
+{
+    public bool Accepting { get; private set; }
+
+    public CrewAvailability(bool accepting)
+    {
+        Accepting = accepting;
+    }
+
+    public void Read(NetworkReader reader)
+    {
+        Accepting = reader.ReadBoolean();
+    }
+
+    public void Write(NetworkWriter writer)
+    {
+        writer.WriteBoolean(Accepting);
+    }
+}
+
+internal struct CrewClosedPilots : IMessage<CrewClosedPilots>
+{
+    private const int MaxCount = 1024;
+
+    public int[] PlayerIndices { get; private set; }
+
+    public CrewClosedPilots(int[] playerIndices)
+    {
+        PlayerIndices = playerIndices;
+    }
+
+    public void Read(NetworkReader reader)
+    {
+        var count = reader.ReadPackedInt32();
+        if (count < 0 || count > MaxCount)
+        {
+            throw new InvalidOperationException($"Closed pilot list of {count} is outside 0..{MaxCount}");
+        }
+
+        PlayerIndices = new int[count];
+        for (var i = 0; i < count; i++)
+        {
+            PlayerIndices[i] = reader.ReadPackedInt32();
+        }
+    }
+
+    public void Write(NetworkWriter writer)
+    {
+        writer.WritePackedInt32(PlayerIndices.Length);
+        foreach (var index in PlayerIndices)
+        {
+            writer.WritePackedInt32(index);
+        }
+    }
+}
