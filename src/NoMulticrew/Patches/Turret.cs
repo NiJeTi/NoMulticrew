@@ -1,46 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using HarmonyLib;
-using NoMulticrew.Seats;
 using UnityEngine;
 
 namespace NoMulticrew.Patches;
-
-[SuppressMessage("ReSharper", "InconsistentNaming")]
-[HarmonyPatch(typeof(WeaponStation), nameof(WeaponStation.SetStationActive))]
-internal static class WeaponStation_SetStationActive
-{
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prefix(WeaponStation __instance, Aircraft aircraft)
-    {
-        if (!IsManned(aircraft, __instance))
-        {
-            return true;
-        }
-
-        foreach (var turret in __instance.Turrets)
-        {
-            turret.SetManual(true);
-        }
-
-        return false;
-    }
-
-    public static bool IsManned(Aircraft aircraft, WeaponStation station)
-    {
-        if (!station.HasTurret())
-        {
-            return false;
-        }
-
-        var server = Plugin.Server;
-        if (server != null)
-        {
-            return server.Crew.Holder(aircraft, station.Number) != null;
-        }
-
-        return Plugin.Client is { } client && client.Crew.Holder(aircraft, station.Number) != SeatTable.Pilot;
-    }
-}
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [HarmonyPatch(typeof(Turret), "FixedUpdate")]

@@ -6,26 +6,6 @@ using NoMulticrew.Networking;
 namespace NoMulticrew.Patches;
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
-[HarmonyPatch(typeof(Unit), nameof(Unit.ReportKilled))]
-internal static class Unit_ReportKilled
-{
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static void Prefix(Unit __instance, out bool __state)
-    {
-        __state = Plugin.Server?.Economy.HoldKillAuthor(__instance) == true;
-    }
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static void Finalizer(bool __state)
-    {
-        if (__state)
-        {
-            Plugin.Server?.Economy.ReleaseKillAuthor();
-        }
-    }
-}
-
-[SuppressMessage("ReSharper", "InconsistentNaming")]
 [HarmonyPatch(typeof(MessageManager), nameof(MessageManager.RpcKillMessage))]
 internal static class MessageManager_RpcKillMessage
 {

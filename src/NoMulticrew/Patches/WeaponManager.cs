@@ -4,23 +4,6 @@ using HarmonyLib;
 namespace NoMulticrew.Patches;
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
-[HarmonyPatch(typeof(Aircraft), nameof(Aircraft.SetActiveStation))]
-internal static class Aircraft_SetActiveStation
-{
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prefix(Aircraft __instance, byte stationIndex)
-    {
-        var crew = Plugin.Client?.Crew;
-        if (crew == null || !crew.BlocksStation(__instance, stationIndex))
-        {
-            return true;
-        }
-
-        return crew.RefuseStation(__instance, stationIndex);
-    }
-}
-
-[SuppressMessage("ReSharper", "InconsistentNaming")]
 [HarmonyPatch(typeof(WeaponManager), nameof(WeaponManager.Fire))]
 internal static class WeaponManager_Fire
 {
@@ -43,17 +26,6 @@ internal static class WeaponManager_Fire
 }
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
-[HarmonyPatch(typeof(Aircraft), "RpcSetActiveStation")]
-internal static class Aircraft_RpcSetActiveStation
-{
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static void Prefix(Aircraft __instance, byte stationIndex)
-    {
-        Plugin.Server?.Crew.RecordPilotStation(__instance, stationIndex);
-    }
-}
-
-[SuppressMessage("ReSharper", "InconsistentNaming")]
 [HarmonyPatch(typeof(WeaponManager), "OrganizeWeaponStations")]
 internal static class WeaponManager_OrganizeWeaponStations
 {
@@ -67,5 +39,35 @@ internal static class WeaponManager_OrganizeWeaponStations
 
         Plugin.Server?.Crew.LoadoutChanged(aircraft);
         Plugin.Client?.BackSeat.LoadoutChanged(aircraft);
+    }
+}
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[HarmonyPatch(typeof(WeaponManager), nameof(WeaponManager.TargetListChanged))]
+internal static class WeaponManager_TargetListChanged
+{
+    private static readonly AccessTools.FieldRef<WeaponManager, Aircraft> AircraftRef =
+        AccessTools.FieldRefAccess<WeaponManager, Aircraft>("aircraft");
+
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static bool Prefix(WeaponManager __instance)
+    {
+        var client = Plugin.Client;
+        if (client == null)
+        {
+            return true;
+        }
+
+        var aircraft = AircraftRef(__instance);
+
+        if (ReferenceEquals(client.BackSeat.Aircraft, aircraft))
+        {
+            client.BackSeat.Weapons.PushTargets();
+            return false;
+        }
+
+        var station = __instance.currentWeaponStation;
+
+        return station == null || !client.Crew.BlocksStation(aircraft, station.Number);
     }
 }

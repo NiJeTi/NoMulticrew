@@ -1,0 +1,40 @@
+using System.Diagnostics.CodeAnalysis;
+using HarmonyLib;
+
+namespace NoMulticrew.Patches;
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[HarmonyPatch(typeof(RadialMenuAction), nameof(RadialMenuAction.TriggerAction))]
+internal static class RadialMenuAction_TriggerAction
+{
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static bool Prefix(RadialMenuAction __instance, Aircraft aircraft)
+    {
+        var client = Plugin.Client;
+        if (client == null || __instance.GetActionType() != RadialMenuAction.ActionType.SelectWeapon)
+        {
+            return true;
+        }
+
+        var station = __instance.weapon_number;
+        var backSeat = client.BackSeat;
+
+        if (ReferenceEquals(backSeat.Aircraft, aircraft))
+        {
+            if (!client.Crew.CanSelect(aircraft, backSeat.SeatIndex, station))
+            {
+                return client.Crew.RefuseStation(aircraft, station);
+            }
+
+            backSeat.Select(station);
+            return false;
+        }
+
+        if (!GameManager.IsLocalAircraft(aircraft))
+        {
+            return false;
+        }
+
+        return !client.Crew.BlocksStation(aircraft, station) || client.Crew.RefuseStation(aircraft, station);
+    }
+}

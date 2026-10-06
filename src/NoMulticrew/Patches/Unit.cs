@@ -7,6 +7,20 @@ using UnityEngine;
 namespace NoMulticrew.Patches;
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
+[HarmonyPatch(typeof(Unit), nameof(Unit.Networkdisabled), MethodType.Setter)]
+internal static class Unit_SetNetworkdisabled
+{
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static void Postfix(Unit __instance, bool value)
+    {
+        if (value)
+        {
+            Plugin.Server?.Crew.Dissolve(__instance.persistentID);
+        }
+    }
+}
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
 [HarmonyPatch(typeof(Unit), nameof(Unit.NetworkremoteWeaponStates), MethodType.Setter)]
 internal static class Unit_SetNetworkremoteWeaponStates
 {
@@ -122,158 +136,6 @@ internal static class Unit_RegisterHit
 }
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
-[HarmonyPatch(typeof(CombatHUD), nameof(CombatHUD.DisplayHit))]
-internal static class CombatHUD_DisplayHit
-{
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prefix()
-    {
-        if (!Unit_RegisterHit.HidesNextDisplay)
-        {
-            return true;
-        }
-
-        Unit_RegisterHit.HidesNextDisplay = false;
-
-        return false;
-    }
-}
-
-[SuppressMessage("ReSharper", "InconsistentNaming")]
-[HarmonyPatch(typeof(BulletSim), nameof(BulletSim.AddBullet))]
-internal static class BulletSim_AddBullet
-{
-    private static readonly AccessTools.FieldRef<Weapon, WeaponStation?> WeaponStationRef =
-        AccessTools.FieldRefAccess<Weapon, WeaponStation?>("weaponStation");
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static void Prefix(Unit ___owner, Gun ___gun, ref bool ___visualOnly)
-    {
-        var client = Plugin.Client;
-        if (client == null)
-        {
-            return;
-        }
-
-        if (___gun.ForceServerAuthority)
-        {
-            ___visualOnly = !___owner.IsServer;
-            return;
-        }
-
-        var station = WeaponStationRef(___gun);
-
-        ___visualOnly = ___owner.remoteSim && (station == null || !client.BackSeat.Owns(___owner, station.Number));
-    }
-}
-
-[SuppressMessage("ReSharper", "InconsistentNaming")]
-[HarmonyPatch(typeof(Gun), "SpawnBullet")]
-internal static class Gun_SpawnBullet
-{
-    private static readonly AccessTools.FieldRef<Weapon, WeaponStation> WeaponStationRef =
-        AccessTools.FieldRefAccess<Weapon, WeaponStation>("weaponStation");
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static void Prefix(Gun __instance, float ___fireInterval)
-    {
-        var client = Plugin.Client;
-        var station = WeaponStationRef(__instance);
-
-        if (client == null
-            || ___fireInterval <= 0.2f
-            || !client.BackSeat.Owns(__instance.attachedUnit, station.Number))
-        {
-            return;
-        }
-
-        client.BackSeat.Weapons.SingleFire(station.Number);
-    }
-}
-
-[SuppressMessage("ReSharper", "InconsistentNaming")]
-[HarmonyPatch(typeof(WeaponStation), nameof(WeaponStation.RemoteFireAuto))]
-internal static class WeaponStation_RemoteFireAuto
-{
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prefix(WeaponStation __instance, Unit owner)
-    {
-        return Plugin.Client?.BackSeat.Owns(owner, __instance.Number) != true;
-    }
-}
-
-[SuppressMessage("ReSharper", "InconsistentNaming")]
-[HarmonyPatch(typeof(WeaponStation), nameof(WeaponStation.RemoteFireSingle))]
-internal static class WeaponStation_RemoteFireSingle
-{
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prefix(WeaponStation __instance, Unit owner)
-    {
-        return Plugin.Client?.BackSeat.Owns(owner, __instance.Number) != true;
-    }
-}
-
-[SuppressMessage("ReSharper", "InconsistentNaming")]
-[HarmonyPatch]
-internal static class Aircraft_UserCode_RpcLaunchMissile
-{
-    private static readonly MethodBase? Target = UserCode.Find(typeof(Aircraft), "RpcLaunchMissile");
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prepare()
-    {
-        if (Target == null)
-        {
-            Plugin.Logger.LogError("Aircraft.UserCode_RpcLaunchMissile not found: a crew launch replays on its own client");
-        }
-
-        return Target != null;
-    }
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static MethodBase TargetMethod()
-    {
-        return Target!;
-    }
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prefix(Aircraft __instance, byte stationIndex)
-    {
-        return Plugin.Client?.BackSeat.Owns(__instance, stationIndex) != true;
-    }
-}
-
-[SuppressMessage("ReSharper", "InconsistentNaming")]
-[HarmonyPatch]
-internal static class Aircraft_UserCode_RpcSetTurretVector
-{
-    private static readonly MethodBase? Target = UserCode.Find(typeof(Aircraft), "RpcSetTurretVector");
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prepare()
-    {
-        if (Target == null)
-        {
-            Plugin.Logger.LogError("Aircraft.UserCode_RpcSetTurretVector not found: a gunner's turret lags their camera");
-        }
-
-        return Target != null;
-    }
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static MethodBase TargetMethod()
-    {
-        return Target!;
-    }
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prefix(Aircraft __instance, byte weaponStationIndex)
-    {
-        return Plugin.Client?.BackSeat.Owns(__instance, weaponStationIndex) != true;
-    }
-}
-
-[SuppressMessage("ReSharper", "InconsistentNaming")]
 [HarmonyPatch(typeof(Unit), nameof(Unit.SingleRemoteFire))]
 internal static class Unit_SingleRemoteFire
 {
@@ -285,12 +147,119 @@ internal static class Unit_SingleRemoteFire
 }
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
-[HarmonyPatch(typeof(Aircraft), nameof(Aircraft.CmdLaunchMissile))]
-internal static class Aircraft_CmdLaunchMissile
+[HarmonyPatch]
+internal static class Unit_UserCode_CmdClaimHit
+{
+    private static readonly MethodBase? Target = UserCode.Find(typeof(Unit), "CmdClaimHit");
+
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static bool Prepare()
+    {
+        if (Target == null)
+        {
+            Plugin.Logger.LogError(
+                "Unit.UserCode_CmdClaimHit not found: gun damage from a crewed aircraft is credited to the pilot"
+            );
+        }
+
+        return Target != null;
+    }
+
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static MethodBase TargetMethod()
+    {
+        return Target!;
+    }
+
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static void Prefix(Unit __instance)
+    {
+        Plugin.Server?.Economy.OnClaim(__instance);
+    }
+}
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[HarmonyPatch(typeof(Unit), nameof(Unit.RecordDamage))]
+internal static class Unit_RecordDamage
 {
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prefix(Aircraft __instance, byte stationIndex)
+    private static void Postfix(Unit __instance, PersistentID lastDamagedBy, float damageAmount)
     {
-        return Plugin.Client?.Crew.BlocksStation(__instance, stationIndex) != true;
+        Plugin.Server?.Economy.OnDamage(__instance, lastDamagedBy, damageAmount);
+    }
+}
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[HarmonyPatch(typeof(Unit), nameof(Unit.ReportKilled))]
+internal static class Unit_ReportKilled
+{
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static void Prefix(Unit __instance, out bool __state)
+    {
+        __state = Plugin.Server?.Economy.HoldKillAuthor(__instance) == true;
+    }
+
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static void Finalizer(bool __state)
+    {
+        if (__state)
+        {
+            Plugin.Server?.Economy.ReleaseKillAuthor();
+        }
+    }
+}
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[HarmonyPatch]
+internal static class Unit_UserCode_RpcSetStationTargets
+{
+    private delegate void StationTargetsSetter(WeaponStation station, ReadOnlySpan<PersistentID> targetIds);
+
+    private static readonly MethodBase? Target = UserCode.Find(typeof(Unit), "RpcSetStationTargets");
+
+    private static readonly StationTargetsSetter SetStationTargets = AccessTools.MethodDelegate<StationTargetsSetter>(
+        AccessTools.Method(typeof(WeaponStation), nameof(WeaponStation.SetStationTargets))
+    );
+
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static bool Prepare()
+    {
+        if (Target == null)
+        {
+            Plugin.Logger.LogError(
+                "Unit.UserCode_RpcSetStationTargets not found: the pilot's targets overwrite the crew's, and no marks are shown"
+            );
+        }
+
+        return Target != null;
+    }
+
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static MethodBase TargetMethod()
+    {
+        return Target!;
+    }
+
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static bool Prefix(Unit __instance, byte stationIndex, ReadOnlySpan<PersistentID> targetIDs)
+    {
+        var seat = Plugin.Client?.BackSeat;
+        if (seat == null || !ReferenceEquals(seat.Aircraft, __instance) || seat.Owns(__instance, stationIndex))
+        {
+            return true;
+        }
+
+        if (stationIndex < __instance.weaponStations.Count)
+        {
+            SetStationTargets(__instance.weaponStations[stationIndex], targetIDs);
+        }
+
+        return false;
+    }
+
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static void Postfix(Unit __instance, byte stationIndex, ReadOnlySpan<PersistentID> targetIDs)
+    {
+        Plugin.Client?.Crew.RecordTargets(__instance, stationIndex, targetIDs);
     }
 }
