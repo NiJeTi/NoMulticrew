@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using NoMulticrew.Networking;
+using NoMulticrew.Patches;
 using NoMulticrew.Seats;
 using NuclearOption.Networking;
 using UnityEngine;
@@ -60,10 +61,22 @@ internal sealed class CrewState
     public static void ApplyTurrets(Aircraft aircraft)
     {
         var current = aircraft.weaponManager.currentWeaponStation;
+        var flown = aircraft.Player != null;
 
         foreach (var station in aircraft.weaponStations)
         {
-            station.SetStationActive(aircraft, ReferenceEquals(station, current));
+            if (!station.HasTurret())
+            {
+                continue;
+            }
+
+            var manual = WeaponStation_SetStationActive.IsManned(aircraft, station)
+                || (flown && ReferenceEquals(station, current));
+
+            foreach (var turret in station.Turrets)
+            {
+                turret.SetManual(manual);
+            }
         }
     }
 
