@@ -19,6 +19,9 @@ internal sealed class BackSeat : IDisposable
             ? AccessTools.MethodDelegate<Func<TargetDetector, UniTask>>(method)
             : null;
 
+    private static readonly string[] CountermeasureFields =
+        ["countermeasureBackground", "countermeasureImage", "countermeasureName", "countermeasureAmmo"];
+
     private const float BailOutConfirmSeconds = 3f;
 
     private readonly ClientSession _session;
@@ -270,6 +273,11 @@ internal sealed class BackSeat : IDisposable
         }
 
         var hud = SceneSingleton<CombatHUD>.i;
+        if (hud != null)
+        {
+            ShowCountermeasures(hud, true);
+        }
+
         if (hud != null && ReferenceEquals(hud.aircraft, aircraft))
         {
             hud.RemoveAircraft();
@@ -327,6 +335,7 @@ internal sealed class BackSeat : IDisposable
         aircraft.cockpitViewPoint = _rearViewPoint.transform;
 
         SceneSingleton<CombatHUD>.i.SetAircraft(aircraft);
+        ShowCountermeasures(SceneSingleton<CombatHUD>.i, false);
         TargetCam.Attach(aircraft);
 
         var camera = SceneSingleton<CameraStateManager>.i;
@@ -344,6 +353,25 @@ internal sealed class BackSeat : IDisposable
         StartScanLoops(aircraft);
 
         Plugin.Logger.LogInfo($"Entered seat {seatIndex} of {aircraft.definition.jsonKey}: {seats[seatIndex]}");
+    }
+
+    private static void ShowCountermeasures(CombatHUD hud, bool visible)
+    {
+        foreach (var name in CountermeasureFields)
+        {
+            switch (AccessTools.Field(typeof(CombatHUD), name)?.GetValue(hud))
+            {
+                case GameObject gameObject:
+                    gameObject.SetActive(visible);
+                    break;
+                case Behaviour behaviour:
+                    behaviour.enabled = visible;
+                    break;
+                default:
+                    Plugin.Logger.LogError($"CombatHUD.{name} not found; the countermeasure block keeps its state");
+                    break;
+            }
+        }
     }
 
     private static bool CloseDeployMenu()

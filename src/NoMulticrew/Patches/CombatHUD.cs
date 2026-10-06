@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using HarmonyLib;
 
 namespace NoMulticrew.Patches;
@@ -18,5 +19,23 @@ internal static class CombatHUD_DisplayHit
         Unit_RegisterHit.HidesNextDisplay = false;
 
         return false;
+    }
+}
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[HarmonyPatch]
+internal static class CombatHUD_DisplayCountermeasures
+{
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static IEnumerable<MethodBase> TargetMethods()
+    {
+        return AccessTools.GetDeclaredMethods(typeof(CombatHUD))
+            .Where(x => x.Name is nameof(CombatHUD.DisplayCountermeasures) or nameof(CombatHUD.DisplayCountermeasureAmmo));
+    }
+
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static bool Prefix()
+    {
+        return Plugin.Client?.BackSeat.Aircraft == null;
     }
 }
