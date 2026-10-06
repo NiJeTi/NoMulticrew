@@ -23,7 +23,7 @@ internal static class RadialMenuAction_TriggerAction
         {
             if (!client.Crew.CanSelect(aircraft, backSeat.SeatIndex, station))
             {
-                return client.Crew.RefuseStation(aircraft, station);
+                return client.Crew.RefuseSelection(aircraft, station);
             }
 
             backSeat.Select(station);
@@ -35,6 +35,6 @@ internal static class RadialMenuAction_TriggerAction
             return false;
         }
 
-        return !client.Crew.BlocksStation(aircraft, station) || client.Crew.RefuseStation(aircraft, station);
+        return !client.Crew.BlocksStation(aircraft, station) || client.Crew.RefuseSelection(aircraft, station);
     }
 }

@@ -74,11 +74,6 @@ internal static class RadialMenuMain_SetupWeapons
 
         foreach (var station in ___aircraft.weaponStations)
         {
-            if (!WeaponWheel.Lists(client, ___aircraft, seat, station.Number))
-            {
-                continue;
-            }
-
             var action = Object.Instantiate(___actionWeaponPrefab);
             action.SetWeapon(station.WeaponInfo, station.Number);
             ___allowedActionsWeapons.Add(action);

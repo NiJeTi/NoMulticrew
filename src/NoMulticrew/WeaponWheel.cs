@@ -78,22 +78,13 @@ internal static class WeaponWheel
         return ReferenceEquals(client.BackSeat.Aircraft, aircraft) ? client.BackSeat.SeatIndex : SeatTable.Pilot;
     }
 
-    public static bool Lists(ClientSession client, Aircraft aircraft, int seat, int station)
-    {
-        return Plugin.SeatTable.IsShared(aircraft) || client.Crew.Holder(aircraft, station) == seat;
-    }
-
     public static string Key(ClientSession client, Aircraft aircraft, int seat)
     {
         var key = new StringBuilder().Append(seat).Append(':');
 
         foreach (var station in aircraft.weaponStations)
         {
-            key.Append(
-                !Lists(client, aircraft, seat, station.Number) ? '-'
-                : client.Crew.CanSelect(aircraft, seat, station.Number) ? 'o'
-                : 'x'
-            );
+            key.Append(client.Crew.CanSelect(aircraft, seat, station.Number) ? 'o' : 'x');
         }
 
         return key.ToString();

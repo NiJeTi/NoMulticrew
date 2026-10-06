@@ -182,6 +182,13 @@ internal sealed class CrewState
         return Refuse($"{SeatTable.Label(Holder(aircraft, stationIndex))} has this weapon");
     }
 
+    public bool RefuseSelection(Aircraft aircraft, int station)
+    {
+        var holder = SeatTable.Label(Holder(aircraft, station));
+
+        return Refuse(Plugin.SeatTable.IsShared(aircraft) ? $"{holder} is using this weapon" : $"{holder}-only weapon");
+    }
+
     public SeatState StateOf(Aircraft aircraft)
     {
         var local = GameManager.IsLocalAircraft(aircraft);
