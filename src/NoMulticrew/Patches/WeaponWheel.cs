@@ -144,6 +144,7 @@ internal static class RadialMenuMain_SetupWeapons
         var client = Plugin.Client;
         if (client == null)
         {
+            WeaponWheel.Greyed.Clear();
             return true;
         }
 
@@ -263,6 +264,11 @@ internal static class RadialMenuMain_RefreshWeapons
 [HarmonyPatch(typeof(RadialMenuMain), nameof(RadialMenuMain.OpenMenu))]
 internal static class RadialMenuMain_OpenMenu
 {
+    private static readonly Action<RadialMenuMain>? SetupWeapons =
+        AccessTools.Method(typeof(RadialMenuMain), "SetupWeapons") is { } method
+            ? AccessTools.MethodDelegate<Action<RadialMenuMain>>(method)
+            : null;
+
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prepare()
     {
@@ -270,22 +276,59 @@ internal static class RadialMenuMain_OpenMenu
     }
 
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static void Prefix(ref Aircraft? ___aircraft)
+    private static bool Prefix(
+        RadialMenuMain __instance,
+        ref Aircraft? ___aircraft,
+        RadialMenuMain.RadialMenuType ___currentState,
+        ref float ___lastOpen,
+        ref Vector3 ___mousePos
+    )
     {
         var client = Plugin.Client;
-        if (client == null || !GameManager.GetLocalAircraft(out var flown))
+        if (client == null)
         {
-            return;
+            return true;
+        }
+
+        var crewed = client.BackSeat.Aircraft;
+        if (crewed != null)
+        {
+            if (___currentState == RadialMenuMain.RadialMenuType.Main)
+            {
+                __instance.CloseMenu();
+                return false;
+            }
+
+            var crewKey = WeaponWheel.Key(client, crewed, client.BackSeat.SeatIndex);
+            if (crewKey != WeaponWheel.Built || !ReferenceEquals(___aircraft, crewed))
+            {
+                ___aircraft = crewed;
+                WeaponWheel.Built = crewKey;
+                SetupWeapons!(__instance);
+            }
+
+            __instance.RefreshWeapons();
+            ___lastOpen = Time.realtimeSinceStartup;
+            ___mousePos = Input.mousePosition;
+
+            return false;
+        }
+
+        if (!GameManager.GetLocalAircraft(out var flown))
+        {
+            ___aircraft = null;
+            WeaponWheel.Built = null;
+            return true;
         }
 
         var key = WeaponWheel.Key(client, flown, SeatTable.Pilot);
-        if (key == WeaponWheel.Built)
+        if (key != WeaponWheel.Built)
         {
-            return;
+            ___aircraft = null;
+            WeaponWheel.Built = key;
         }
 
-        ___aircraft = null;
-        WeaponWheel.Built = key;
+        return true;
     }
 }
 
@@ -297,13 +340,30 @@ internal static class RadialMenuAction_TriggerAction
     private static bool Prefix(RadialMenuAction __instance, Aircraft aircraft)
     {
         var client = Plugin.Client;
-        if (client == null
-            || __instance.GetActionType() != RadialMenuAction.ActionType.SelectWeapon
-            || !client.Crew.BlocksStation(aircraft, __instance.weapon_number))
+        if (client == null || __instance.GetActionType() != RadialMenuAction.ActionType.SelectWeapon)
         {
             return true;
         }
 
-        return client.Crew.RefuseStation(aircraft, __instance.weapon_number);
+        var station = __instance.weapon_number;
+        var backSeat = client.BackSeat;
+
+        if (ReferenceEquals(backSeat.Aircraft, aircraft))
+        {
+            if (!client.Crew.CanSelect(aircraft, backSeat.SeatIndex, station))
+            {
+                return client.Crew.RefuseStation(aircraft, station);
+            }
+
+            backSeat.Select(station);
+            return false;
+        }
+
+        if (!GameManager.IsLocalAircraft(aircraft))
+        {
+            return false;
+        }
+
+        return !client.Crew.BlocksStation(aircraft, station) || client.Crew.RefuseStation(aircraft, station);
     }
 }

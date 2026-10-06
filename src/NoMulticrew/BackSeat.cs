@@ -152,7 +152,7 @@ internal sealed class BackSeat : IDisposable
         Weapons.Tick(Controls.IsFireHeld());
     }
 
-    private void Select(int station)
+    public void Select(int station)
     {
         if (station == Station)
         {
