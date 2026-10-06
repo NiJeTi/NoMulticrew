@@ -34,6 +34,7 @@ internal sealed class CrewmateScreen : IDisposable
     private CrewmateCam? _camera;
     private Action<TargetCam.OnCamToggle>? _toggle;
     private bool _shown;
+    private (int Station, int Ids, int Live, bool Overlay, string Camera) _logged = (int.MinValue, 0, 0, false, "");
 
     public Aircraft Aircraft { get; }
 
@@ -70,19 +71,14 @@ internal sealed class CrewmateScreen : IDisposable
 
     public void Tick(CrewState crew)
     {
-        _overlay?.Show(_source != null && _source.enabled);
-
-        if (_camera == null || _toggle == null || _screen == null)
-        {
-            return;
-        }
+        var overlay = _source != null && _source.enabled;
+        _overlay?.Show(overlay);
 
         var state = crew.StateOf(Aircraft);
         var station = Seat == SeatTable.Pilot ? state.PilotStation : state.WsoStation;
+        var ids = crew.TargetsOf(Aircraft, station);
 
         _targets.Clear();
-
-        var ids = crew.TargetsOf(Aircraft, station);
 
         for (var i = 0; i < ids.Count; i++)
         {
@@ -92,8 +88,20 @@ internal sealed class CrewmateScreen : IDisposable
             }
         }
 
-        var active = _camera.Tick(_targets);
-        if (active == _shown)
+        var active = _camera != null && _toggle != null && _screen != null && _camera.Tick(_targets);
+        var camera = _camera == null ? "missing" : active ? "active" : "idle";
+        var logged = (station, ids.Count, _targets.Count, overlay, camera);
+
+        if (logged != _logged)
+        {
+            _logged = logged;
+            Plugin.Logger.LogDebug(
+                $"{SeatTable.Label(Seat)}'s screen on {Aircraft.definition.jsonKey}: station {station}, "
+                + $"{ids.Count} target ids, {_targets.Count} live, overlay {(overlay ? "shown" : "hidden")}, camera {camera}"
+            );
+        }
+
+        if (_toggle == null || active == _shown)
         {
             return;
         }

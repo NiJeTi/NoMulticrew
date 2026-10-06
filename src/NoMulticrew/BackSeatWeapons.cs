@@ -99,6 +99,8 @@ internal sealed class BackSeatWeapons
             .ToArray();
 
         _session.SendCommand(CrewCommand.SetStationTargets(aircraft.persistentID, (byte)_seat.Station, targets));
+
+        Plugin.Logger.LogDebug($"Pushed {targets.Length} targets for station {_seat.Station}");
     }
 
     public void Aim(Turret turret, Aircraft aircraft, WeaponStation station)

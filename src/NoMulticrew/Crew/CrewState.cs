@@ -134,6 +134,8 @@ internal sealed class CrewState
         }
 
         stations[station] = targets.ToArray();
+
+        Plugin.Logger.LogDebug($"Recorded {targets.Length} targets for station {station} of {aircraft.persistentID}");
     }
 
     public void CollectCrewmateTargets(Aircraft aircraft, int localSeat, HashSet<PersistentID> into)
