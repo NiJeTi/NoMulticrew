@@ -19,9 +19,6 @@ internal sealed class BackSeat : IDisposable
             ? AccessTools.MethodDelegate<Func<TargetDetector, UniTask>>(method)
             : null;
 
-    private static readonly AccessTools.FieldRef<Weapon, Hardpoint?> HardpointRef =
-        AccessTools.FieldRefAccess<Weapon, Hardpoint?>("hardpoint");
-
     private const float BailOutConfirmSeconds = 3f;
 
     private readonly ClientSession _session;
@@ -32,8 +29,6 @@ internal sealed class BackSeat : IDisposable
     private GameObject? _rearViewPoint;
 
     private CameraStateManager? _camera;
-
-    private Vector3 _viewBase;
 
     private float _bailOutArmedAt = float.NegativeInfinity;
 
@@ -178,48 +173,6 @@ internal sealed class BackSeat : IDisposable
         Plugin.Logger.LogDebug($"Back seat selected station {station}");
 
         SceneSingleton<CombatHUD>.i.ShowWeaponStation(station >= 0 ? aircraft.weaponStations[station] : null);
-
-        MoveView();
-    }
-
-    private void MoveView()
-    {
-        if (_rearViewPoint == null)
-        {
-            return;
-        }
-
-        var aircraft = Aircraft!;
-        var seat = Plugin.SeatTable.SeatsFor(aircraft.definition.jsonKey)[SeatIndex];
-        var view = Station >= 0 ? seat.ViewFor(SetsOf(aircraft, aircraft.weaponStations[Station])) : seat.DefaultView;
-
-        _rearViewPoint.transform.localPosition = _viewBase + view.Offset;
-
-        Plugin.Logger.LogDebug($"Back seat view for station {Station}: {view}");
-    }
-
-    private static HashSet<string> SetsOf(Aircraft aircraft, WeaponStation station)
-    {
-        var names = new HashSet<string>();
-
-        foreach (var weapon in station.Weapons)
-        {
-            var hardpoint = weapon != null ? HardpointRef(weapon) : null;
-            if (hardpoint == null)
-            {
-                continue;
-            }
-
-            foreach (var set in aircraft.weaponManager.hardpointSets)
-            {
-                if (set.hardpoints.Contains(hardpoint))
-                {
-                    names.Add(set.name);
-                }
-            }
-        }
-
-        return names;
     }
 
     private int Next(int from, int direction)
@@ -366,9 +319,9 @@ internal sealed class BackSeat : IDisposable
         _originalViewPoint = original;
         _rearViewPoint = new GameObject("NoMulticrew.RearViewPoint");
         var cockpit = aircraft.cockpit.transform;
+        var eye = cockpit.InverseTransformPoint(original.position) + seats[seatIndex].View;
         _rearViewPoint.transform.SetParent(cockpit, false);
-        _viewBase = cockpit.InverseTransformPoint(original.position);
-        _rearViewPoint.transform.localPosition = _viewBase + seats[seatIndex].DefaultView.Offset;
+        _rearViewPoint.transform.localPosition = eye;
         _rearViewPoint.transform.rotation = original.rotation;
 
         aircraft.cockpitViewPoint = _rearViewPoint.transform;
@@ -382,12 +335,7 @@ internal sealed class BackSeat : IDisposable
         camera.SetFollowingUnit(aircraft);
         camera.SwitchState(camera.cockpitState);
 
-        _session.Screens.Board(
-            aircraft,
-            seats[seatIndex],
-            _rearViewPoint.transform,
-            _viewBase + seats[seatIndex].DefaultView.Offset
-        );
+        _session.Screens.Board(aircraft, seats[seatIndex], _rearViewPoint.transform, eye);
 
         SceneSingleton<DynamicMap>.i.Minimize();
 

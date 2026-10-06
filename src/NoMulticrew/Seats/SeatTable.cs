@@ -24,7 +24,7 @@ internal sealed class SeatTable
                     "info_bomb_250_1",
                     "Gun20mm_Rotary_Turret",
                 ],
-                views: [new SeatView(new Vector3(0f, 0f, -0.95f))],
+                view: new Vector3(0f, 0f, -0.95f),
                 screen: new ScreenPlacement(
                     new Vector3(0f, 0.874f, -0.887f),
                     new Vector3(0f, 0.342f, -0.94f),
@@ -50,7 +50,7 @@ internal sealed class SeatTable
                     "info_nuclearBomb1",
                     "info_nuclearBomb1_strategic",
                 ],
-                views: [new SeatView(new Vector3(0f, -0.02f, -1.28f))],
+                view: new Vector3(0f, -0.02f, -1.28f),
                 screen: new ScreenPlacement(
                     new Vector3(0f, 0.825f, -1.173f),
                     new Vector3(0f, 0.259f, -0.966f),
@@ -75,7 +75,7 @@ internal sealed class SeatTable
                     "info_nuclearBomb1",
                     "info_nuclearBomb1_strategic",
                 ],
-                views: [new SeatView(new Vector3(0f, 0.16f, -1.30f))],
+                view: new Vector3(0f, 0.16f, -1.30f),
                 screen: new ScreenPlacement(
                     new Vector3(0f, 0.32f, -1.099f),
                     new Vector3(0f, 0.342f, -0.94f),
@@ -88,16 +88,15 @@ internal sealed class SeatTable
         [
             new SeatDefinition(
                 weapons: ["info_AGM1", "info_AGM_scanner1", "GTG1_info", "Grenade_40mm", "Gun12.7mm"],
-                views:
-                [
-                    new SeatView(["Door guns"], new Vector3(0.29f, -0.47f, -1.19f)),
-                    new SeatView(new Vector3(-0.45f, 0f, -1.20f)),
-                ],
-                screen: new ScreenPlacement(
-                    new Vector3(-0.94f, 0.542f, -1.051f),
-                    new Vector3(0f, 0.342f, -0.94f),
-                    new Vector2(0.134f, 0.089f),
-                    new Rect(0f, 0.249f, 0.525f, 0.751f)
+                view: new Vector3(0.98f, 0f, 0f),
+                panel: new PanelPlacement(
+                    new Vector3(-0.455f, 0.468f, 0.716f),
+                    new Vector3(-0.176f, 0.468f, 0.716f),
+                    new Vector3(-0.176f, 0.269f, 0.695f),
+                    new Vector3(-0.455f, 0.269f, 0.695f),
+                    new Vector2(0f, 1f),
+                    new Vector2(0.525f, 0.249f),
+                    new Vector3(0f, 0.105f, -0.994f)
                 )
             ),
         ],
@@ -105,7 +104,7 @@ internal sealed class SeatTable
         [
             new SeatDefinition(
                 weapons: ["info_AGM1", "info_AGM2", "info_AGM_heavy", "info_AGM_scanner1", "Gun30mm_Rotary_Turret"],
-                views: [new SeatView(new Vector3(0f, -0.43f, 1.40f))],
+                view: new Vector3(0f, -0.43f, 1.40f),
                 screen: new ScreenPlacement(
                     new Vector3(0f, 0.023f, 1.929f),
                     new Vector3(0f, 0.423f, -0.906f),
@@ -127,20 +126,15 @@ internal sealed class SeatTable
                     "Gun57mm_Aerial",
                     "Gun76mm_Guided",
                 ],
-                views:
-                [
-                    new SeatView(["Floor Turret Mount"], new Vector3(0.40f, -1.90f, -2.60f)),
-                    new SeatView(["Left Sponson Pylon"], new Vector3(-1.54f, -2.04f, -7.02f)),
-                    new SeatView(["Right Sponson Pylon"], new Vector3(2.34f, -2.04f, -7.02f)),
-                    new SeatView(["Left Sponson Pylon", "Right Sponson Pylon"], new Vector3(0f, -1.89f, -7.02f)),
-                    new SeatView(["Cargo Bay (Front)"], new Vector3(0.40f, -2.07f, -9.72f)),
-                    new SeatView(new Vector3(0f, 0f, -1.48f)),
-                ],
-                screen: new ScreenPlacement(
-                    new Vector3(-0.67f, 0.344f, -0.043f),
-                    new Vector3(0f, 0.342f, -0.94f),
-                    new Vector2(0.317f, 0.211f),
-                    new Rect(0.001f, 0.277f, 0.499f, 0.718f)
+                view: new Vector3(1.34f, 0f, 0f),
+                panel: new PanelPlacement(
+                    new Vector3(-0.516f, 0.439f, 1.528f),
+                    new Vector3(-0.219f, 0.439f, 1.528f),
+                    new Vector3(-0.219f, 0.247f, 1.492f),
+                    new Vector3(-0.516f, 0.246f, 1.492f),
+                    new Vector2(0.001f, 0.995f),
+                    new Vector2(0.5f, 0.277f),
+                    new Vector3(0f, 0.184f, -0.983f)
                 )
             ),
         ],
@@ -156,7 +150,7 @@ internal sealed class SeatTable
                     "info_bomb_500_glide",
                     "info_bomb_glide1",
                 ],
-                views: [new SeatView(new Vector3(0.80f, 0f, 0f))],
+                view: new Vector3(0.80f, 0f, 0f),
                 panel: new PanelPlacement(
                     new Vector3(-0.6383f, 0.344f, 0.4951f),
                     new Vector3(-0.3463f, 0.344f, 0.4951f),
@@ -171,7 +165,7 @@ internal sealed class SeatTable
         ["Darkreach"] =
         [
             SeatDefinition.Shared(
-                views: [new SeatView(new Vector3(0.99f, 0f, 0f))],
+                view: new Vector3(0.99f, 0f, 0f),
                 panel: new PanelPlacement(
                     new Vector3(-0.5794f, 1.1629f, 1.6931f),
                     new Vector3(-0.2416f, 1.1628f, 1.6934f),
@@ -203,7 +197,7 @@ internal sealed class SeatTable
                     "info_nuclearBomb1",
                     "info_nuclearBomb1_strategic",
                 ],
-                views: [new SeatView(new Vector3(0.84f, 0f, 0f))],
+                view: new Vector3(0.84f, 0f, 0f),
                 panel: new PanelPlacement(
                     new Vector3(-0.666f, 0.0694f, 0.5823f),
                     new Vector3(-0.2767f, 0.0695f, 0.5823f),
@@ -342,11 +336,6 @@ internal sealed class SeatTable
 
         foreach (var seat in result)
         {
-            if (!seat.HasOneDefaultView)
-            {
-                Plugin.Logger.LogError($"The WSO of {name} needs exactly one default view");
-            }
-
             if (!seat.IsShared && seat.Weapons.Count == 0)
             {
                 Plugin.Logger.LogError($"The WSO of {name} lists no weapons");
