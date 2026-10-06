@@ -139,6 +139,12 @@ internal sealed class CrewMarks : IDisposable
             _aircraft = null;
             _next.Clear();
         }
+
+        _next.RemoveWhere(static id =>
+            !UnitRegistry.TryGetUnit(id, out var unit)
+            || (unit.NetworkHQ != null
+                && SceneSingleton<DynamicMap>.i != null
+                && unit.NetworkHQ == SceneSingleton<DynamicMap>.i.HQ));
     }
 
     private void DrawLines()
