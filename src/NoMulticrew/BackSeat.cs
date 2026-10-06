@@ -88,23 +88,24 @@ internal sealed class BackSeat : IDisposable
         Enter(aircraft, seatIndex);
     }
 
-    public void RequestLeave()
+    public bool RequestLeave()
     {
         if (Aircraft == null)
         {
-            return;
+            return false;
         }
 
         if (JoinRequests.IsValidExit(Aircraft) || BailOutArmed)
         {
             _bailOutArmedAt = float.NegativeInfinity;
             _session.Send(new CrewLeaveRequest());
-            return;
+            return false;
         }
 
         _bailOutArmedAt = Time.unscaledTime;
         _session.Prompt.ShowNotice("Press Eject again to bail out — your sortie earnings go to the pilot");
-        Feedback.Play(CrewCue.WeaponSwitch);
+
+        return true;
     }
 
     public void LoadoutChanged(Aircraft aircraft)
@@ -144,9 +145,9 @@ internal sealed class BackSeat : IDisposable
             Select(Next(Station, -1));
         }
 
-        if (Controls.IsEjectDown())
+        if (Controls.IsEjectDown() && RequestLeave())
         {
-            RequestLeave();
+            Feedback.Play(CrewCue.WeaponSwitch);
         }
 
         Weapons.Tick(Controls.IsFireHeld());
