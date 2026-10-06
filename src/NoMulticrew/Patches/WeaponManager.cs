@@ -71,3 +71,31 @@ internal static class WeaponManager_TargetListChanged
         return station == null || !client.Crew.BlocksStation(aircraft, station.Number);
     }
 }
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[HarmonyPatch(typeof(WeaponManager), nameof(WeaponManager.NextWeaponStation))]
+internal static class WeaponManager_NextWeaponStation
+{
+    private static readonly AccessTools.FieldRef<WeaponManager, Aircraft> AircraftRef =
+        AccessTools.FieldRefAccess<WeaponManager, Aircraft>("aircraft");
+
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static bool Prefix(WeaponManager __instance)
+    {
+        return Plugin.Client?.PilotSeat.Cycle(AircraftRef(__instance), 1) != true;
+    }
+}
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[HarmonyPatch(typeof(WeaponManager), nameof(WeaponManager.PreviousWeaponStation))]
+internal static class WeaponManager_PreviousWeaponStation
+{
+    private static readonly AccessTools.FieldRef<WeaponManager, Aircraft> AircraftRef =
+        AccessTools.FieldRefAccess<WeaponManager, Aircraft>("aircraft");
+
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static bool Prefix(WeaponManager __instance)
+    {
+        return Plugin.Client?.PilotSeat.Cycle(AircraftRef(__instance), -1) != true;
+    }
+}

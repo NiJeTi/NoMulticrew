@@ -42,26 +42,46 @@ internal sealed class PilotSeat
     private void KeepOffCrewStations(Aircraft aircraft)
     {
         var current = aircraft.weaponManager.currentWeaponStation;
-        if (current == null || _session.Crew.Holder(aircraft, current.Number) == SeatTable.Pilot)
+        if (current == null || _session.Crew.CanSelect(aircraft, SeatTable.Pilot, current.Number))
         {
             return;
+        }
+
+        Cycle(aircraft, 1);
+
+        if (!ReferenceEquals(aircraft.weaponManager.currentWeaponStation, current))
+        {
+            _session.Crew.RefuseStation(aircraft, current.Number);
+        }
+    }
+
+    public bool Cycle(Aircraft aircraft, int direction)
+    {
+        var manager = aircraft.weaponManager;
+        var current = manager.currentWeaponStation;
+        if (current == null || !GameManager.IsLocalAircraft(aircraft))
+        {
+            return false;
         }
 
         var count = aircraft.weaponStations.Count;
 
         for (var step = 1; step < count; step++)
         {
-            var candidate = (current.Number + step) % count;
-            if (_session.Crew.Holder(aircraft, candidate) != SeatTable.Pilot)
+            var candidate = ((current.Number + direction * step) % count + count) % count;
+            if (!_session.Crew.CanSelect(aircraft, SeatTable.Pilot, candidate))
             {
                 continue;
             }
 
-            _session.Crew.RefuseStation(aircraft, current.Number);
+            manager.currentWeaponStation = aircraft.weaponStations[candidate];
             aircraft.SetActiveStation((byte)candidate);
-            SceneSingleton<CombatHUD>.i.ShowWeaponStation(aircraft.weaponStations[candidate]);
-            return;
+            SceneSingleton<CombatHUD>.i.ShowWeaponStation(manager.currentWeaponStation);
+
+            return true;
         }
+
+        return true;
     }
 
     public void OnTurretVector(CrewTurretVector message)

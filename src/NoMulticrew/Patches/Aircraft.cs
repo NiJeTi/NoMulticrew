@@ -94,13 +94,7 @@ internal static class Aircraft_SetActiveStation
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prefix(Aircraft __instance, byte stationIndex)
     {
-        var crew = Plugin.Client?.Crew;
-        if (crew == null || !crew.BlocksStation(__instance, stationIndex))
-        {
-            return true;
-        }
-
-        return crew.RefuseStation(__instance, stationIndex);
+        return Plugin.Client?.Crew.BlocksStation(__instance, stationIndex) != true;
     }
 }
 
