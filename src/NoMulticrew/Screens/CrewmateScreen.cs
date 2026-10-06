@@ -82,9 +82,11 @@ internal sealed class CrewmateScreen : IDisposable
 
         _targets.Clear();
 
-        foreach (var id in crew.TargetsOf(Aircraft, station))
+        var ids = crew.TargetsOf(Aircraft, station);
+
+        for (var i = 0; i < ids.Count; i++)
         {
-            if (UnitRegistry.TryGetUnit(id, out var unit) && unit != null && !unit.disabled)
+            if (UnitRegistry.TryGetUnit(ids[i], out var unit) && unit != null && !unit.disabled)
             {
                 _targets.Add(unit);
             }

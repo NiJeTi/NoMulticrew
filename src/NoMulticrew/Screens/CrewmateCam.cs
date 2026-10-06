@@ -219,6 +219,7 @@ internal sealed class CrewmateCam : IDisposable
             Plugin.Logger.LogWarning("No free layer for the crewmate's target view grading; it is shown ungraded");
             Object.Destroy(_volume);
             _volume = null;
+            _camera!.GetUniversalAdditionalCameraData().volumeLayerMask = 0;
 
             return;
         }
