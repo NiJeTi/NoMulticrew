@@ -24,6 +24,8 @@ internal sealed class BackSeat : IDisposable
 
     private const float BailOutConfirmSeconds = 3f;
 
+    private const float RideTimeConstant = 0.2f;
+
     private readonly ClientSession _session;
 
     private readonly HashSet<TargetDetector> _scanning = [];
@@ -34,6 +36,8 @@ internal sealed class BackSeat : IDisposable
     private CameraStateManager? _camera;
 
     private float _bailOutArmedAt = float.NegativeInfinity;
+
+    private Vector3 _rideVelocity;
 
     public Aircraft? Aircraft { get; private set; }
 
@@ -112,6 +116,15 @@ internal sealed class BackSeat : IDisposable
         {
             Station = -1;
         }
+    }
+
+    public Vector3 SmoothVelocity(Vector3 velocity, bool restart)
+    {
+        _rideVelocity = restart
+            ? velocity
+            : Vector3.Lerp(_rideVelocity, velocity, 1f - Mathf.Exp(-Time.fixedDeltaTime / RideTimeConstant));
+
+        return _rideVelocity;
     }
 
     private void Employ()
