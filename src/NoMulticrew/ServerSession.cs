@@ -4,6 +4,7 @@ using NoMulticrew.Crew;
 using NoMulticrew.Networking;
 using NuclearOption.DedicatedServer.Commands;
 using NuclearOption.Networking;
+using UnityEngine;
 
 namespace NoMulticrew;
 
@@ -130,6 +131,19 @@ internal sealed class ServerSession : IDisposable
         }
 
         Plugin.Client?.Kills.Record(killedId, author.PlayerIndex);
+    }
+
+    public void ShowCrewHit(Player crew, Unit target, Vector3 relativePos)
+    {
+        if (GameManager.IsLocalPlayer(crew))
+        {
+            return;
+        }
+
+        SendToPlayer(
+            crew.Owner,
+            new CrewHit(target.persistentID, NetworkFloatHelper.CompressIfValid(relativePos, logErrors: false, "relativePos"))
+        );
     }
 
     public void OnSceneReady(INetworkPlayer player)

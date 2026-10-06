@@ -20,6 +20,7 @@ internal static class MessageRegistry
         Register<CrewTurretVector>();
         Register<CrewLaunch>();
         Register<CrewKillAuthor>();
+        Register<CrewHit>();
     }
 
     private static void Register<T>()

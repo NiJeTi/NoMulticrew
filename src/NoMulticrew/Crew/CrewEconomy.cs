@@ -41,6 +41,8 @@ internal sealed class CrewEconomy
         _session = session;
     }
 
+    public Player? ContextCrew => _contextCrew;
+
     public void Attributed(Player sender, Action action)
     {
         _sender = sender;

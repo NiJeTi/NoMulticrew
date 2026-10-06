@@ -49,6 +49,8 @@ internal static class Unit_SetFiringState
 [HarmonyPatch(typeof(Unit), nameof(Unit.RegisterHit))]
 internal static class Unit_RegisterHit
 {
+    public static bool HidesNextDisplay { get; set; }
+
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prefix(
         Unit __instance,
@@ -60,26 +62,46 @@ internal static class Unit_RegisterHit
     )
     {
         __state = false;
+        HidesNextDisplay = false;
 
         var client = Plugin.Client;
         if (client != null)
         {
             var station = __instance.weaponStations.FindIndex(x => x.WeaponInfo == weaponInfo);
 
-            if (client.Crew.BlocksStation(__instance, station)
-                && !(__instance.IsServer && IsServerAuthoritative(__instance.weaponStations[station])))
+            if (client.Crew.BlocksStation(__instance, station))
             {
-                return false;
+                HidesNextDisplay = true;
+
+                if (!(__instance.IsServer && IsServerAuthoritative(__instance.weaponStations[station])))
+                {
+                    return false;
+                }
             }
 
-            if (!__instance.IsServer && client.BackSeat.Owns(__instance, station))
+            if (client.BackSeat.Owns(__instance, station))
             {
-                client.BackSeat.Weapons.ClaimHit(hitUnit, relativePos, bulletVelocity, (byte)station);
-                return false;
+                var hud = SceneSingleton<CombatHUD>.i;
+                if (hud != null)
+                {
+                    hud.DisplayHit(hitUnit.transform.TransformPoint(relativePos).ToGlobalPosition(), hitUnit);
+                }
+
+                if (!__instance.IsServer)
+                {
+                    client.BackSeat.Weapons.ClaimHit(hitUnit, relativePos, bulletVelocity, (byte)station);
+                    return false;
+                }
             }
         }
 
-        __state = Plugin.Server?.Economy.EnterHitContext(__instance, weaponInfo) == true;
+        var server = Plugin.Server;
+        __state = server?.Economy.EnterHitContext(__instance, weaponInfo) == true;
+
+        if (__state)
+        {
+            server!.ShowCrewHit(server.Economy.ContextCrew!, hitUnit, relativePos);
+        }
 
         return true;
     }
@@ -96,6 +118,24 @@ internal static class Unit_RegisterHit
         {
             Plugin.Server!.Economy.ExitContext();
         }
+    }
+}
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[HarmonyPatch(typeof(CombatHUD), nameof(CombatHUD.DisplayHit))]
+internal static class CombatHUD_DisplayHit
+{
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static bool Prefix()
+    {
+        if (!Unit_RegisterHit.HidesNextDisplay)
+        {
+            return true;
+        }
+
+        Unit_RegisterHit.HidesNextDisplay = false;
+
+        return false;
     }
 }
 

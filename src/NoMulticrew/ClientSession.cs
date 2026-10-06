@@ -54,6 +54,7 @@ internal sealed class ClientSession : IDisposable
         _client.MessageHandler.RegisterHandler<CrewTurretVector>(OnTurretVector, allowUnauthenticated: false);
         _client.MessageHandler.RegisterHandler<CrewLaunch>(OnLaunch, allowUnauthenticated: false);
         _client.MessageHandler.RegisterHandler<CrewKillAuthor>(OnKillAuthor, allowUnauthenticated: false);
+        _client.MessageHandler.RegisterHandler<CrewHit>(OnHit, allowUnauthenticated: false);
         _client.Authenticated.AddListener(OnAuthenticated);
     }
 
@@ -70,6 +71,7 @@ internal sealed class ClientSession : IDisposable
         _client.MessageHandler.UnregisterHandler<CrewTurretVector>();
         _client.MessageHandler.UnregisterHandler<CrewLaunch>();
         _client.MessageHandler.UnregisterHandler<CrewKillAuthor>();
+        _client.MessageHandler.UnregisterHandler<CrewHit>();
     }
 
     public void AttachMfd(VirtualMFD mfd)
@@ -220,6 +222,22 @@ internal sealed class ClientSession : IDisposable
         {
             Kills.Record(message.KilledId, message.PlayerIndex);
         }
+    }
+
+    private void OnHit(INetworkPlayer player, CrewHit message)
+    {
+        var hud = SceneSingleton<CombatHUD>.i;
+
+        if (!Confirmed
+            || BackSeat.Aircraft == null
+            || hud == null
+            || !UnitRegistry.TryGetUnit(message.TargetId, out var target)
+            || !NetworkFloatHelper.TryDecompress(message.RelativePos, out var relativePos, logErrors: false, "relativePos"))
+        {
+            return;
+        }
+
+        hud.DisplayHit(target.transform.TransformPoint(relativePos).ToGlobalPosition(), target);
     }
 
     public void Tick()
