@@ -15,6 +15,7 @@ internal sealed class CrewEconomy
     }
 
     private const float ClaimLifetimeSeconds = 0.25f;
+    private const float LaunchLifetimeSeconds = 5f;
     private const float CreditThreshold = 0.01f;
 
     private static readonly AccessTools.FieldRef<Unit, Dictionary<PersistentID, float>?> DamageCreditRef =
@@ -22,7 +23,8 @@ internal sealed class CrewEconomy
 
     private readonly ServerSession _session;
 
-    private readonly Dictionary<(PersistentID Aircraft, WeaponInfo Weapon), Player> _launchers = [];
+    private readonly Dictionary<(PersistentID Aircraft, WeaponInfo Weapon), Queue<(Player? Launcher, float Time)>> _launches = [];
+    private readonly Dictionary<Missile, Player> _launchers = [];
     private readonly Dictionary<PersistentID, Queue<(Player? Claimant, float Time)>> _claims = [];
     private readonly Dictionary<(PersistentID Target, PersistentID Aircraft), Ledger> _ledger = [];
     private readonly Dictionary<Player, (float Allocation, float Score)> _escrow = [];
@@ -54,25 +56,54 @@ internal sealed class CrewEconomy
 
     public void OnLaunch(Unit owner, WeaponStation station)
     {
-        if (owner is not Aircraft aircraft)
+        if (owner is not Aircraft aircraft || !_session.Crew.IsCrewed(aircraft.persistentID))
         {
             return;
         }
 
         var key = (aircraft.persistentID, station.WeaponInfo);
-        var launcher = _sender;
 
-        if (launcher != null)
+        if (!_launches.TryGetValue(key, out var queue))
         {
-            Plugin.Logger.LogDebug(
-                $"{station.WeaponInfo.weaponName} from {aircraft.persistentID} launched by "
-                + launcher.GetDisplayName(PlayerNameContext.Other)
-            );
-            _launchers[key] = launcher;
+            queue = new Queue<(Player?, float)>();
+            _launches[key] = queue;
         }
-        else
+
+        queue.Enqueue((_sender, Time.unscaledTime));
+    }
+
+    public void OnSpawn(Missile missile, Unit? owner)
+    {
+        if (owner == null || !_launches.TryGetValue((owner.persistentID, missile.GetWeaponInfo()), out var queue))
         {
-            _launchers.Remove(key);
+            return;
+        }
+
+        var now = Time.unscaledTime;
+
+        while (queue.Count > 0)
+        {
+            var (launcher, time) = queue.Dequeue();
+            if (now - time > LaunchLifetimeSeconds)
+            {
+                continue;
+            }
+
+            if (launcher != null)
+            {
+                foreach (var spent in _launchers.Keys.Where(x => x == null).ToList())
+                {
+                    _launchers.Remove(spent);
+                }
+
+                Plugin.Logger.LogDebug(
+                    $"{missile.GetWeaponInfo().weaponName} from {owner.persistentID} launched by "
+                    + launcher.GetDisplayName(PlayerNameContext.Other)
+                );
+                _launchers[missile] = launcher;
+            }
+
+            return;
         }
     }
 
@@ -117,10 +148,8 @@ internal sealed class CrewEconomy
 
     public bool EnterMissileContext(Missile missile)
     {
-        var weapon = missile.GetWeaponInfo();
-
         return _contextCrew == null
-            && _launchers.TryGetValue((missile.ownerID, weapon), out var launcher)
+            && _launchers.TryGetValue(missile, out var launcher)
             && Enter(missile.ownerID, launcher);
     }
 
@@ -242,9 +271,16 @@ internal sealed class CrewEconomy
                 ledger.Crew.Remove(crew);
             }
 
-            foreach (var key in _launchers.Where(x => ReferenceEquals(x.Value, crew)).Select(x => x.Key).ToList())
+            foreach (var missile in _launchers.Where(x => ReferenceEquals(x.Value, crew)).Select(x => x.Key).ToList())
             {
-                _launchers.Remove(key);
+                _launchers.Remove(missile);
+            }
+
+            foreach (var key in _launches.Keys.ToList())
+            {
+                _launches[key] = new Queue<(Player?, float)>(
+                    _launches[key].Select(x => ReferenceEquals(x.Launcher, crew) ? (null, x.Time) : x)
+                );
             }
 
             foreach (var dealer in _claims.Keys.ToList())
