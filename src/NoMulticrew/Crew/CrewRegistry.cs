@@ -139,13 +139,15 @@ internal sealed class CrewRegistry
         Broadcast(aircraft.persistentID);
     }
 
-    public void Release(Player player)
+    public void Release(Player player, bool forfeit)
     {
         var aircraftId = AircraftOf(player);
         if (aircraftId == null)
         {
             return;
         }
+
+        _session.Economy.Settle(player, aircraftId.Value, forfeit);
 
         var seats = _crews[aircraftId.Value];
 

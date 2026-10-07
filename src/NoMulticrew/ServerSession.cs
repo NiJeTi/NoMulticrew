@@ -183,12 +183,7 @@ internal sealed class ServerSession : IDisposable
 
             Requests.Forget(player);
 
-            if (seatedIn is { } freed)
-            {
-                Economy.Settle(player, freed, forfeit: true);
-            }
-
-            Crew.Release(player);
+            Crew.Release(player, forfeit: true);
             Crew.DissolvePilotedBy(player);
         }
 
@@ -261,8 +256,7 @@ internal sealed class ServerSession : IDisposable
             + (valid ? "with a valid exit" : "by bailing out")
         );
 
-        Economy.Settle(player, aircraftId.Value, forfeit: !valid);
-        Crew.Release(player);
+        Crew.Release(player, forfeit: !valid);
         Notify(player, valid ? "Left the seat" : "Bailed out", CrewCue.Deselect);
     }
 

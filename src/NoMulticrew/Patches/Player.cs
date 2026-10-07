@@ -12,13 +12,12 @@ internal static class Player_SetAircraft
     private static void Postfix(Player __instance)
     {
         var server = Plugin.Server;
-        if (server == null || server.Crew.AircraftOf(__instance) is not { } seatedIn)
+        if (server == null || server.Crew.AircraftOf(__instance) == null)
         {
             return;
         }
 
-        server.Economy.Settle(__instance, seatedIn, forfeit: true);
-        server.Crew.Release(__instance);
+        server.Crew.Release(__instance, forfeit: true);
         server.Notify(__instance, "Left the seat");
     }
 }
