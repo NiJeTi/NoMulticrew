@@ -20,7 +20,7 @@ internal sealed class CrewTargetCam
     private static readonly AccessTools.FieldRef<TargetCam, GameObject?> LandingCanvasRef =
         AccessTools.FieldRefAccess<TargetCam, GameObject?>("canvasObjectLanding");
 
-    private static readonly AccessTools.FieldRef<TargetCam, UnitPart?> AttachedPartRef =
+    public static readonly AccessTools.FieldRef<TargetCam, UnitPart?> AttachedPartRef =
         AccessTools.FieldRefAccess<TargetCam, UnitPart?>("attachedPart");
 
     private static readonly MethodInfo OnTouchdown = GameMembers.Method(typeof(TargetCam), "TargetCam_OnTouchdown");

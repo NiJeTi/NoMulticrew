@@ -19,9 +19,6 @@ internal sealed class CrewmateCam : IDisposable
     private const float InfraredRange = 10000f;
     private const float RetargetDistance = 50f;
 
-    private static readonly AccessTools.FieldRef<TargetCam, UnitPart?> AttachedPartRef =
-        AccessTools.FieldRefAccess<TargetCam, UnitPart?>("attachedPart");
-
     private static readonly AccessTools.FieldRef<TargetCam, Transform?> ForwardMountRef =
         AccessTools.FieldRefAccess<TargetCam, Transform?>("camMountForward");
 
@@ -65,11 +62,6 @@ internal sealed class CrewmateCam : IDisposable
         {
             Plugin.Logger.LogError($"Failed to build the crewmate's target camera: {e}");
             cam.Dispose();
-
-            if (cam.Texture != null)
-            {
-                Object.Destroy(cam.Texture);
-            }
 
             return null;
         }
@@ -141,6 +133,13 @@ internal sealed class CrewmateCam : IDisposable
             Object.Destroy(_volume.profile);
         }
 
+        if (Texture != null)
+        {
+            Object.Destroy(Texture);
+        }
+
+        Texture = null;
+
         if (_root != null)
         {
             Object.Destroy(_root);
@@ -160,7 +159,7 @@ internal sealed class CrewmateCam : IDisposable
             throw new InvalidOperationException($"{_aircraft.definition.jsonKey} has no target camera");
         }
 
-        var part = AttachedPartRef(source);
+        var part = CrewTargetCam.AttachedPartRef(source);
         var forward = ForwardMountRef(source);
         var rear = RearMountRef(source);
         if (part == null || forward == null || rear == null)

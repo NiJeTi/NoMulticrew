@@ -11,8 +11,6 @@ internal sealed class CrewmateScreen : IDisposable
 {
     private const float PanelLift = 0.002f;
 
-    private static readonly int EmissionMap = Shader.PropertyToID("_EmissionMap");
-
     private static readonly AccessTools.FieldRef<TacScreen, GameObject?> TargetDisplayRef =
         AccessTools.FieldRefAccess<TacScreen, GameObject?>("targetCamDisplay");
 
@@ -127,11 +125,6 @@ internal sealed class CrewmateScreen : IDisposable
             Object.Destroy(_texture);
         }
 
-        if (_camera?.Texture != null)
-        {
-            Object.Destroy(_camera.Texture);
-        }
-
         _camera = null;
         _toggle = null;
         _holder = null;
@@ -155,7 +148,7 @@ internal sealed class CrewmateScreen : IDisposable
         }
 
         var targetCam = Aircraft.targetCam;
-        if (targetCam == null || CrewScreens.CamToggle == null)
+        if (targetCam == null)
         {
             throw new InvalidOperationException("the aircraft has no target camera on this client");
         }
@@ -221,7 +214,7 @@ internal sealed class CrewmateScreen : IDisposable
 
         _material = new Material(shared) { name = "NoMulticrew.CrewmateScreen" };
 
-        _material.SetTexture(EmissionMap, _texture);
+        _material.SetTexture(CrewScreens.EmissionMap, _texture);
         CrewScreens.MaterialRef(_screen) = _material;
 
         _overlay = Overlay(panel, source, _material);

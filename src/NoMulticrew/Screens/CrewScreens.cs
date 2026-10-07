@@ -16,6 +16,8 @@ internal sealed class CrewScreens
 
     public static readonly MethodInfo CamToggle = GameMembers.Method(typeof(TacScreen), "TacScreen_OnCamToggle");
 
+    public static readonly int EmissionMap = Shader.PropertyToID("_EmissionMap");
+
     private static readonly AccessTools.FieldRef<TacScreen, bool> RadarOnRef =
         AccessTools.FieldRefAccess<TacScreen, bool>("radarOn");
 
@@ -36,8 +38,6 @@ internal sealed class CrewScreens
 
     private static readonly MethodInfo LightWarning =
         GameMembers.Method(typeof(MissileWarningLight), "MissileWarningLights_OnMissileWarning");
-
-    private static readonly int EmissionMap = Shader.PropertyToID("_EmissionMap");
 
     private readonly ClientSession _session;
 
