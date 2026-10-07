@@ -55,7 +55,7 @@ internal sealed class ClientSession : IDisposable
         Screens = new CrewScreens(this);
 
         _client.MessageHandler.RegisterHandler<MulticrewWelcome>(OnWelcome, allowUnauthenticated: false);
-        _client.MessageHandler.RegisterHandler<CrewRoster>(OnState, allowUnauthenticated: false);
+        _client.MessageHandler.RegisterHandler<CrewRoster>(OnRoster, allowUnauthenticated: false);
         _client.MessageHandler.RegisterHandler<CrewJoinPrompt>(OnJoinPrompt, allowUnauthenticated: false);
         _client.MessageHandler.RegisterHandler<CrewNotice>(OnNotice, allowUnauthenticated: false);
         _client.MessageHandler.RegisterHandler<CrewTurretVector>(OnTurretVector, allowUnauthenticated: false);
@@ -203,7 +203,7 @@ internal sealed class ClientSession : IDisposable
         }
     }
 
-    private void OnState(INetworkPlayer player, CrewRoster message)
+    private void OnRoster(INetworkPlayer player, CrewRoster message)
     {
         if (!Confirmed)
         {
