@@ -94,6 +94,7 @@ internal sealed class CrewScreen : IDisposable
     private const string SeatsTitle = "SEATS";
 
     private const float OffersIntervalSeconds = 0.5f;
+    private const float DescribeIntervalSeconds = 0.1f;
 
     private static readonly AccessTools.FieldRef<VirtualMFD, List<Button>> LeftButtonsRef =
         AccessTools.FieldRefAccess<VirtualMFD, List<Button>>("leftButtons");
@@ -111,6 +112,7 @@ internal sealed class CrewScreen : IDisposable
     private SeatOffer[] _offers = [];
     private float _offersAt = float.NegativeInfinity;
 
+    private float _describedAt = float.NegativeInfinity;
     private Content? _shown;
 
     private CrewScreen(ClientSession session, Layout layout, int screenIndex)
@@ -159,12 +161,18 @@ internal sealed class CrewScreen : IDisposable
             return;
         }
 
-        var content = Describe();
-
-        if (!content.Same(_shown))
+        var now = Time.unscaledTime;
+        if (now - _describedAt >= DescribeIntervalSeconds)
         {
-            _shown = content;
-            Rebuild(content);
+            _describedAt = now;
+
+            var content = Describe();
+
+            if (!content.Same(_shown))
+            {
+                _shown = content;
+                Rebuild(content);
+            }
         }
 
         foreach (var row in _rows)
@@ -176,7 +184,7 @@ internal sealed class CrewScreen : IDisposable
     private Content Describe()
     {
         var backSeat = _session.BackSeat.Aircraft;
-        var aircraft = backSeat != null ? backSeat : LocalAircraft();
+        var aircraft = backSeat != null ? backSeat : GameManager.GetLocalAircraft(out var local) ? local : null;
 
         var crew = new List<string>();
         var stations = new List<(string, bool)>();
@@ -192,7 +200,17 @@ internal sealed class CrewScreen : IDisposable
 
             if (_session.Crew.TryGetRoster(aircraft.persistentID, out var roster))
             {
-                DescribeSeats(aircraft, roster, crew);
+                var here = backSeat != null;
+
+                crew.Add(
+                    $"{SeatTable.Label(Role.Wso).ToUpperInvariant()}  "
+                    + $"{CrewState.NameOf(roster.WsoPlayerIndex)}{(here ? " <" : "")}"
+                );
+
+                if (here)
+                {
+                    crew.Add($"PENDING  +{roster.Pending:F0}");
+                }
             }
             else
             {
@@ -273,19 +291,6 @@ internal sealed class CrewScreen : IDisposable
         _offers = [.. offers.OrderBy(x => x.Airbase).ThenBy(x => x.Text)];
 
         return _offers;
-    }
-
-    private void DescribeSeats(Aircraft aircraft, CrewRoster roster, List<string> crew)
-    {
-        var here = ReferenceEquals(_session.BackSeat.Aircraft, aircraft);
-        var name = CrewState.NameOf(roster.WsoPlayerIndex);
-
-        crew.Add($"{SeatTable.Label(Role.Wso).ToUpperInvariant()}  {name}{(here ? " <" : "")}");
-
-        if (here)
-        {
-            crew.Add($"PENDING  +{roster.Pending:F0}");
-        }
     }
 
     private void DescribeStations(Aircraft aircraft, List<(string, bool)> stations)
@@ -429,11 +434,6 @@ internal sealed class CrewScreen : IDisposable
                 Object.DestroyImmediate(line.gameObject);
             }
         }
-    }
-
-    private static Aircraft? LocalAircraft()
-    {
-        return GameManager.GetLocalAircraft(out var aircraft) ? aircraft : null;
     }
 
     private void ReleaseScreenSlot()
