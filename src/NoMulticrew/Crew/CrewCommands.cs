@@ -83,19 +83,23 @@ internal sealed class CrewCommands
             return;
         }
 
-        var name = sender.GetDisplayName(PlayerNameContext.Other);
-
         if (!ReferenceEquals(_session.Crew.WsoOf(message.AircraftId), sender))
         {
             if (_released.TryGetValue(connection, out var released)
                 && released.Aircraft == message.AircraftId
                 && Time.unscaledTime - released.Time <= ReleaseGraceSeconds)
             {
-                Plugin.Logger.LogDebug($"Dropped late crew {message.Kind} for {message.AircraftId} from {name}");
+                Plugin.Logger.LogDebug(
+                    $"Dropped late crew {message.Kind} for {message.AircraftId} "
+                    + $"from {sender.GetDisplayName(PlayerNameContext.Other)}"
+                );
                 return;
             }
 
-            Plugin.Logger.LogWarning($"Crew {message.Kind} for {message.AircraftId} from {name}, who has no seat in it");
+            Plugin.Logger.LogWarning(
+                $"Crew {message.Kind} for {message.AircraftId} from {sender.GetDisplayName(PlayerNameContext.Other)}, "
+                + "who has no seat in it"
+            );
             connection.SetError(NoAuthorityCost, PlayerErrorFlags.NoAuthority);
             return;
         }
@@ -107,7 +111,7 @@ internal sealed class CrewCommands
 
         if (message.Kind == CrewCommandKind.SelectStation)
         {
-            SelectStation(connection, aircraft, message.Station, name);
+            SelectStation(connection, sender, aircraft, message.Station);
             return;
         }
 
@@ -116,15 +120,15 @@ internal sealed class CrewCommands
             if (Plugin.SeatTable.IsShared(aircraft))
             {
                 Plugin.Logger.LogDebug(
-                    $"Dropped crew {message.Kind} from {name} for station {message.Station} of {message.AircraftId}, "
-                    + "which their seat no longer holds"
+                    $"Dropped crew {message.Kind} from {sender.GetDisplayName(PlayerNameContext.Other)} "
+                    + $"for station {message.Station} of {message.AircraftId}, which their seat no longer holds"
                 );
                 return;
             }
 
             Plugin.Logger.LogWarning(
-                $"Crew {message.Kind} from {name} names station {message.Station} of {message.AircraftId}, "
-                + "which their seat does not hold"
+                $"Crew {message.Kind} from {sender.GetDisplayName(PlayerNameContext.Other)} "
+                + $"names station {message.Station} of {message.AircraftId}, which their seat does not hold"
             );
             connection.SetError(NoAuthorityCost, PlayerErrorFlags.NoAuthority);
             return;
@@ -132,7 +136,9 @@ internal sealed class CrewCommands
 
         if (!Validate(message, out var cost, out var flags))
         {
-            Plugin.Logger.LogWarning($"Crew {message.Kind} from {name} has invalid arguments");
+            Plugin.Logger.LogWarning(
+                $"Crew {message.Kind} from {sender.GetDisplayName(PlayerNameContext.Other)} has invalid arguments"
+            );
             connection.SetError(cost, flags);
             return;
         }
@@ -313,11 +319,14 @@ internal sealed class CrewCommands
         }
     }
 
-    private void SelectStation(INetworkPlayer connection, Aircraft aircraft, byte station, string name)
+    private void SelectStation(INetworkPlayer connection, Player sender, Aircraft aircraft, byte station)
     {
         if (station != SeatTable.NoStation && station >= aircraft.weaponStations.Count)
         {
-            Plugin.Logger.LogWarning($"Crew station {station} from {name} is out of bounds for {aircraft.persistentID}");
+            Plugin.Logger.LogWarning(
+                $"Crew station {station} from {sender.GetDisplayName(PlayerNameContext.Other)} "
+                + $"is out of bounds for {aircraft.persistentID}"
+            );
             connection.SetError(1, NuclearOptionPlayerErrorFlags.OutOfBounds);
             return;
         }
@@ -328,13 +337,17 @@ internal sealed class CrewCommands
             if (!Plugin.SeatTable.IsShared(aircraft))
             {
                 Plugin.Logger.LogWarning(
-                    $"Crew station {station} from {name} is not their seat's on {aircraft.persistentID}"
+                    $"Crew station {station} from {sender.GetDisplayName(PlayerNameContext.Other)} "
+                    + $"is not their seat's on {aircraft.persistentID}"
                 );
                 connection.SetError(NoAuthorityCost, PlayerErrorFlags.NoAuthority);
                 return;
             }
 
-            Plugin.Logger.LogDebug($"Refused station {station} of {aircraft.persistentID} to {name}: the pilot has it");
+            Plugin.Logger.LogDebug(
+                $"Refused station {station} of {aircraft.persistentID} "
+                + $"to {sender.GetDisplayName(PlayerNameContext.Other)}: the pilot has it"
+            );
             _session.Crew.SendRoster(aircraft.persistentID);
             return;
         }
