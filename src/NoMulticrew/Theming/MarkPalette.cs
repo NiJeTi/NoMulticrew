@@ -5,7 +5,7 @@ namespace NoMulticrew.Theming;
 
 internal sealed class MarkPalette
 {
-    public static readonly Color DefaultCrewTarget = new(1f, 0.75f, 0f);
+    private static readonly Color DefaultCrewTarget = new(1f, 0.75f, 0f);
 
     private readonly Dictionary<string, Color> _colors = [];
 
