@@ -315,24 +315,8 @@ internal sealed class BackSeat : IDisposable
 
         aircraft.weaponManager.GetTargetList().Clear();
 
-        var seat = Plugin.SeatTable.WsoSeat(aircraft);
-        if (seat == null)
-        {
-            Plugin.Logger.LogError(
-                $"Seated as WSO of {aircraft.definition.jsonKey}, but the local seat table has no WSO for it. "
-                + "This client's seat table differs from the server's."
-            );
-
-            return;
-        }
-
+        var seat = Plugin.SeatTable.WsoSeat(aircraft)!;
         var original = aircraft.cockpitViewPoint;
-        if (original == null)
-        {
-            Plugin.Logger.LogError($"{aircraft.definition.jsonKey} has no cockpit view point");
-
-            return;
-        }
 
         _originalViewPoint = original;
         _rearViewPoint = new GameObject("NoMulticrew.RearViewPoint");
