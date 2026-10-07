@@ -14,9 +14,10 @@ internal sealed class CrewScreens
     public static readonly AccessTools.FieldRef<TacScreen, Material?> MaterialRef =
         AccessTools.FieldRefAccess<TacScreen, Material?>("screenMaterial");
 
-    public static readonly MethodInfo? CamToggle = AccessTools.Method(typeof(TacScreen), "TacScreen_OnCamToggle");
+    public static readonly MethodInfo CamToggle = GameMembers.Method(typeof(TacScreen), "TacScreen_OnCamToggle");
 
-    private static readonly FieldInfo? RadarOnField = AccessTools.Field(typeof(TacScreen), "radarOn");
+    private static readonly AccessTools.FieldRef<TacScreen, bool> RadarOnRef =
+        AccessTools.FieldRefAccess<TacScreen, bool>("radarOn");
 
     private static readonly AccessTools.FieldRef<Cockpit, GameObject?> PrefabRef =
         AccessTools.FieldRefAccess<Cockpit, GameObject?>("tacScreenUIPrefab");
@@ -27,14 +28,14 @@ internal sealed class CrewScreens
     private static readonly AccessTools.FieldRef<MissileWarningLight, MissileWarning?> MissileWarningRef =
         AccessTools.FieldRefAccess<MissileWarningLight, MissileWarning?>("missileWarning");
 
-    private static readonly MethodInfo? AppDisable =
-        AccessTools.Method(typeof(MFDAppManager), "HUDAppManager_OnUnitDisable");
+    private static readonly MethodInfo AppDisable =
+        GameMembers.Method(typeof(MFDAppManager), "HUDAppManager_OnUnitDisable");
 
-    private static readonly MethodInfo? LightDisable =
-        AccessTools.Method(typeof(MissileWarningLight), "MissileWarningLights_OnDisable");
+    private static readonly MethodInfo LightDisable =
+        GameMembers.Method(typeof(MissileWarningLight), "MissileWarningLights_OnDisable");
 
-    private static readonly MethodInfo? LightWarning =
-        AccessTools.Method(typeof(MissileWarningLight), "MissileWarningLights_OnMissileWarning");
+    private static readonly MethodInfo LightWarning =
+        GameMembers.Method(typeof(MissileWarningLight), "MissileWarningLights_OnMissileWarning");
 
     private static readonly int EmissionMap = Shader.PropertyToID("_EmissionMap");
 
@@ -74,25 +75,13 @@ internal sealed class CrewScreens
             return;
         }
 
-        if (RadarOnField == null)
-        {
-            Plugin.Logger.LogError("TacScreen.radarOn not found; a crew screen built while the radar is off shows it on");
-            return;
-        }
-
-        RadarOnField.SetValue(screen, !aircraft.radar.activated);
+        RadarOnRef(screen) = !aircraft.radar.activated;
     }
 
     public void Board(Aircraft aircraft, SeatDefinition seat, Transform viewPoint, Vector3 eye)
     {
         Clear();
         _seated = aircraft;
-
-        if (CamToggle == null || AppDisable == null || LightDisable == null || LightWarning == null)
-        {
-            Plugin.Logger.LogError("Tactical screen handlers not found; the WSO gets no tactical screen");
-            return;
-        }
 
         if (aircraft.targetCam == null)
         {

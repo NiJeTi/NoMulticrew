@@ -9,7 +9,7 @@ namespace NoMulticrew.Patches;
 internal static class Turret_FixedUpdate
 {
     private static readonly Action<Turret, Vector3> AimTurret = AccessTools.MethodDelegate<Action<Turret, Vector3>>(
-        AccessTools.Method(typeof(Turret), "AimTurret", [typeof(Vector3)])
+        GameMembers.Method(typeof(Turret), "AimTurret", [typeof(Vector3)])
     );
 
     [SuppressMessage("ReSharper", "UnusedMember.Local")]

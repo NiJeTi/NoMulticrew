@@ -1,3 +1,4 @@
+using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -21,6 +22,18 @@ internal sealed class CrewTargetCam
 
     private static readonly AccessTools.FieldRef<TargetCam, UnitPart?> AttachedPartRef =
         AccessTools.FieldRefAccess<TargetCam, UnitPart?>("attachedPart");
+
+    private static readonly MethodInfo OnTouchdown = GameMembers.Method(typeof(TargetCam), "TargetCam_OnTouchdown");
+
+    private static readonly MethodInfo OnSetGear = GameMembers.Method(typeof(TargetCam), "TargetCam_OnSetGear");
+
+    private static readonly MethodInfo OnBeginRendering = GameMembers.Method(typeof(TargetCam), "OnBeginCameraRendering");
+
+    private static readonly MethodInfo OnEndRendering = GameMembers.Method(typeof(TargetCam), "OnEndCameraRendering");
+
+    private static readonly MethodInfo OnDetach = GameMembers.Method(typeof(TargetCam), "TargetCam_OnDetach");
+
+    private static readonly MethodInfo OnUnitDisable = GameMembers.Method(typeof(TargetCam), "TargetCam_OnUnitDisable");
 
     private TargetCam? _cam;
     private Aircraft? _aircraft;
@@ -57,8 +70,8 @@ internal sealed class CrewTargetCam
             return;
         }
 
-        aircraft.OnTouchdown -= Handler<Action>(cam, "TargetCam_OnTouchdown");
-        aircraft.onSetGear -= Handler<Action<Aircraft.OnSetGear>>(cam, "TargetCam_OnSetGear");
+        aircraft.OnTouchdown -= AccessTools.MethodDelegate<Action>(OnTouchdown, cam);
+        aircraft.onSetGear -= AccessTools.MethodDelegate<Action<Aircraft.OnSetGear>>(OnSetGear, cam);
 
         _cam = cam;
         _aircraft = aircraft;
@@ -86,11 +99,11 @@ internal sealed class CrewTargetCam
         DestroyOrReport(LandingCanvasRef(cam), null);
 
         RenderPipelineManager.beginCameraRendering -=
-            Handler<Action<ScriptableRenderContext, Camera>>(cam, "OnBeginCameraRendering");
+            AccessTools.MethodDelegate<Action<ScriptableRenderContext, Camera>>(OnBeginRendering, cam);
         RenderPipelineManager.endCameraRendering -=
-            Handler<Action<ScriptableRenderContext, Camera>>(cam, "OnEndCameraRendering");
+            AccessTools.MethodDelegate<Action<ScriptableRenderContext, Camera>>(OnEndRendering, cam);
 
-        var detach = Handler<Action<UnitPart>>(cam, "TargetCam_OnDetach");
+        var detach = AccessTools.MethodDelegate<Action<UnitPart>>(OnDetach, cam);
         var part = AttachedPartRef(cam);
         if (part != null)
         {
@@ -99,7 +112,7 @@ internal sealed class CrewTargetCam
 
         if (aircraft != null)
         {
-            aircraft.onDisableUnit -= Handler<Action<Unit>>(cam, "TargetCam_OnUnitDisable");
+            aircraft.onDisableUnit -= AccessTools.MethodDelegate<Action<Unit>>(OnUnitDisable, cam);
 
             if (aircraft.cockpit != null)
             {
@@ -116,12 +129,6 @@ internal sealed class CrewTargetCam
         {
             cam.enabled = false;
         }
-    }
-
-    private static T Handler<T>(TargetCam cam, string name)
-        where T : Delegate
-    {
-        return AccessTools.MethodDelegate<T>(AccessTools.Method(typeof(TargetCam), name), cam);
     }
 
     private static void DestroyOrReport(GameObject? target, string? required)

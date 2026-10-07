@@ -1,3 +1,4 @@
+using System.Reflection;
 using HarmonyLib;
 using NuclearOption.UI;
 using NuclearOption.UIStyleSystem;
@@ -30,6 +31,14 @@ internal sealed class MarkPaletteSection : IDisposable
     private static readonly AccessTools.FieldRef<AccessibilityMenu, bool> IsThemeEditedRef =
         AccessTools.FieldRefAccess<AccessibilityMenu, bool>("isThemeEdited");
 
+    private static readonly MethodInfo RefreshThemeName = GameMembers.Method(typeof(AccessibilityMenu), "RefreshThemeName");
+
+    private static readonly MethodInfo RefreshButtons = GameMembers.Method(typeof(AccessibilityMenu), "RefreshButtons");
+
+    private static readonly MethodInfo HoverIn = GameMembers.Method(typeof(AccessibilityMenu), "OnColorNameHoverIn");
+
+    private static readonly MethodInfo HoverOut = GameMembers.Method(typeof(AccessibilityMenu), "OnColorNameHoveredOut");
+
     private static MarkPaletteSection? _current;
 
     private readonly AccessibilityMenu _menu;
@@ -47,18 +56,10 @@ internal sealed class MarkPaletteSection : IDisposable
         _container = container;
         _picker = picker;
 
-        _refreshThemeName = AccessTools.MethodDelegate<Action>(
-            AccessTools.Method(typeof(AccessibilityMenu), "RefreshThemeName"), menu
-        );
-        _refreshButtons = AccessTools.MethodDelegate<Action>(
-            AccessTools.Method(typeof(AccessibilityMenu), "RefreshButtons"), menu
-        );
-        _hoverIn = AccessTools.MethodDelegate<Action<string>>(
-            AccessTools.Method(typeof(AccessibilityMenu), "OnColorNameHoverIn"), menu
-        );
-        _hoverOut = AccessTools.MethodDelegate<Action<string>>(
-            AccessTools.Method(typeof(AccessibilityMenu), "OnColorNameHoveredOut"), menu
-        );
+        _refreshThemeName = AccessTools.MethodDelegate<Action>(RefreshThemeName, menu);
+        _refreshButtons = AccessTools.MethodDelegate<Action>(RefreshButtons, menu);
+        _hoverIn = AccessTools.MethodDelegate<Action<string>>(HoverIn, menu);
+        _hoverOut = AccessTools.MethodDelegate<Action<string>>(HoverOut, menu);
 
         _picker.OnColorChanged += OnColorChanged;
         _picker.OnColorNameHoverIn += _hoverIn;

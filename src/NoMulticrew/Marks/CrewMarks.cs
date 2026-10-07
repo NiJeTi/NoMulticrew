@@ -14,11 +14,11 @@ internal sealed class CrewMarks : IDisposable
         AccessTools.FieldRefAccess<CombatHUD, List<HUDUnitMarker>>("markers");
 
     private static readonly Action<HUDUnitMarker> UpdateMarkerColor = AccessTools.MethodDelegate<Action<HUDUnitMarker>>(
-        AccessTools.Method(typeof(HUDUnitMarker), "UpdateColor")
+        GameMembers.Method(typeof(HUDUnitMarker), "UpdateColor")
     );
 
     private static readonly Action<HUDUnitMarker> SetMarkerFactionColor = AccessTools.MethodDelegate<Action<HUDUnitMarker>>(
-        AccessTools.Method(typeof(HUDUnitMarker), "SetFactionColor")
+        GameMembers.Method(typeof(HUDUnitMarker), "SetFactionColor")
     );
 
     private readonly ClientSession _session;

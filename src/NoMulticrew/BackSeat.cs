@@ -4,23 +4,36 @@ using NoMulticrew.Crew;
 using NoMulticrew.Networking;
 using NoMulticrew.Seats;
 using NuclearOption.Networking;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 namespace NoMulticrew;
 
 internal sealed class BackSeat : IDisposable
 {
-    private static readonly System.Reflection.MethodInfo? HideSelectionMethod =
-        AccessTools.Method(typeof(AircraftSelectionMenu), "HideSelection");
+    private static readonly Action<AircraftSelectionMenu> HideSelection =
+        AccessTools.MethodDelegate<Action<AircraftSelectionMenu>>(
+            GameMembers.Method(typeof(AircraftSelectionMenu), "HideSelection")
+        );
 
-    private static readonly Func<TargetDetector, UniTask>? RepeatSearch =
-        AccessTools.Method(typeof(TargetDetector), "RepeatSearch") is { } method
-            ? AccessTools.MethodDelegate<Func<TargetDetector, UniTask>>(method)
-            : null;
+    private static readonly Func<TargetDetector, UniTask> RepeatSearch =
+        AccessTools.MethodDelegate<Func<TargetDetector, UniTask>>(
+            GameMembers.Method(typeof(TargetDetector), "RepeatSearch")
+        );
 
-    private static readonly string[] CountermeasureFields =
-        ["countermeasureBackground", "countermeasureImage", "countermeasureName", "countermeasureAmmo"];
+    private static readonly AccessTools.FieldRef<CombatHUD, GameObject> CountermeasureBackgroundRef =
+        AccessTools.FieldRefAccess<CombatHUD, GameObject>("countermeasureBackground");
+
+    private static readonly AccessTools.FieldRef<CombatHUD, Image> CountermeasureImageRef =
+        AccessTools.FieldRefAccess<CombatHUD, Image>("countermeasureImage");
+
+    private static readonly AccessTools.FieldRef<CombatHUD, TextMeshProUGUI> CountermeasureNameRef =
+        AccessTools.FieldRefAccess<CombatHUD, TextMeshProUGUI>("countermeasureName");
+
+    private static readonly AccessTools.FieldRef<CombatHUD, TextMeshProUGUI> CountermeasureAmmoRef =
+        AccessTools.FieldRefAccess<CombatHUD, TextMeshProUGUI>("countermeasureAmmo");
 
     private const float BailOutConfirmSeconds = 3f;
 
@@ -370,21 +383,10 @@ internal sealed class BackSeat : IDisposable
 
     private static void ShowCountermeasures(CombatHUD hud, bool visible)
     {
-        foreach (var name in CountermeasureFields)
-        {
-            switch (AccessTools.Field(typeof(CombatHUD), name)?.GetValue(hud))
-            {
-                case GameObject gameObject:
-                    gameObject.SetActive(visible);
-                    break;
-                case Behaviour behaviour:
-                    behaviour.enabled = visible;
-                    break;
-                default:
-                    Plugin.Logger.LogError($"CombatHUD.{name} not found; the countermeasure block keeps its state");
-                    break;
-            }
-        }
+        CountermeasureBackgroundRef(hud).SetActive(visible);
+        CountermeasureImageRef(hud).enabled = visible;
+        CountermeasureNameRef(hud).enabled = visible;
+        CountermeasureAmmoRef(hud).enabled = visible;
     }
 
     private static bool CloseDeployMenu()
@@ -395,14 +397,7 @@ internal sealed class BackSeat : IDisposable
             return false;
         }
 
-        if (HideSelectionMethod == null)
-        {
-            Plugin.Logger.LogError("AircraftSelectionMenu.HideSelection not found; the deploy menu stays open");
-
-            return false;
-        }
-
-        HideSelectionMethod.Invoke(menu, []);
+        HideSelection(menu);
 
         return true;
     }
@@ -411,15 +406,6 @@ internal sealed class BackSeat : IDisposable
     {
         if (Plugin.IsServer)
         {
-            return;
-        }
-
-        if (RepeatSearch == null)
-        {
-            Plugin.Logger.LogError(
-                "TargetDetector.RepeatSearch not found; the back seat sees only contacts the faction already knows"
-            );
-
             return;
         }
 
