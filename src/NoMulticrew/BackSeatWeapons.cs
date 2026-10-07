@@ -94,7 +94,7 @@ internal sealed class BackSeatWeapons
         var aircraft = _seat.Aircraft!;
         var targets = aircraft.weaponManager.GetTargetList()
             .Where(x => x != null)
-            .Take(128)
+            .Take(CrewCommand.MaxTargets)
             .Select(x => x.persistentID)
             .ToArray();
 

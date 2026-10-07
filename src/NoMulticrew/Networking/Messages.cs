@@ -233,6 +233,8 @@ internal enum CrewCommandKind : byte
 
 internal struct CrewCommand : IMessage<CrewCommand>
 {
+    public const int MaxTargets = 128;
+
     public CrewCommandKind Kind { get; private set; }
 
     public PersistentID AircraftId { get; private set; }
@@ -349,9 +351,9 @@ internal struct CrewCommand : IMessage<CrewCommand>
                 break;
             case CrewCommandKind.SetStationTargets:
                 var count = reader.ReadByte();
-                if (count > 128)
+                if (count > MaxTargets)
                 {
-                    throw new InvalidOperationException($"Crew target list of {count} exceeds 128");
+                    throw new InvalidOperationException($"Crew target list of {count} exceeds {MaxTargets}");
                 }
 
                 Targets = new PersistentID[count];
@@ -390,6 +392,11 @@ internal struct CrewCommand : IMessage<CrewCommand>
                 writer.Write(Vector);
                 break;
             case CrewCommandKind.SetStationTargets:
+                if (Targets.Length > MaxTargets)
+                {
+                    throw new InvalidOperationException($"Crew target list of {Targets.Length} exceeds {MaxTargets}");
+                }
+
                 writer.WriteByte((byte)Targets.Length);
                 foreach (var target in Targets)
                 {
