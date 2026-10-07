@@ -18,8 +18,6 @@ internal static class Discovery
     private static readonly AccessTools.FieldRef<SteamLobby, HostedLobbyInstance> HostedLobbyRef =
         AccessTools.FieldRefAccess<SteamLobby, HostedLobbyInstance>("_hostedLobby");
 
-    private static readonly Dictionary<CSteamID, bool> LobbyStateCache = [];
-
     private static bool _currentLobbyState;
 
     public static string? TryAppendTags(IReadOnlyDictionary<string, string> tags)
@@ -62,19 +60,11 @@ internal static class Discovery
         hosted.SetData(LobbyKey, TagValue);
     }
 
-    public static void NoteServerTags(ServerLobbyInstance lobby)
-    {
-        var capable = lobby.details.GetGameTags().Split(',')
-            .Any(tag => tag.Split('=') is [TagKey, TagValue]);
-
-        LobbyStateCache[lobby.LobbyId] = capable;
-    }
-
     private static bool IsCapable(LobbyInstance lobby)
     {
-        if (lobby.DedicatedServer)
+        if (lobby is ServerLobbyInstance server)
         {
-            return LobbyStateCache.GetValueOrDefault(lobby.LobbyId);
+            return server.details.GetGameTags().Split(',').Any(tag => tag.Split('=') is [TagKey, TagValue]);
         }
 
         return SteamMatchmaking.GetLobbyData(lobby.LobbyId, LobbyKey) == TagValue;
