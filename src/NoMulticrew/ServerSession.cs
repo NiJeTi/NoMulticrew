@@ -21,13 +21,13 @@ internal sealed class ServerSession : IDisposable
     private readonly NetworkServer _server;
     private readonly bool _commandRegistered;
 
-    public CrewRegistry Crew { get; private set; } = null!;
+    public CrewRegistry Crew { get; private set; }
 
-    public JoinRequests Requests { get; private set; } = null!;
+    public JoinRequests Requests { get; private set; }
 
-    public CrewEconomy Economy { get; private set; } = null!;
+    public CrewEconomy Economy { get; private set; }
 
-    public CrewCommands Commands { get; private set; } = null!;
+    public CrewCommands Commands { get; private set; }
 
     public ServerSession(NetworkServer server)
     {
@@ -185,6 +185,7 @@ internal sealed class ServerSession : IDisposable
         Commands.Forget(connection);
     }
 
+    [MemberNotNull(nameof(Crew), nameof(Requests), nameof(Economy), nameof(Commands))]
     private void StartMission()
     {
         Crew = new CrewRegistry(this);
