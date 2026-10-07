@@ -58,20 +58,16 @@ internal static class TargetCam_Initialize
 [HarmonyPatch(typeof(TargetCam), "Update")]
 internal static class TargetCam_Update
 {
-    private static readonly AccessTools.FieldRef<TargetCam, Aircraft?> AircraftRef =
-        AccessTools.FieldRefAccess<TargetCam, Aircraft?>("aircraft");
-
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prefix(TargetCam __instance)
+    private static bool Prefix(TargetCam __instance, Aircraft? ___aircraft)
     {
         var client = Plugin.Client;
-        var aircraft = AircraftRef(__instance);
 
         if (client == null
-            || aircraft == null
-            || ReferenceEquals(client.BackSeat.Aircraft, aircraft)
-            || (aircraft.Player != null && aircraft.Player.IsLocalPlayer)
-            || Plugin.SeatTable.SeatsFor(aircraft.definition.jsonKey).Count == 0)
+            || ___aircraft == null
+            || ReferenceEquals(client.BackSeat.Aircraft, ___aircraft)
+            || (___aircraft.Player != null && ___aircraft.Player.IsLocalPlayer)
+            || Plugin.SeatTable.SeatsFor(___aircraft.definition.jsonKey).Count == 0)
         {
             return true;
         }

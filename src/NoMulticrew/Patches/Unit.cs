@@ -181,7 +181,7 @@ internal static class Unit_ReportKilled
     {
         if (__state)
         {
-            Plugin.Server?.Economy.ReleaseKillAuthor();
+            Plugin.Server!.Economy.ReleaseKillAuthor();
         }
     }
 }

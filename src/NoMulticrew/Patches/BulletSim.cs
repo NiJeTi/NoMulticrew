@@ -7,8 +7,8 @@ namespace NoMulticrew.Patches;
 [HarmonyPatch(typeof(BulletSim), nameof(BulletSim.AddBullet))]
 internal static class BulletSim_AddBullet
 {
-    private static readonly AccessTools.FieldRef<Weapon, WeaponStation?> WeaponStationRef =
-        AccessTools.FieldRefAccess<Weapon, WeaponStation?>("weaponStation");
+    private static readonly AccessTools.FieldRef<Weapon, WeaponStation> WeaponStationRef =
+        AccessTools.FieldRefAccess<Weapon, WeaponStation>("weaponStation");
 
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static void Prefix(Unit ___owner, Gun ___gun, ref bool ___visualOnly)
@@ -25,8 +25,6 @@ internal static class BulletSim_AddBullet
             return;
         }
 
-        var station = WeaponStationRef(___gun);
-
-        ___visualOnly = ___owner.remoteSim && (station == null || !client.BackSeat.Owns(___owner, station.Number));
+        ___visualOnly = ___owner.remoteSim && !client.BackSeat.Owns(___owner, WeaponStationRef(___gun).Number);
     }
 }

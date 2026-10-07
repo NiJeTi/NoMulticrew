@@ -28,11 +28,8 @@ internal static class HUDUnitMarker_UpdateColor
 [HarmonyAfter("NoWingmen")]
 internal static class HUDUnitMarker_SetFactionColor
 {
-    private static readonly AccessTools.FieldRef<HUDUnitMarker, Color> ColorRef =
-        AccessTools.FieldRefAccess<HUDUnitMarker, Color>("color");
-
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static void Postfix(HUDUnitMarker __instance)
+    private static void Postfix(HUDUnitMarker __instance, ref Color ___color)
     {
         var marks = Plugin.Client?.Marks;
         if (marks == null || __instance.selected || !marks.TryGetColor(__instance.unit, out var color))
@@ -40,7 +37,7 @@ internal static class HUDUnitMarker_SetFactionColor
             return;
         }
 
-        color.a *= ColorRef(__instance).a;
-        ColorRef(__instance) = color;
+        color.a *= ___color.a;
+        ___color = color;
     }
 }

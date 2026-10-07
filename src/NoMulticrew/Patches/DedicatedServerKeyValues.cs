@@ -10,13 +10,10 @@ namespace NoMulticrew.Patches;
 [HarmonyPatch(typeof(DedicatedServerKeyValues), "ApplyTags")]
 internal static class DedicatedServerKeyValues_ApplyTags
 {
-    private static readonly AccessTools.FieldRef<DedicatedServerKeyValues, Dictionary<string, string>> TagsRef =
-        AccessTools.FieldRefAccess<DedicatedServerKeyValues, Dictionary<string, string>>("tags");
-
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static void Postfix(DedicatedServerKeyValues __instance)
+    private static void Postfix(Dictionary<string, string> ___tags)
     {
-        var text = Discovery.TryAppendTags(TagsRef(__instance));
+        var text = Discovery.TryAppendTags(___tags);
         if (text == null)
         {
             return;

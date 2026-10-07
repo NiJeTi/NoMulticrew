@@ -7,21 +7,18 @@ namespace NoMulticrew.Patches;
 [HarmonyPatch(typeof(WeaponManager), nameof(WeaponManager.Fire))]
 internal static class WeaponManager_Fire
 {
-    private static readonly AccessTools.FieldRef<WeaponManager, Aircraft> AircraftRef =
-        AccessTools.FieldRefAccess<WeaponManager, Aircraft>("aircraft");
-
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prefix(WeaponManager __instance)
+    private static bool Prefix(WeaponManager __instance, Aircraft ___aircraft)
     {
         var crew = Plugin.Client?.Crew;
         var station = __instance.currentWeaponStation;
 
-        if (crew == null || station == null || !crew.BlocksStation(AircraftRef(__instance), station.Number))
+        if (crew == null || station == null || !crew.BlocksStation(___aircraft, station.Number))
         {
             return true;
         }
 
-        return crew.RefuseStation(AircraftRef(__instance), station.Number);
+        return crew.RefuseStation(___aircraft, station.Number);
     }
 }
 
@@ -29,16 +26,11 @@ internal static class WeaponManager_Fire
 [HarmonyPatch(typeof(WeaponManager), "OrganizeWeaponStations")]
 internal static class WeaponManager_OrganizeWeaponStations
 {
-    private static readonly AccessTools.FieldRef<WeaponManager, Aircraft> AircraftRef =
-        AccessTools.FieldRefAccess<WeaponManager, Aircraft>("aircraft");
-
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static void Postfix(WeaponManager __instance)
+    private static void Postfix(Aircraft ___aircraft)
     {
-        var aircraft = AircraftRef(__instance);
-
-        Plugin.Server?.Crew.LoadoutChanged(aircraft);
-        Plugin.Client?.BackSeat.LoadoutChanged(aircraft);
+        Plugin.Server?.Crew.LoadoutChanged(___aircraft);
+        Plugin.Client?.BackSeat.LoadoutChanged(___aircraft);
     }
 }
 
@@ -46,11 +38,8 @@ internal static class WeaponManager_OrganizeWeaponStations
 [HarmonyPatch(typeof(WeaponManager), nameof(WeaponManager.TargetListChanged))]
 internal static class WeaponManager_TargetListChanged
 {
-    private static readonly AccessTools.FieldRef<WeaponManager, Aircraft> AircraftRef =
-        AccessTools.FieldRefAccess<WeaponManager, Aircraft>("aircraft");
-
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prefix(WeaponManager __instance)
+    private static bool Prefix(WeaponManager __instance, Aircraft ___aircraft)
     {
         var client = Plugin.Client;
         if (client == null)
@@ -58,9 +47,7 @@ internal static class WeaponManager_TargetListChanged
             return true;
         }
 
-        var aircraft = AircraftRef(__instance);
-
-        if (ReferenceEquals(client.BackSeat.Aircraft, aircraft))
+        if (ReferenceEquals(client.BackSeat.Aircraft, ___aircraft))
         {
             client.BackSeat.Weapons.PushTargets();
             return false;
@@ -68,7 +55,7 @@ internal static class WeaponManager_TargetListChanged
 
         var station = __instance.currentWeaponStation;
 
-        return station == null || !client.Crew.BlocksStation(aircraft, station.Number);
+        return station == null || !client.Crew.BlocksStation(___aircraft, station.Number);
     }
 }
 
@@ -76,13 +63,10 @@ internal static class WeaponManager_TargetListChanged
 [HarmonyPatch(typeof(WeaponManager), nameof(WeaponManager.NextWeaponStation))]
 internal static class WeaponManager_NextWeaponStation
 {
-    private static readonly AccessTools.FieldRef<WeaponManager, Aircraft> AircraftRef =
-        AccessTools.FieldRefAccess<WeaponManager, Aircraft>("aircraft");
-
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prefix(WeaponManager __instance)
+    private static bool Prefix(Aircraft ___aircraft)
     {
-        return Plugin.Client?.PilotSeat.Cycle(AircraftRef(__instance), 1) != true;
+        return Plugin.Client?.PilotSeat.Cycle(___aircraft, 1) != true;
     }
 }
 
@@ -90,12 +74,9 @@ internal static class WeaponManager_NextWeaponStation
 [HarmonyPatch(typeof(WeaponManager), nameof(WeaponManager.PreviousWeaponStation))]
 internal static class WeaponManager_PreviousWeaponStation
 {
-    private static readonly AccessTools.FieldRef<WeaponManager, Aircraft> AircraftRef =
-        AccessTools.FieldRefAccess<WeaponManager, Aircraft>("aircraft");
-
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prefix(WeaponManager __instance)
+    private static bool Prefix(Aircraft ___aircraft)
     {
-        return Plugin.Client?.PilotSeat.Cycle(AircraftRef(__instance), -1) != true;
+        return Plugin.Client?.PilotSeat.Cycle(___aircraft, -1) != true;
     }
 }

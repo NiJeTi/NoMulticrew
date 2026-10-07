@@ -7,22 +7,18 @@ namespace NoMulticrew.Patches;
 [HarmonyPatch(typeof(Gun), "SpawnBullet")]
 internal static class Gun_SpawnBullet
 {
-    private static readonly AccessTools.FieldRef<Weapon, WeaponStation> WeaponStationRef =
-        AccessTools.FieldRefAccess<Weapon, WeaponStation>("weaponStation");
-
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static void Prefix(Gun __instance, float ___fireInterval)
+    private static void Prefix(Gun __instance, float ___fireInterval, WeaponStation ___weaponStation)
     {
         var client = Plugin.Client;
-        var station = WeaponStationRef(__instance);
 
         if (client == null
             || ___fireInterval <= 0.2f
-            || !client.BackSeat.Owns(__instance.attachedUnit, station.Number))
+            || !client.BackSeat.Owns(__instance.attachedUnit, ___weaponStation.Number))
         {
             return;
         }
 
-        client.BackSeat.Weapons.SingleFire(station.Number);
+        client.BackSeat.Weapons.SingleFire(___weaponStation.Number);
     }
 }
