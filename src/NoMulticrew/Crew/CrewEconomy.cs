@@ -17,6 +17,8 @@ internal sealed class CrewEconomy
     private const float ClaimLifetimeSeconds = 0.25f;
     private const float LaunchLifetimeSeconds = 5f;
     private const float CreditThreshold = 0.01f;
+    private const float PilotShare = 0.20f;
+    private const float CrewShare = 0.35f;
 
     private static readonly AccessTools.FieldRef<Unit, Dictionary<PersistentID, float>?> DamageCreditRef =
         AccessTools.FieldRefAccess<Unit, Dictionary<PersistentID, float>?>("damageCredit");
@@ -512,11 +514,9 @@ internal sealed class CrewEconomy
         participants.AddRange(occupants);
 
         var others = participants.Where(x => !ReferenceEquals(x, earner)).ToList();
-        var share = ReferenceEquals(earner, pilot)
-            ? Plugin.Settings.PilotOutboundShare.Value
-            : Plugin.Settings.CrewOutboundShare.Value;
+        var share = ReferenceEquals(earner, pilot) ? PilotShare : CrewShare;
 
-        if (!participants.Contains(earner) || others.Count == 0 || share <= 0f)
+        if (!participants.Contains(earner) || others.Count == 0)
         {
             Pay(hq, earner, target, allocation, score, type);
             return;
