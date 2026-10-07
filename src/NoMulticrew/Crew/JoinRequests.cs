@@ -14,7 +14,6 @@ internal sealed class JoinRequests
         public required int Id { get; init; }
         public required Player Joiner { get; init; }
         public required Aircraft Aircraft { get; init; }
-        public required byte SeatIndex { get; init; }
         public required float ExpiresAt { get; init; }
     }
 
@@ -96,7 +95,7 @@ internal sealed class JoinRequests
             return;
         }
 
-        if (!CanSeat(aircraft, joiner, message.SeatIndex, out var reason))
+        if (!CanSeat(aircraft, joiner, out var reason))
         {
             _session.Notify(joiner, reason);
             return;
@@ -107,11 +106,10 @@ internal sealed class JoinRequests
             Id = _nextId++,
             Joiner = joiner,
             Aircraft = aircraft,
-            SeatIndex = message.SeatIndex,
             ExpiresAt = Time.unscaledTime + TimeoutSeconds
         };
 
-        var prompt = new CrewJoinPrompt(request.Id, joiner.PlayerIndex, request.SeatIndex, TimeoutSeconds);
+        var prompt = new CrewJoinPrompt(request.Id, joiner.PlayerIndex, SeatTable.Wso, TimeoutSeconds);
 
         if (!_session.SendToPlayer(aircraft.Player.Owner, prompt))
         {
@@ -122,7 +120,7 @@ internal sealed class JoinRequests
         _requests.Add(request);
 
         Plugin.Logger.LogInfo(
-            $"{joiner.GetDisplayName(PlayerNameContext.Other)} asked for seat {request.SeatIndex} "
+            $"{joiner.GetDisplayName(PlayerNameContext.Other)} asked for the WSO seat "
             + $"of {aircraft.definition.jsonKey} {aircraft.persistentID}"
         );
     }
@@ -162,25 +160,20 @@ internal sealed class JoinRequests
             return;
         }
 
-        if (!CanSeat(request.Aircraft, request.Joiner, request.SeatIndex, out var reason))
+        if (!CanSeat(request.Aircraft, request.Joiner, out var reason))
         {
             Plugin.Logger.LogInfo($"Crew request {request.Id} accepted but no longer valid: {reason}");
             _session.Notify(request.Joiner, reason, CrewCue.Deselect);
             return;
         }
 
-        _session.Crew.Seat(request.Aircraft, request.SeatIndex, request.Joiner);
+        _session.Crew.Seat(request.Aircraft, request.Joiner);
 
-        var label = SeatTable.Label(request.SeatIndex);
-        var joined = $"{request.Joiner.GetDisplayName(PlayerNameContext.Other)} joined as {label}";
-
-        foreach (var aboard in _session.Crew.Occupants(request.Aircraft.persistentID).Append(request.Aircraft.Player))
-        {
-            if (!ReferenceEquals(aboard, request.Joiner))
-            {
-                _session.Notify(aboard, joined, CrewCue.Select);
-            }
-        }
+        _session.Notify(
+            request.Aircraft.Player,
+            $"{request.Joiner.GetDisplayName(PlayerNameContext.Other)} joined as {SeatTable.Label(SeatTable.Wso)}",
+            CrewCue.Select
+        );
 
         _session.Notify(request.Joiner, "Seated", CrewCue.Select);
     }
@@ -225,7 +218,7 @@ internal sealed class JoinRequests
         }
     }
 
-    private bool CanSeat(Aircraft aircraft, Player joiner, byte seatIndex, [NotNullWhen(false)] out string? reason)
+    private bool CanSeat(Aircraft aircraft, Player joiner, [NotNullWhen(false)] out string? reason)
     {
         if (!CanBoard(aircraft, joiner, out _, out reason))
         {
@@ -238,7 +231,7 @@ internal sealed class JoinRequests
             return false;
         }
 
-        if (seatIndex != SeatTable.Wso || Plugin.SeatTable.WsoSeat(aircraft) == null)
+        if (Plugin.SeatTable.WsoSeat(aircraft) == null)
         {
             reason = "That aircraft has no such seat";
             return false;
@@ -256,7 +249,7 @@ internal sealed class JoinRequests
             return false;
         }
 
-        if (_session.Crew.IsTaken(aircraft.persistentID, seatIndex))
+        if (_session.Crew.IsCrewed(aircraft.persistentID))
         {
             reason = "That seat is taken";
             return false;

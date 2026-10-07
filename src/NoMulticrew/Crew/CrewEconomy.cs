@@ -213,7 +213,7 @@ internal sealed class CrewEconomy
 
         var index = SeatTable.StationOf(aircraft, weapon);
 
-        return index >= 0 && Enter(aircraft.persistentID, _session.Crew.Holder(aircraft, index));
+        return index >= 0 && Enter(aircraft.persistentID, _session.Crew.WsoHolding(aircraft, index));
     }
 
     public void ExitContext()
@@ -309,10 +309,10 @@ internal sealed class CrewEconomy
         }
 
         var aircraft = player.Aircraft;
-        var occupants = aircraft != null ? _session.Crew.Occupants(aircraft.persistentID) : [];
+        var wso = aircraft != null ? _session.Crew.WsoOf(aircraft.persistentID) : null;
         var portions = Attribute(player, target, type);
 
-        if (occupants.Count == 0 && portions.Count == 1 && ReferenceEquals(portions[0].Earner, player))
+        if (wso == null && portions.Count == 1 && ReferenceEquals(portions[0].Earner, player))
         {
             return false;
         }
@@ -328,7 +328,7 @@ internal sealed class CrewEconomy
         {
             foreach (var (earner, fraction) in portions)
             {
-                Share(hq, earner, player, occupants, target, allocation * fraction, score * fraction, type);
+                Share(hq, earner, player, wso, target, allocation * fraction, score * fraction, type);
             }
         }
         finally
@@ -547,15 +547,18 @@ internal sealed class CrewEconomy
         FactionHQ hq,
         Player earner,
         Player pilot,
-        List<Player> occupants,
+        Player? wso,
         Unit? target,
         float allocation,
         float score,
         FactionHQ.RewardType type
     )
     {
-        var participants = new List<Player>(occupants.Count + 1) { pilot };
-        participants.AddRange(occupants);
+        var participants = new List<Player>(2) { pilot };
+        if (wso != null)
+        {
+            participants.Add(wso);
+        }
 
         var others = participants.Where(x => !ReferenceEquals(x, earner)).ToList();
         var share = ReferenceEquals(earner, pilot) ? PilotShare : CrewShare;

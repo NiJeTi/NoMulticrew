@@ -67,7 +67,7 @@ internal static class WeaponStation_SetStationActive
         var server = Plugin.Server;
         if (server != null)
         {
-            return server.Crew.Holder(aircraft, station.Number) != null;
+            return server.Crew.WsoHolding(aircraft, station.Number) != null;
         }
 
         return Plugin.Client is { } client && client.Crew.Holder(aircraft, station.Number) != SeatTable.Pilot;

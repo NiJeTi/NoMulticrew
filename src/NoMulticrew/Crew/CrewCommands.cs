@@ -85,8 +85,7 @@ internal sealed class CrewCommands
 
         var name = sender.GetDisplayName(PlayerNameContext.Other);
 
-        var seat = _session.Crew.SeatOf(sender, message.AircraftId);
-        if (seat == null)
+        if (!ReferenceEquals(_session.Crew.WsoOf(message.AircraftId), sender))
         {
             if (_released.TryGetValue(connection, out var released)
                 && released.Aircraft == message.AircraftId
@@ -108,11 +107,11 @@ internal sealed class CrewCommands
 
         if (message.Kind == CrewCommandKind.SelectStation)
         {
-            SelectStation(connection, aircraft, sender, seat.Value, message.Station, name);
+            SelectStation(connection, aircraft, message.Station, name);
             return;
         }
 
-        if (!ReferenceEquals(_session.Crew.Holder(aircraft, message.Station), sender))
+        if (!ReferenceEquals(_session.Crew.WsoHolding(aircraft, message.Station), sender))
         {
             if (Plugin.SeatTable.IsShared(aircraft))
             {
@@ -162,7 +161,7 @@ internal sealed class CrewCommands
         {
             for (var i = 0; i < aircraft.weaponStations.Count && i < 32; i++)
             {
-                if (_session.Crew.Holder(aircraft, i) != null)
+                if (_session.Crew.WsoHolding(aircraft, i) != null)
                 {
                     owned |= 1 << i;
                 }
@@ -314,14 +313,7 @@ internal sealed class CrewCommands
         }
     }
 
-    private void SelectStation(
-        INetworkPlayer connection,
-        Aircraft aircraft,
-        Player sender,
-        int seat,
-        byte station,
-        string name
-    )
+    private void SelectStation(INetworkPlayer connection, Aircraft aircraft, byte station, string name)
     {
         if (station != SeatTable.NoStation && station >= aircraft.weaponStations.Count)
         {
@@ -331,7 +323,7 @@ internal sealed class CrewCommands
         }
 
         if (station != SeatTable.NoStation
-            && !Plugin.SeatTable.CanSelect(aircraft, seat, station, _session.Crew.StateOf(aircraft)))
+            && !Plugin.SeatTable.CanSelect(aircraft, SeatTable.Wso, station, _session.Crew.ServerState(aircraft)))
         {
             if (!Plugin.SeatTable.IsShared(aircraft))
             {
@@ -347,7 +339,7 @@ internal sealed class CrewCommands
             return;
         }
 
-        _session.Crew.Select(sender, aircraft.persistentID, station);
+        _session.Crew.Select(aircraft.persistentID, station);
     }
 
     private void SetFiring(Aircraft aircraft, byte station, bool firing)

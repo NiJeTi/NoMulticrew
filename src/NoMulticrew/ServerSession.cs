@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 using Mirage;
 using NoMulticrew.Crew;
 using NoMulticrew.Networking;
-using NoMulticrew.Seats;
 using NuclearOption.DedicatedServer.Commands;
 using NuclearOption.Networking;
 using UnityEngine;
@@ -176,8 +175,8 @@ internal sealed class ServerSession : IDisposable
             var name = player.GetDisplayName(PlayerNameContext.Other);
 
             Plugin.Logger.LogInfo(
-                seatedIn is { } aircraftId && Crew.SeatOf(player, aircraftId) is { } seat
-                    ? $"{name} disconnected, freeing {SeatTable.Label(seat)} of {aircraftId}"
+                seatedIn is { } aircraftId
+                    ? $"{name} disconnected, freeing WSO of {aircraftId}"
                     : $"{name} disconnected, in no crew seat"
             );
 

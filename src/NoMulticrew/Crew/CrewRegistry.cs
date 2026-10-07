@@ -7,8 +7,8 @@ namespace NoMulticrew.Crew;
 
 internal sealed class CrewRegistry
 {
-    private readonly Dictionary<PersistentID, Player?[]> _crews = [];
-    private readonly Dictionary<Player, byte> _stations = [];
+    private readonly Dictionary<PersistentID, Player> _wsos = [];
+    private readonly Dictionary<PersistentID, byte> _wsoStations = [];
     private readonly Dictionary<PersistentID, byte> _pilotStations = [];
 
     private readonly ServerSession _session;
@@ -18,59 +18,40 @@ internal sealed class CrewRegistry
         _session = session;
     }
 
-    public int? SeatOf(Player player, PersistentID aircraftId)
+    public Player? WsoOf(PersistentID aircraftId)
     {
-        if (!_crews.TryGetValue(aircraftId, out var seats))
-        {
-            return null;
-        }
-
-        var index = Array.FindIndex(seats, x => ReferenceEquals(x, player));
-
-        return index >= 0 ? index : null;
+        return _wsos.GetValueOrDefault(aircraftId);
     }
 
     public bool IsCrewed(PersistentID aircraftId)
     {
-        return _crews.ContainsKey(aircraftId);
+        return _wsos.ContainsKey(aircraftId);
     }
 
-    public SeatState StateOf(Aircraft aircraft)
+    public SeatState ServerState(Aircraft aircraft)
     {
-        var wso = _crews.TryGetValue(aircraft.persistentID, out var seats) ? seats[SeatTable.Wso] : null;
-        var pilot = _pilotStations.GetValueOrDefault(aircraft.persistentID, SeatTable.NoStation);
+        var id = aircraft.persistentID;
+        var aboard = _wsos.ContainsKey(id);
 
         return new SeatState(
-            wso != null,
-            wso != null ? SeatTable.StationIndex(_stations.GetValueOrDefault(wso, SeatTable.NoStation)) : -1,
-            SeatTable.StationIndex(pilot)
+            aboard,
+            aboard ? SeatTable.StationIndex(_wsoStations.GetValueOrDefault(id, SeatTable.NoStation)) : -1,
+            SeatTable.StationIndex(_pilotStations.GetValueOrDefault(id, SeatTable.NoStation))
         );
     }
 
-    public Player? Holder(Aircraft aircraft, int stationIndex)
+    public Player? WsoHolding(Aircraft aircraft, int station)
     {
-        return Plugin.SeatTable.Holder(aircraft, stationIndex, StateOf(aircraft)) == SeatTable.Wso
-            ? _crews[aircraft.persistentID][SeatTable.Wso]
+        return Plugin.SeatTable.Holder(aircraft, station, ServerState(aircraft)) == SeatTable.Wso
+            ? _wsos[aircraft.persistentID]
             : null;
-    }
-
-    public List<Player> Occupants(PersistentID aircraftId)
-    {
-        return _crews.TryGetValue(aircraftId, out var seats)
-            ? [.. seats.Where(x => x != null).Select(x => x!)]
-            : [];
-    }
-
-    public bool IsTaken(PersistentID aircraftId, int seatIndex)
-    {
-        return _crews.TryGetValue(aircraftId, out var seats) && seats[seatIndex] != null;
     }
 
     public PersistentID? AircraftOf(Player player)
     {
-        foreach (var (aircraftId, seats) in _crews)
+        foreach (var (aircraftId, wso) in _wsos)
         {
-            if (seats.Any(x => ReferenceEquals(x, player)))
+            if (ReferenceEquals(wso, player))
             {
                 return aircraftId;
             }
@@ -79,17 +60,9 @@ internal sealed class CrewRegistry
         return null;
     }
 
-    public void Seat(Aircraft aircraft, int seatIndex, Player player)
+    public void Seat(Aircraft aircraft, Player player)
     {
-        var key = aircraft.definition.jsonKey;
-
-        if (!_crews.TryGetValue(aircraft.persistentID, out var seats))
-        {
-            seats = new Player?[1];
-            _crews[aircraft.persistentID] = seats;
-        }
-
-        seats[seatIndex] = player;
+        _wsos[aircraft.persistentID] = player;
 
         _pilotStations.TryAdd(
             aircraft.persistentID,
@@ -97,16 +70,16 @@ internal sealed class CrewRegistry
         );
 
         Plugin.Logger.LogInfo(
-            $"{player.GetDisplayName(PlayerNameContext.Other)} took seat {seatIndex} "
-            + $"({SeatTable.Label(seatIndex)}) of {key} {aircraft.persistentID}"
+            $"{player.GetDisplayName(PlayerNameContext.Other)} took the WSO seat of "
+            + $"{aircraft.definition.jsonKey} {aircraft.persistentID}"
         );
 
         Broadcast(aircraft.persistentID);
     }
 
-    public void Select(Player player, PersistentID aircraftId, byte station)
+    public void Select(PersistentID aircraftId, byte station)
     {
-        _stations[player] = station;
+        _wsoStations[aircraftId] = station;
 
         Broadcast(aircraftId);
     }
@@ -126,15 +99,12 @@ internal sealed class CrewRegistry
     {
         _pilotStations[aircraft.persistentID] = aircraft.weaponStations.Count > 0 ? (byte)0 : SeatTable.NoStation;
 
-        if (!_crews.TryGetValue(aircraft.persistentID, out var seats))
+        if (!IsCrewed(aircraft.persistentID))
         {
             return;
         }
 
-        foreach (var occupant in seats.Where(x => x != null))
-        {
-            _stations.Remove(occupant!);
-        }
+        _wsoStations.Remove(aircraft.persistentID);
 
         Broadcast(aircraft.persistentID);
     }
@@ -149,38 +119,20 @@ internal sealed class CrewRegistry
 
         _session.Economy.Settle(player, aircraftId.Value, forfeit);
 
-        var seats = _crews[aircraftId.Value];
-
-        UnitRegistry.TryGetUnit<Aircraft>(aircraftId.Value, out var aircraft);
-
-        var label = "Crew";
-
-        for (var i = 0; i < seats.Length; i++)
-        {
-            if (ReferenceEquals(seats[i], player))
-            {
-                label = SeatTable.Label(i);
-
-                _stations.Remove(player);
-                seats[i] = null;
-            }
-        }
+        _wsos.Remove(aircraftId.Value);
+        _wsoStations.Remove(aircraftId.Value);
 
         _session.Commands.Released(player, aircraftId.Value);
 
-        var left = $"{player.GetDisplayName(PlayerNameContext.Other)} left {label}";
+        UnitRegistry.TryGetUnit<Aircraft>(aircraftId.Value, out var aircraft);
 
-        foreach (var aboard in seats.Where(x => x != null).Append(aircraft != null ? aircraft.Player : null))
+        if (aircraft != null && aircraft.Player != null)
         {
-            if (aboard != null)
-            {
-                _session.Notify(aboard, left, CrewCue.Deselect);
-            }
-        }
-
-        if (seats.All(x => x == null))
-        {
-            _crews.Remove(aircraftId.Value);
+            _session.Notify(
+                aircraft.Player,
+                $"{player.GetDisplayName(PlayerNameContext.Other)} left {SeatTable.Label(SeatTable.Wso)}",
+                CrewCue.Deselect
+            );
         }
 
         Plugin.Logger.LogInfo($"{player.GetDisplayName(PlayerNameContext.Other)} left their seat in {aircraftId.Value}");
@@ -190,31 +142,25 @@ internal sealed class CrewRegistry
 
     public void Dissolve(PersistentID aircraftId)
     {
-        if (!_crews.Remove(aircraftId, out var seats))
+        if (!_wsos.Remove(aircraftId, out var wso))
         {
             return;
         }
 
-        foreach (var occupant in seats.Where(x => x != null))
-        {
-            _stations.Remove(occupant!);
-            _session.Economy.Settle(occupant!, aircraftId, forfeit: false);
-            _session.Commands.Released(occupant!, aircraftId);
-        }
+        _wsoStations.Remove(aircraftId);
+        _session.Economy.Settle(wso, aircraftId, forfeit: false);
+        _session.Commands.Released(wso, aircraftId);
 
         Plugin.Logger.LogInfo($"Crew of {aircraftId} dissolved");
 
-        foreach (var occupant in seats.Where(x => x != null))
-        {
-            _session.Notify(occupant!, "The crew was dissolved", CrewCue.Deselect);
-        }
+        _session.Notify(wso, "The crew was dissolved", CrewCue.Deselect);
 
         Broadcast(aircraftId);
     }
 
     public void DissolvePilotedBy(Player pilot)
     {
-        foreach (var aircraftId in _crews.Keys.ToList())
+        foreach (var aircraftId in _wsos.Keys.ToList())
         {
             if (UnitRegistry.TryGetUnit(aircraftId, out var unit)
                 && unit is Aircraft aircraft
@@ -232,7 +178,7 @@ internal sealed class CrewRegistry
 
     public void SendRosters(INetworkPlayer player)
     {
-        foreach (var aircraftId in _crews.Keys.ToList())
+        foreach (var aircraftId in _wsos.Keys.ToList())
         {
             _session.SendToPlayer(player, Roster(aircraftId));
         }
@@ -240,16 +186,21 @@ internal sealed class CrewRegistry
 
     private CrewRoster Roster(PersistentID aircraftId)
     {
-        var seats = _crews.GetValueOrDefault(aircraftId, []);
-        var occupants = seats.Select(x => x != null ? x.PlayerIndex : -1).ToArray();
-        var pending = seats.Select(x => x != null ? _session.Economy.PendingOf(x) : 0f).ToArray();
-
-        var selected = seats
-            .Select(x => x != null ? _stations.GetValueOrDefault(x, SeatTable.NoStation) : SeatTable.NoStation)
-            .ToArray();
+        var wso = WsoOf(aircraftId);
         var pilot = _pilotStations.GetValueOrDefault(aircraftId, SeatTable.NoStation);
 
-        return new CrewRoster(aircraftId, occupants, pending, selected, pilot);
+        if (wso == null)
+        {
+            return new CrewRoster(aircraftId, [], [], [], pilot);
+        }
+
+        return new CrewRoster(
+            aircraftId,
+            [wso.PlayerIndex],
+            [_session.Economy.PendingOf(wso)],
+            [_wsoStations.GetValueOrDefault(aircraftId, SeatTable.NoStation)],
+            pilot
+        );
     }
 
     private void Broadcast(PersistentID aircraftId)
