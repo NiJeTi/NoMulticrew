@@ -11,7 +11,7 @@ namespace NoMulticrew;
 
 internal sealed class ClientSession : IDisposable
 {
-    private const float RequestTimeoutSeconds = 12f;
+    private const float RequestTimeoutSeconds = JoinRequests.TimeoutSeconds + 2f;
 
     private readonly NetworkClient _client;
     private readonly bool _advertised;

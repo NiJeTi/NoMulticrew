@@ -17,7 +17,7 @@ internal sealed class JoinRequests
         public required float ExpiresAt { get; init; }
     }
 
-    private const float TimeoutSeconds = 10f;
+    public const float TimeoutSeconds = 10f;
 
     private readonly List<Request> _requests = [];
 
