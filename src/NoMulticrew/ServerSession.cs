@@ -114,12 +114,15 @@ internal sealed class ServerSession : IDisposable
         return true;
     }
 
-    public void SendToAllCapable<T>(T message)
+    public void SendToAllCapable<T>(T message, INetworkPlayer? except = null)
         where T : struct, IMessage<T>
     {
         foreach (var player in _validPlayers.ToArray())
         {
-            player.Send(message);
+            if (!ReferenceEquals(player, except))
+            {
+                player.Send(message);
+            }
         }
     }
 
@@ -130,15 +133,7 @@ internal sealed class ServerSession : IDisposable
             return;
         }
 
-        var message = new CrewKillAuthor(killedId, author.PlayerIndex);
-
-        foreach (var player in _validPlayers.ToArray())
-        {
-            if (!ReferenceEquals(player, _server.LocalPlayer))
-            {
-                player.Send(message);
-            }
-        }
+        SendToAllCapable(new CrewKillAuthor(killedId, author.PlayerIndex), except: _server.LocalPlayer);
 
         Plugin.Client?.Kills.Record(killedId, author.PlayerIndex);
     }
