@@ -281,16 +281,28 @@ internal sealed class ServerSession : IDisposable
             return;
         }
 
+        var count = 0;
+        var unchanged = true;
+
+        foreach (var connection in _closedPilots)
+        {
+            if (connection.TryGetPlayer<Player>(out var player) && player.PlayerIndex > 0)
+            {
+                count++;
+                unchanged &= Array.BinarySearch(_closedSent, player.PlayerIndex) >= 0;
+            }
+        }
+
+        if (unchanged && count == _closedSent.Length)
+        {
+            return;
+        }
+
         var indices = _closedPilots
             .Select(x => x.TryGetPlayer<Player>(out var player) ? player.PlayerIndex : 0)
             .Where(x => x > 0)
             .OrderBy(x => x)
             .ToArray();
-
-        if (indices.SequenceEqual(_closedSent))
-        {
-            return;
-        }
 
         _closedSent = indices;
         SendToAllCapable(new CrewClosedPilots(indices));
