@@ -11,31 +11,26 @@ internal sealed class CrewState
 {
     private const float RefusalIntervalSeconds = 2f;
 
-    private readonly Dictionary<PersistentID, CrewRoster> _crews = [];
+    private readonly Dictionary<PersistentID, CrewRoster> _rosters = [];
     private readonly Dictionary<PersistentID, Dictionary<byte, PersistentID[]>> _stationTargets = [];
 
     private float _lastRefusal = float.NegativeInfinity;
 
     public void Apply(CrewRoster message)
     {
-        if (message.Occupants.All(id => id < 0))
+        if (message.WsoPlayerIndex >= 0)
         {
-            _crews.Remove(message.AircraftId);
+            _rosters[message.AircraftId] = message;
         }
         else
         {
-            _crews[message.AircraftId] = message;
+            _rosters.Remove(message.AircraftId);
         }
 
         Plugin.Logger.LogDebug(
             $"Crew state for {message.AircraftId}: "
-            + string.Join(
-                ", ",
-                message.Occupants.Select(
-                    (id, i) => $"seat {i}={(id < 0 ? "empty" : id.ToString())} station {message.Selected[i]}"
-                )
-            )
-            + $", pilot station {message.PilotStation}"
+            + $"WSO {(message.WsoPlayerIndex < 0 ? "empty" : message.WsoPlayerIndex.ToString())} "
+            + $"station {message.WsoStation}, pilot station {message.PilotStation}"
         );
 
         if (UnitRegistry.TryGetUnit<Aircraft>(message.AircraftId, out var aircraft))
@@ -46,15 +41,13 @@ internal sealed class CrewState
 
     public void Clear()
     {
-        _crews.Clear();
+        _rosters.Clear();
         _stationTargets.Clear();
     }
 
-    public bool IsTaken(PersistentID aircraftId, int seatIndex)
+    public bool HasRoster(PersistentID aircraftId)
     {
-        return _crews.TryGetValue(aircraftId, out var crew)
-            && seatIndex < crew.Occupants.Length
-            && crew.Occupants[seatIndex] >= 0;
+        return _rosters.ContainsKey(aircraftId);
     }
 
     public static void ApplyTurrets(Aircraft aircraft)
@@ -79,32 +72,30 @@ internal sealed class CrewState
         }
     }
 
-    public bool TryGetCrew(PersistentID aircraftId, out CrewRoster crew)
+    public bool TryGetRoster(PersistentID aircraftId, out CrewRoster roster)
     {
-        return _crews.TryGetValue(aircraftId, out crew);
+        return _rosters.TryGetValue(aircraftId, out roster);
     }
 
-    public bool TryGetLocalSeat([NotNullWhen(true)] out Aircraft? aircraft, out int seatIndex)
+    public bool TryGetSeatedAircraft([NotNullWhen(true)] out Aircraft? aircraft)
     {
         aircraft = null;
-        seatIndex = -1;
 
         if (!GameManager.GetLocalPlayer<Player>(out var player))
         {
             return false;
         }
 
-        foreach (var (aircraftId, crew) in _crews)
+        foreach (var (aircraftId, roster) in _rosters)
         {
-            var index = Array.IndexOf(crew.Occupants, player.PlayerIndex);
-
-            if (index < 0 || !UnitRegistry.TryGetUnit<Aircraft>(aircraftId, out var found) || found.disabled)
+            if (roster.WsoPlayerIndex != player.PlayerIndex
+                || !UnitRegistry.TryGetUnit<Aircraft>(aircraftId, out var found)
+                || found.disabled)
             {
                 continue;
             }
 
             aircraft = found;
-            seatIndex = index;
 
             return true;
         }
@@ -141,7 +132,7 @@ internal sealed class CrewState
     {
         into.Clear();
 
-        if (!_crews.ContainsKey(aircraft.persistentID)
+        if (!_rosters.ContainsKey(aircraft.persistentID)
             || !_stationTargets.TryGetValue(aircraft.persistentID, out var stations))
         {
             return;
@@ -195,15 +186,15 @@ internal sealed class CrewState
         var local = GameManager.IsLocalAircraft(aircraft);
         var own = local ? aircraft.weaponManager.currentWeaponStation?.Number ?? -1 : -1;
 
-        if (!_crews.TryGetValue(aircraft.persistentID, out var crew))
+        if (!_rosters.TryGetValue(aircraft.persistentID, out var roster))
         {
             return new SeatState(false, -1, own);
         }
 
         return new SeatState(
-            crew.Occupants[0] >= 0,
-            SeatTable.StationIndex(crew.Selected[0]),
-            local ? own : SeatTable.StationIndex(crew.PilotStation)
+            roster.WsoPlayerIndex >= 0,
+            SeatTable.StationIndex(roster.WsoStation),
+            local ? own : SeatTable.StationIndex(roster.PilotStation)
         );
     }
 

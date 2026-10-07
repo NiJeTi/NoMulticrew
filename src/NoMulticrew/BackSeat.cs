@@ -58,8 +58,6 @@ internal sealed class BackSeat : IDisposable
 
     public CrewTargetCam TargetCam { get; } = new();
 
-    public int SeatIndex { get; private set; } = -1;
-
     public int Station { get; private set; } = -1;
 
     public bool BailOutArmed =>
@@ -78,9 +76,9 @@ internal sealed class BackSeat : IDisposable
 
     public void Tick()
     {
-        _session.Crew.TryGetLocalSeat(out var aircraft, out var seatIndex);
+        _session.Crew.TryGetSeatedAircraft(out var aircraft);
 
-        if (ReferenceEquals(aircraft, Aircraft) && seatIndex == SeatIndex)
+        if (ReferenceEquals(aircraft, Aircraft))
         {
             Reattach();
             Employ();
@@ -100,7 +98,7 @@ internal sealed class BackSeat : IDisposable
             return;
         }
 
-        Enter(aircraft, seatIndex);
+        Enter(aircraft);
     }
 
     public bool RequestLeave()
@@ -272,7 +270,6 @@ internal sealed class BackSeat : IDisposable
         _bailOutArmedAt = float.NegativeInfinity;
         _session.Screens.Leave();
         TargetCam.Detach();
-        SeatIndex = -1;
         Station = -1;
         Weapons.Clear();
 
@@ -326,10 +323,9 @@ internal sealed class BackSeat : IDisposable
         Plugin.Logger.LogInfo("Left the back seat");
     }
 
-    private void Enter(Aircraft aircraft, int seatIndex)
+    private void Enter(Aircraft aircraft)
     {
         Aircraft = aircraft;
-        SeatIndex = seatIndex;
 
         aircraft.weaponManager.GetTargetList().Clear();
 
@@ -380,7 +376,7 @@ internal sealed class BackSeat : IDisposable
 
         StartScanLoops(aircraft);
 
-        Plugin.Logger.LogInfo($"Entered seat {seatIndex} of {aircraft.definition.jsonKey}: {seat}");
+        Plugin.Logger.LogInfo($"Entered the WSO seat of {aircraft.definition.jsonKey}: {seat}");
     }
 
     private static void ShowCountermeasures(CombatHUD hud, bool visible)

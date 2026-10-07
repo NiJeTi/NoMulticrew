@@ -190,9 +190,9 @@ internal sealed class CrewScreen : IDisposable
             var pilot = aircraft.Player != null ? aircraft.Player.GetDisplayName(PlayerNameContext.Other) : "NONE";
             crew.Add($"PILOT  {pilot}");
 
-            if (_session.Crew.TryGetCrew(aircraft.persistentID, out var state))
+            if (_session.Crew.TryGetRoster(aircraft.persistentID, out var roster))
             {
-                DescribeSeats(aircraft, state, crew);
+                DescribeSeats(aircraft, roster, crew);
             }
             else
             {
@@ -245,7 +245,7 @@ internal sealed class CrewScreen : IDisposable
                 if (Plugin.SeatTable.WsoSeat(aircraft) == null
                     || !JoinRequests.CanBoard(aircraft, local, out var airbase, out _)
                     || !_session.TakesCrew(aircraft.Player)
-                    || _session.Crew.IsTaken(aircraft.persistentID, 0)
+                    || _session.Crew.HasRoster(aircraft.persistentID)
                     || !Plugin.SeatTable.Offered(aircraft))
                 {
                     continue;
@@ -275,23 +275,16 @@ internal sealed class CrewScreen : IDisposable
         return _offers;
     }
 
-    private void DescribeSeats(Aircraft aircraft, CrewRoster state, List<string> crew)
+    private void DescribeSeats(Aircraft aircraft, CrewRoster roster, List<string> crew)
     {
-        for (var seat = 0; seat < state.Occupants.Length; seat++)
-        {
-            var occupant = state.Occupants[seat];
-            var name = occupant < 0 ? "EMPTY" : CrewJoinPromptUi.NameOf(occupant);
-            var here = ReferenceEquals(_session.BackSeat.Aircraft, aircraft) && seat == _session.BackSeat.SeatIndex
-                ? " <"
-                : "";
+        var here = ReferenceEquals(_session.BackSeat.Aircraft, aircraft);
+        var name = CrewJoinPromptUi.NameOf(roster.WsoPlayerIndex);
 
-            crew.Add($"{SeatTable.Label(Role.Wso).ToUpperInvariant()}  {name}{here}");
-        }
+        crew.Add($"{SeatTable.Label(Role.Wso).ToUpperInvariant()}  {name}{(here ? " <" : "")}");
 
-        var mine = ReferenceEquals(_session.BackSeat.Aircraft, aircraft) ? _session.BackSeat.SeatIndex : -1;
-        if (mine >= 0 && mine < state.Pending.Length)
+        if (here)
         {
-            crew.Add($"PENDING  +{state.Pending[mine]:F0}");
+            crew.Add($"PENDING  +{roster.Pending:F0}");
         }
     }
 

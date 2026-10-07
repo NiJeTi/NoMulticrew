@@ -65,55 +65,38 @@ internal struct CrewRoster : IMessage<CrewRoster>
 {
     public PersistentID AircraftId { get; private set; }
 
-    public int[] Occupants { get; private set; }
+    public int WsoPlayerIndex { get; private set; }
 
-    public float[] Pending { get; private set; }
+    public float Pending { get; private set; }
 
-    public byte[] Selected { get; private set; }
+    public byte WsoStation { get; private set; }
 
     public byte PilotStation { get; private set; }
 
-    public CrewRoster(PersistentID aircraftId, int[] occupants, float[] pending, byte[] selected, byte pilotStation)
+    public CrewRoster(PersistentID aircraftId, int wsoPlayerIndex, float pending, byte wsoStation, byte pilotStation)
     {
         AircraftId = aircraftId;
-        Occupants = occupants;
+        WsoPlayerIndex = wsoPlayerIndex;
         Pending = pending;
-        Selected = selected;
+        WsoStation = wsoStation;
         PilotStation = pilotStation;
     }
 
     public void Read(NetworkReader reader)
     {
         AircraftId = new PersistentID { Id = reader.ReadUInt32() };
-
-        var count = reader.ReadByte();
-
-        Occupants = new int[count];
-        Pending = new float[count];
-        Selected = new byte[count];
-
-        for (var i = 0; i < count; i++)
-        {
-            Occupants[i] = reader.ReadPackedInt32();
-            Pending[i] = reader.ReadSingleConverter();
-            Selected[i] = reader.ReadByte();
-        }
-
+        WsoPlayerIndex = reader.ReadPackedInt32();
+        Pending = reader.ReadSingleConverter();
+        WsoStation = reader.ReadByte();
         PilotStation = reader.ReadByte();
     }
 
     public void Write(NetworkWriter writer)
     {
         writer.WriteUInt32(AircraftId.Id);
-        writer.WriteByte((byte)Occupants.Length);
-
-        for (var i = 0; i < Occupants.Length; i++)
-        {
-            writer.WritePackedInt32(Occupants[i]);
-            writer.WriteSingleConverter(Pending[i]);
-            writer.WriteByte(Selected[i]);
-        }
-
+        writer.WritePackedInt32(WsoPlayerIndex);
+        writer.WriteSingleConverter(Pending);
+        writer.WriteByte(WsoStation);
         writer.WriteByte(PilotStation);
     }
 }

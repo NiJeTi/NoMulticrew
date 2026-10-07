@@ -187,19 +187,13 @@ internal sealed class CrewRegistry
     private CrewRoster Roster(PersistentID aircraftId)
     {
         var wso = WsoOf(aircraftId);
-        var pilot = _pilotStations.GetValueOrDefault(aircraftId, SeatTable.NoStation);
-
-        if (wso == null)
-        {
-            return new CrewRoster(aircraftId, [], [], [], pilot);
-        }
 
         return new CrewRoster(
             aircraftId,
-            [wso.PlayerIndex],
-            [_session.Economy.PendingOf(wso)],
-            [_wsoStations.GetValueOrDefault(aircraftId, SeatTable.NoStation)],
-            pilot
+            wso != null ? wso.PlayerIndex : -1,
+            wso != null ? _session.Economy.PendingOf(wso) : 0f,
+            _wsoStations.GetValueOrDefault(aircraftId, SeatTable.NoStation),
+            _pilotStations.GetValueOrDefault(aircraftId, SeatTable.NoStation)
         );
     }
 
