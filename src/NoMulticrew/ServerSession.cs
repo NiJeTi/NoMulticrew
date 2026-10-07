@@ -172,7 +172,7 @@ internal sealed class ServerSession : IDisposable
 
             Plugin.Logger.LogInfo(
                 seatedIn is { } aircraftId
-                    ? $"{name} disconnected, freeing WSO of {aircraftId}"
+                    ? $"{name} disconnected, freeing {SeatTable.Label(Role.Wso)} of {aircraftId}"
                     : $"{name} disconnected, in no crew seat"
             );
 

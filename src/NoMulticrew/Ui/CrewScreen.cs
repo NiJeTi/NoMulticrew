@@ -1,5 +1,4 @@
 using NoMulticrew.Crew;
-using NoMulticrew.Networking;
 using NoMulticrew.Seats;
 using NuclearOption.Networking;
 using UnityEngine;
