@@ -96,18 +96,34 @@ internal sealed class CrewScreens
             return;
         }
 
+        GameObject? instance = null;
+
         try
         {
-            _own = Object.Instantiate(prefab, cockpit.transform).GetComponent<TacScreen>();
-            _apps = _own.GetComponentsInChildren<MFDAppManager>(true);
-            _lights = _own.GetComponentsInChildren<MissileWarningLight>(true);
-            _own.Initialize(aircraft, cockpit);
-            SyncRadar(_own, aircraft);
+            instance = Object.Instantiate(prefab, cockpit.transform);
+
+            var own = instance.GetComponent<TacScreen>();
+            if (own == null)
+            {
+                throw new InvalidOperationException("the tactical screen prefab has no TacScreen");
+            }
+
+            _own = own;
+            _apps = own.GetComponentsInChildren<MFDAppManager>(true);
+            _lights = own.GetComponentsInChildren<MissileWarningLight>(true);
+            own.Initialize(aircraft, cockpit);
+            SyncRadar(own, aircraft);
         }
         catch (Exception e)
         {
             Plugin.Logger.LogError($"Failed to build the WSO's tactical screen: {e}");
             DestroyOwn(aircraft);
+
+            if (instance != null)
+            {
+                Object.Destroy(instance);
+            }
+
             return;
         }
 
