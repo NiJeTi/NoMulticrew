@@ -173,15 +173,15 @@ internal static class Unit_ReportKilled
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static void Prefix(Unit __instance, out bool __state)
     {
-        __state = Plugin.Server?.Economy.HoldKillAuthor(__instance) == true;
+        __state = Plugin.Server?.Economy.OpenKill(__instance) == true;
     }
 
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static void Finalizer(bool __state)
+    private static void Finalizer(Unit __instance, bool __state)
     {
         if (__state)
         {
-            Plugin.Server!.Economy.ReleaseKillAuthor();
+            Plugin.Server!.Economy.CloseKill(__instance);
         }
     }
 }

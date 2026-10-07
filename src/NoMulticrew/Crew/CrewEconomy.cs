@@ -28,7 +28,7 @@ internal sealed class CrewEconomy
     private readonly Dictionary<(PersistentID Aircraft, WeaponInfo Weapon), Queue<(Player? Launcher, float Time)>> _launches = [];
     private readonly Dictionary<Missile, Player> _launchers = [];
     private readonly Dictionary<PersistentID, Queue<(Player? Claimant, float Time)>> _claims = [];
-    private readonly Dictionary<(PersistentID Target, PersistentID Aircraft), Ledger> _ledger = [];
+    private readonly Dictionary<PersistentID, Dictionary<PersistentID, Ledger>> _ledger = [];
     private readonly Dictionary<Player, (float Allocation, float Score)> _escrow = [];
 
     private PersistentID _contextAircraft;
@@ -199,58 +199,48 @@ internal sealed class CrewEconomy
         _contextCrew = null;
     }
 
-    public bool HoldKillAuthor(Unit target)
+    public bool OpenKill(Unit target)
     {
-        var credit = DamageCreditRef(target);
-        if (_killAuthor != null || credit == null)
-        {
-            return false;
-        }
-
-        var grand = credit.Values.Sum();
+        PersistentUnit? top = null;
         var most = 0f;
-        var top = PersistentID.None;
 
-        foreach (var (key, value) in credit)
+        foreach (var entry in Counted(target))
         {
-            if (!UnitRegistry.TryGetPersistentUnit(key, out _) || value / grand < CreditThreshold)
+            if (entry.Value >= most)
             {
-                continue;
-            }
-
-            if (value >= most)
-            {
-                most = value;
-                top = key;
+                most = entry.Value;
+                top = entry.Unit;
             }
         }
 
-        if (!_ledger.TryGetValue((target.persistentID, top), out var ledger) || ledger.Crew.Count == 0)
+        if (top?.player is { } pilot)
         {
-            return false;
+            var (total, crew) = Credit(target, pilot);
+
+            if (crew.Count > 0)
+            {
+                var pilotOwn = total - crew.Values.Sum();
+                var (member, amount) = crew.Aggregate((best, next) => next.Value > best.Value ? next : best);
+
+                if (amount > pilotOwn)
+                {
+                    Plugin.Logger.LogDebug(
+                        $"Kill of {target.persistentID} authored by {member.GetDisplayName(PlayerNameContext.Other)}: "
+                        + $"{amount:F1} against the pilot's {pilotOwn:F1}"
+                    );
+
+                    _killAuthor = (target.persistentID, member);
+                }
+            }
         }
 
-        var pilotOwn = most - ledger.Crew.Values.Sum();
-        var (member, amount) = ledger.Crew.Aggregate((best, next) => next.Value > best.Value ? next : best);
-
-        if (amount <= pilotOwn)
-        {
-            return false;
-        }
-
-        Plugin.Logger.LogDebug(
-            $"Kill of {target.persistentID} authored by {member.GetDisplayName(PlayerNameContext.Other)}: "
-            + $"{amount:F1} against the pilot's {pilotOwn:F1}"
-        );
-
-        _killAuthor = (target.persistentID, member);
-
-        return true;
+        return _ledger.ContainsKey(target.persistentID);
     }
 
-    public void ReleaseKillAuthor()
+    public void CloseKill(Unit target)
     {
         _killAuthor = null;
+        _ledger.Remove(target.persistentID);
     }
 
     public Player? KillAuthorOf(PersistentID killedId)
@@ -265,12 +255,17 @@ internal sealed class CrewEconomy
             return;
         }
 
-        var key = (target.persistentID, dealer);
-        if (!_ledger.TryGetValue(key, out var ledger))
+        if (!_ledger.TryGetValue(target.persistentID, out var ledgers))
+        {
+            ledgers = [];
+            _ledger[target.persistentID] = ledgers;
+        }
+
+        if (!ledgers.TryGetValue(dealer, out var ledger))
         {
             UnitRegistry.TryGetPersistentUnit(dealer, out var dealerUnit);
             ledger = new Ledger { Pilot = dealerUnit?.player };
-            _ledger[key] = ledger;
+            ledgers[dealer] = ledger;
         }
 
         ledger.Crew[_contextCrew] = ledger.Crew.GetValueOrDefault(_contextCrew) + amount;
@@ -292,7 +287,7 @@ internal sealed class CrewEconomy
 
         var aircraft = player.Aircraft;
         var occupants = aircraft != null ? _session.Crew.Occupants(aircraft.persistentID) : [];
-        var portions = Attribute(player, target, type, occupants);
+        var portions = Attribute(player, target, type);
 
         if (occupants.Count == 0 && portions.Count == 1 && ReferenceEquals(portions[0].Earner, player))
         {
@@ -330,9 +325,22 @@ internal sealed class CrewEconomy
     {
         if (forfeit)
         {
-            foreach (var ledger in _ledger.Values)
+            foreach (var (target, ledgers) in _ledger.ToList())
             {
-                ledger.Crew.Remove(crew);
+                foreach (var (aircraft, ledger) in ledgers.ToList())
+                {
+                    ledger.Crew.Remove(crew);
+
+                    if (ledger.Crew.Count == 0)
+                    {
+                        ledgers.Remove(aircraft);
+                    }
+                }
+
+                if (ledgers.Count == 0)
+                {
+                    _ledger.Remove(target);
+                }
             }
 
             foreach (var missile in _launchers.Where(x => ReferenceEquals(x.Value, crew)).Select(x => x.Key).ToList())
@@ -424,57 +432,70 @@ internal sealed class CrewEconomy
         return true;
     }
 
-    private List<(Player Earner, float Fraction)> Attribute(
-        Player pilot,
-        Unit? target,
-        FactionHQ.RewardType type,
-        List<Player> occupants
-    )
+    private static List<(PersistentID Dealer, float Value, PersistentUnit Unit)> Counted(Unit target)
+    {
+        var counted = new List<(PersistentID, float, PersistentUnit)>();
+        var credit = DamageCreditRef(target);
+        var grand = credit?.Values.Sum() ?? 0f;
+
+        if (credit == null || grand <= 0f)
+        {
+            return counted;
+        }
+
+        foreach (var (dealer, value) in credit)
+        {
+            if (UnitRegistry.TryGetPersistentUnit(dealer, out var unit) && value / grand >= CreditThreshold)
+            {
+                counted.Add((dealer, value, unit));
+            }
+        }
+
+        return counted;
+    }
+
+    private (float Total, Dictionary<Player, float> Crew) Credit(Unit target, Player pilot)
+    {
+        var counted = Counted(target).Where(x => ReferenceEquals(x.Unit.player, pilot)).ToList();
+        var total = counted.Sum(x => x.Value);
+        var crew = new Dictionary<Player, float>();
+
+        if (!_ledger.TryGetValue(target.persistentID, out var ledgers))
+        {
+            return (total, crew);
+        }
+
+        foreach (var (aircraft, ledger) in ledgers)
+        {
+            if (!ReferenceEquals(ledger.Pilot, pilot))
+            {
+                continue;
+            }
+
+            var cap = counted.FirstOrDefault(x => x.Dealer == aircraft).Value;
+            var sum = ledger.Crew.Values.Sum();
+            var scale = sum > cap ? cap / sum : 1f;
+
+            foreach (var (member, amount) in ledger.Crew)
+            {
+                if (amount * scale > 0f)
+                {
+                    crew[member] = crew.GetValueOrDefault(member) + amount * scale;
+                }
+            }
+        }
+
+        return (total, crew);
+    }
+
+    private List<(Player Earner, float Fraction)> Attribute(Player pilot, Unit? target, FactionHQ.RewardType type)
     {
         if (type != FactionHQ.RewardType.Kill || target == null)
         {
             return [(pilot, 1f)];
         }
 
-        var credit = DamageCreditRef(target);
-        var grand = credit?.Values.Sum() ?? 0f;
-        var total = 0f;
-        var crew = new Dictionary<Player, float>();
-        var counted = new Dictionary<PersistentID, float>();
-
-        if (credit != null && grand > 0f)
-        {
-            foreach (var (key, value) in credit)
-            {
-                if (value / grand >= CreditThreshold
-                    && UnitRegistry.TryGetPersistentUnit(key, out var unit)
-                    && ReferenceEquals(unit.player, pilot))
-                {
-                    total += value;
-                    counted[key] = value;
-                }
-            }
-        }
-
-        foreach (var key in _ledger.Keys.Where(x => x.Target == target.persistentID).ToList())
-        {
-            var ledger = _ledger[key];
-            if (!ReferenceEquals(ledger.Pilot, pilot))
-            {
-                continue;
-            }
-
-            _ledger.Remove(key);
-
-            var cap = counted.GetValueOrDefault(key.Aircraft);
-            var sum = ledger.Crew.Values.Sum();
-            var scale = sum > cap ? cap / sum : 1f;
-
-            foreach (var (member, amount) in ledger.Crew)
-            {
-                crew[member] = crew.GetValueOrDefault(member) + amount * scale;
-            }
-        }
+        var (total, crew) = Credit(target, pilot);
 
         if (total <= 0f || crew.Count == 0)
         {
