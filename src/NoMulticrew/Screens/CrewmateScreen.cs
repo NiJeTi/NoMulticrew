@@ -12,10 +12,6 @@ internal sealed class CrewmateScreen : IDisposable
     private const float PanelLift = 0.002f;
 
     private static readonly int EmissionMap = Shader.PropertyToID("_EmissionMap");
-    private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
-    private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
-
-    private static readonly Color Tint = new(1f, 0f, 1f);
 
     private static readonly AccessTools.FieldRef<TacScreen, GameObject?> TargetDisplayRef =
         AccessTools.FieldRefAccess<TacScreen, GameObject?>("targetCamDisplay");
@@ -225,17 +221,8 @@ internal sealed class CrewmateScreen : IDisposable
 
         _material = new Material(shared) { name = "NoMulticrew.CrewmateScreen" };
 
-        if (Plugin.Settings.TintCrewmatePanel.Value)
-        {
-            _material.SetTexture(EmissionMap, null);
-            _material.SetColor(EmissionColor, Tint);
-            _material.SetColor(BaseColor, Tint);
-        }
-        else
-        {
-            _material.SetTexture(EmissionMap, _texture);
-            CrewScreens.MaterialRef(_screen) = _material;
-        }
+        _material.SetTexture(EmissionMap, _texture);
+        CrewScreens.MaterialRef(_screen) = _material;
 
         _overlay = Overlay(panel, source, _material);
         _overlay.Show(false);

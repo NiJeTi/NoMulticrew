@@ -4,40 +4,23 @@ namespace NoMulticrew;
 
 internal sealed class Settings
 {
-    private const string SectionCrew = "Crew";
     private const string SectionEconomy = "Economy";
-    private const string SectionDebug = "Debug";
 
     public ConfigEntry<bool> RejectAllRequests { get; }
 
     public ConfigEntry<float> PilotOutboundShare { get; }
     public ConfigEntry<float> CrewOutboundShare { get; }
 
-    public ConfigEntry<bool> TintCrewmatePanel { get; }
-
-    private Settings(
-        ConfigEntry<bool> rejectAllRequests,
-        ConfigEntry<float> pilotOutboundShare,
-        ConfigEntry<float> crewOutboundShare,
-        ConfigEntry<bool> tintCrewmatePanel
-    )
+    public Settings(ConfigFile config)
     {
-        RejectAllRequests = rejectAllRequests;
-        PilotOutboundShare = pilotOutboundShare;
-        CrewOutboundShare = crewOutboundShare;
-        TintCrewmatePanel = tintCrewmatePanel;
-    }
-
-    public static Settings Init(ConfigFile config)
-    {
-        var rejectAllRequests = config.Bind(
-            SectionCrew,
+        RejectAllRequests = config.Bind(
+            "Crew",
             "RejectAllRequests",
             false,
             "Decline every crew request for your aircraft without asking"
         );
 
-        var pilotOutboundShare = config.Bind(
+        PilotOutboundShare = config.Bind(
             SectionEconomy,
             "PilotOutboundShare",
             0.2f,
@@ -47,7 +30,7 @@ internal sealed class Settings
             )
         );
 
-        var crewOutboundShare = config.Bind(
+        CrewOutboundShare = config.Bind(
             SectionEconomy,
             "CrewOutboundShare",
             0.2f,
@@ -56,14 +39,5 @@ internal sealed class Settings
                 new AcceptableValueRange<float>(0f, 1f)
             )
         );
-
-        var tintCrewmatePanel = config.Bind(
-            SectionDebug,
-            "TintCrewmatePanel",
-            false,
-            "Fill the crewmate's half of a side-by-side panel with solid magenta instead of their screen, to check where it sits"
-        );
-
-        return new Settings(rejectAllRequests, pilotOutboundShare, crewOutboundShare, tintCrewmatePanel);
     }
 }

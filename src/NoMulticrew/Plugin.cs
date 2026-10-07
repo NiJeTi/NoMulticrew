@@ -37,7 +37,7 @@ internal sealed class Plugin : BaseUnityPlugin
     {
         Logger = base.Logger;
 
-        Settings = Settings.Init(Config);
+        Settings = new Settings(Config);
         Palette = new MarkPalette();
         SeatTable = new SeatTable();
 
