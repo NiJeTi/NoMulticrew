@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
@@ -24,14 +25,11 @@ internal sealed class Plugin : BaseUnityPlugin
 
     public static bool IsServer => Server != null;
 
-    private static readonly AccessTools.FieldRef<ResourcesAsyncLoader<NetworkManagerNuclearOption>>
-        NetworkManagerLoaderRef = AccessTools.StaticFieldRefAccess<ResourcesAsyncLoader<NetworkManagerNuclearOption>>(
-            AccessTools.Field(typeof(NetworkManagerNuclearOption), "loader")
-        );
+    private static AccessTools.FieldRef<ResourcesAsyncLoader<NetworkManagerNuclearOption>> NetworkManagerLoaderRef = null!;
 
     private static NetworkManagerNuclearOption? _manager;
 
-    private Harmony? _harmony;
+    private readonly Harmony _harmony = new(MyPluginInfo.PLUGIN_GUID);
 
     private void Awake()
     {
@@ -41,17 +39,28 @@ internal sealed class Plugin : BaseUnityPlugin
         Palette = new MarkPalette();
         SeatTable = new SeatTable();
 
-        MessageRegistry.RegisterAll();
-
         try
         {
-            _harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
+            foreach (var type in typeof(Plugin).Assembly.GetTypes())
+            {
+                if (!type.ContainsGenericParameters)
+                {
+                    RuntimeHelpers.RunClassConstructor(type.TypeHandle);
+                }
+            }
+
+            NetworkManagerLoaderRef = AccessTools.StaticFieldRefAccess<ResourcesAsyncLoader<NetworkManagerNuclearOption>>(
+                GameMembers.Field(typeof(NetworkManagerNuclearOption), "loader")
+            );
+
             _harmony.PatchAll();
+            MessageRegistry.RegisterAll();
         }
         catch (Exception e)
         {
+            _harmony.UnpatchSelf();
             enabled = false;
-            Logger.LogError($"Failed to patch: {e}");
+            Logger.LogError($"NoMulticrew is disabled and the game runs vanilla: {e.GetBaseException().Message}\n{e}");
             return;
         }
 
@@ -76,7 +85,7 @@ internal sealed class Plugin : BaseUnityPlugin
         DisposeServerSession();
         DisposeClientSession();
 
-        _harmony?.UnpatchSelf();
+        _harmony.UnpatchSelf();
     }
 
     private static void Attach()
