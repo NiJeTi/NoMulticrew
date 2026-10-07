@@ -1,7 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 using HarmonyLib;
-using NoMulticrew.Networking;
 
 namespace NoMulticrew.Patches;
 
@@ -17,28 +15,9 @@ internal static class Aircraft_StartEjectionSequence
 }
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
-[HarmonyPatch]
+[HarmonyPatch(typeof(Aircraft), "UserCode_RpcLaunchMissile_1465828762")]
 internal static class Aircraft_UserCode_RpcLaunchMissile
 {
-    private static readonly MethodBase? Target = UserCode.Find(typeof(Aircraft), "RpcLaunchMissile");
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prepare()
-    {
-        if (Target == null)
-        {
-            Plugin.Logger.LogError("Aircraft.UserCode_RpcLaunchMissile not found: a crew launch replays on its own client");
-        }
-
-        return Target != null;
-    }
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static MethodBase TargetMethod()
-    {
-        return Target!;
-    }
-
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prefix(Aircraft __instance, byte stationIndex)
     {
@@ -47,28 +26,9 @@ internal static class Aircraft_UserCode_RpcLaunchMissile
 }
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
-[HarmonyPatch]
+[HarmonyPatch(typeof(Aircraft), "UserCode_RpcSetTurretVector_-312569381")]
 internal static class Aircraft_UserCode_RpcSetTurretVector
 {
-    private static readonly MethodBase? Target = UserCode.Find(typeof(Aircraft), "RpcSetTurretVector");
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prepare()
-    {
-        if (Target == null)
-        {
-            Plugin.Logger.LogError("Aircraft.UserCode_RpcSetTurretVector not found: a gunner's turret lags their camera");
-        }
-
-        return Target != null;
-    }
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static MethodBase TargetMethod()
-    {
-        return Target!;
-    }
-
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prefix(Aircraft __instance, byte weaponStationIndex)
     {
@@ -110,30 +70,9 @@ internal static class Aircraft_RpcSetActiveStation
 }
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
-[HarmonyPatch]
+[HarmonyPatch(typeof(Aircraft), "UserCode_RpcSetActiveStation_1081017235")]
 internal static class Aircraft_UserCode_RpcSetActiveStation
 {
-    private static readonly MethodBase? Target = UserCode.Find(typeof(Aircraft), "RpcSetActiveStation");
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prepare()
-    {
-        if (Target == null)
-        {
-            Plugin.Logger.LogError(
-                "Aircraft.UserCode_RpcSetActiveStation not found: the pilot's weapon change resets the crew's selection"
-            );
-        }
-
-        return Target != null;
-    }
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static MethodBase TargetMethod()
-    {
-        return Target!;
-    }
-
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prefix(Aircraft __instance)
     {

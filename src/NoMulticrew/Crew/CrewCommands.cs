@@ -30,23 +30,32 @@ internal sealed class CrewCommands
     private static readonly Limit TargetsLimit = new(10, 30, 2);
     private static readonly Limit SelectLimit = new(10, 30, 2);
 
-    private static readonly Action<Unit, byte>? SingleRemoteFire =
-        Bind<Action<Unit, byte>>(typeof(Unit), "CmdSingleRemoteFire");
+    private static readonly Action<Unit, byte> SingleRemoteFire = AccessTools.MethodDelegate<Action<Unit, byte>>(
+        GameMembers.Method(typeof(Unit), "UserCode_CmdSingleRemoteFire_1708169300")
+    );
 
-    private static readonly Action<Unit, byte>? StoppedFiring =
-        Bind<Action<Unit, byte>>(typeof(Unit), "CmdStoppedFiring");
+    private static readonly Action<Unit, byte> StoppedFiring = AccessTools.MethodDelegate<Action<Unit, byte>>(
+        GameMembers.Method(typeof(Unit), "UserCode_CmdStoppedFiring_-1238964004")
+    );
 
-    private static readonly Action<Unit, PersistentID, Vector3Compressed, Vector3Compressed, byte>? ClaimHit =
-        Bind<Action<Unit, PersistentID, Vector3Compressed, Vector3Compressed, byte>>(typeof(Unit), "CmdClaimHit");
+    private static readonly Action<Unit, PersistentID, Vector3Compressed, Vector3Compressed, byte> ClaimHit =
+        AccessTools.MethodDelegate<Action<Unit, PersistentID, Vector3Compressed, Vector3Compressed, byte>>(
+            GameMembers.Method(typeof(Unit), "UserCode_CmdClaimHit_-1122942669")
+        );
 
-    private static readonly Action<Aircraft, byte, Unit?, GlobalPosition>? LaunchMissile =
-        Bind<Action<Aircraft, byte, Unit?, GlobalPosition>>(typeof(Aircraft), "CmdLaunchMissile");
+    private static readonly Action<Aircraft, byte, Unit?, GlobalPosition> LaunchMissile =
+        AccessTools.MethodDelegate<Action<Aircraft, byte, Unit?, GlobalPosition>>(
+            GameMembers.Method(typeof(Aircraft), "UserCode_CmdLaunchMissile_644415535")
+        );
 
-    private static readonly Action<Aircraft, byte, Vector3Compressed>? SetTurretVector =
-        Bind<Action<Aircraft, byte, Vector3Compressed>>(typeof(Aircraft), "CmdSetTurretVector");
+    private static readonly Action<Aircraft, byte, Vector3Compressed> SetTurretVector =
+        AccessTools.MethodDelegate<Action<Aircraft, byte, Vector3Compressed>>(
+            GameMembers.Method(typeof(Aircraft), "UserCode_CmdSetTurretVector_-1133982608")
+        );
 
-    private static readonly StationTargetsHalf? SetStationTargets =
-        Bind<StationTargetsHalf>(typeof(Unit), "CmdSetStationTargets");
+    private static readonly StationTargetsHalf SetStationTargets = AccessTools.MethodDelegate<StationTargetsHalf>(
+        GameMembers.Method(typeof(Unit), "UserCode_CmdSetStationTargets_872088460")
+    );
 
     private readonly ServerSession _session;
 
@@ -175,7 +184,7 @@ internal sealed class CrewCommands
             aircraft.NetworkremoteWeaponStates = new WeaponMask(aircraft.NetworkremoteWeaponStates.Mask & ~dropped);
         }
 
-        if (dropped == 0 || aircraft == null || SetStationTargets == null)
+        if (dropped == 0 || aircraft == null)
         {
             return;
         }
@@ -202,19 +211,6 @@ internal sealed class CrewCommands
         {
             _buckets.Remove(key);
         }
-    }
-
-    private static T? Bind<T>(Type type, string name)
-        where T : Delegate
-    {
-        var method = UserCode.Find(type, name);
-        if (method == null)
-        {
-            Plugin.Logger.LogError($"{type.Name}.UserCode_{name} not found: crew commands of that kind are dropped");
-            return null;
-        }
-
-        return AccessTools.MethodDelegate<T>(method);
     }
 
     private static Limit LimitOf(CrewCommandKind kind)
@@ -276,40 +272,35 @@ internal sealed class CrewCommands
                 SetFiring(aircraft, message.Station, message.Firing);
                 break;
             case CrewCommandKind.SingleFire:
-                SingleRemoteFire?.Invoke(aircraft, message.Station);
+                SingleRemoteFire(aircraft, message.Station);
                 break;
             case CrewCommandKind.StoppedFiring:
-                StoppedFiring?.Invoke(aircraft, message.Station);
+                StoppedFiring(aircraft, message.Station);
                 break;
             case CrewCommandKind.ClaimHit:
                 _session.Economy.Attributed(
                     sender,
-                    () => ClaimHit?.Invoke(aircraft, message.TargetId, message.Vector, message.Velocity, message.Station)
+                    () => ClaimHit(aircraft, message.TargetId, message.Vector, message.Velocity, message.Station)
                 );
                 break;
             case CrewCommandKind.LaunchMissile:
                 Launch(aircraft, sender, message);
                 break;
             case CrewCommandKind.TurretVector:
-                SetTurretVector?.Invoke(aircraft, message.Station, message.Vector);
+                SetTurretVector(aircraft, message.Station, message.Vector);
                 _session.SendToPlayer(
                     aircraft.Player.Owner,
                     new CrewTurretVector(aircraft.persistentID, message.Station, message.Vector)
                 );
                 break;
             case CrewCommandKind.SetStationTargets:
-                SetStationTargets?.Invoke(aircraft, message.Station, message.Targets);
+                SetStationTargets(aircraft, message.Station, message.Targets);
                 break;
         }
     }
 
     private void Launch(Aircraft aircraft, Player sender, CrewCommand message)
     {
-        if (LaunchMissile == null)
-        {
-            return;
-        }
-
         UnitRegistry.TryGetUnit(message.TargetId, out var target);
 
         _session.Economy.Attributed(sender, () => LaunchMissile(aircraft, message.Station, target, message.Aimpoint));

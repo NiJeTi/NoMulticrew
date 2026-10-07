@@ -1,7 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 using HarmonyLib;
-using NoMulticrew.Networking;
 using UnityEngine;
 
 namespace NoMulticrew.Patches;
@@ -147,30 +145,9 @@ internal static class Unit_SingleRemoteFire
 }
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
-[HarmonyPatch]
+[HarmonyPatch(typeof(Unit), "UserCode_CmdClaimHit_-1122942669")]
 internal static class Unit_UserCode_CmdClaimHit
 {
-    private static readonly MethodBase? Target = UserCode.Find(typeof(Unit), "CmdClaimHit");
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prepare()
-    {
-        if (Target == null)
-        {
-            Plugin.Logger.LogError(
-                "Unit.UserCode_CmdClaimHit not found: gun damage from a crewed aircraft is credited to the pilot"
-            );
-        }
-
-        return Target != null;
-    }
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static MethodBase TargetMethod()
-    {
-        return Target!;
-    }
-
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static void Prefix(Unit __instance)
     {
@@ -210,35 +187,14 @@ internal static class Unit_ReportKilled
 }
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
-[HarmonyPatch]
+[HarmonyPatch(typeof(Unit), "UserCode_RpcSetStationTargets_1363862903")]
 internal static class Unit_UserCode_RpcSetStationTargets
 {
     private delegate void StationTargetsSetter(WeaponStation station, ReadOnlySpan<PersistentID> targetIds);
 
-    private static readonly MethodBase? Target = UserCode.Find(typeof(Unit), "RpcSetStationTargets");
-
     private static readonly StationTargetsSetter SetStationTargets = AccessTools.MethodDelegate<StationTargetsSetter>(
         AccessTools.Method(typeof(WeaponStation), nameof(WeaponStation.SetStationTargets))
     );
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prepare()
-    {
-        if (Target == null)
-        {
-            Plugin.Logger.LogError(
-                "Unit.UserCode_RpcSetStationTargets not found: the pilot's targets overwrite the crew's, and no marks are shown"
-            );
-        }
-
-        return Target != null;
-    }
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static MethodBase TargetMethod()
-    {
-        return Target!;
-    }
 
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prefix(Unit __instance, byte stationIndex, ReadOnlySpan<PersistentID> targetIDs)

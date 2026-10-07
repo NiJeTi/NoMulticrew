@@ -9,10 +9,14 @@ internal sealed class CrewKillFeed
 {
     private const float RecordLifetimeSeconds = 5f;
 
-    private static readonly Func<KillType, PersistentUnit, PersistentUnit, bool>? Filter =
-        Resolve<Func<KillType, PersistentUnit, PersistentUnit, bool>>("KillFeedFilter");
+    private static readonly Func<KillType, PersistentUnit, PersistentUnit, bool> Filter =
+        AccessTools.MethodDelegate<Func<KillType, PersistentUnit, PersistentUnit, bool>>(
+            GameMembers.Method(typeof(MessageManager), "KillFeedFilter")
+        );
 
-    private static readonly Func<FactionHQ, Color>? ColorFromFaction = Resolve<Func<FactionHQ, Color>>("ColorFromFaction");
+    private static readonly Func<FactionHQ, Color> ColorFromFaction = AccessTools.MethodDelegate<Func<FactionHQ, Color>>(
+        GameMembers.Method(typeof(MessageManager), "ColorFromFaction")
+    );
 
     private readonly Dictionary<PersistentID, (int PlayerIndex, float Time)> _authors = [];
 
@@ -30,11 +34,6 @@ internal sealed class CrewKillFeed
 
     public bool TryPrint(PersistentID killerId, PersistentID killedId, KillType killedType)
     {
-        if (Filter == null || ColorFromFaction == null)
-        {
-            return false;
-        }
-
         if (!_authors.Remove(killedId, out var author)
             || Time.unscaledTime - author.Time > RecordLifetimeSeconds
             || !UnitRegistry.TryGetPersistentUnit(killedId, out var killed)
@@ -49,11 +48,11 @@ internal sealed class CrewKillFeed
         }
 
         var name = $"{CrewJoinPromptUi.NameOf(author.PlayerIndex)} [{killer.definition.unitName}]";
-        var line = name.AddColor(ColorFromFaction!(killer.GetHQ()))
+        var line = name.AddColor(ColorFromFaction(killer.GetHQ()))
             + " "
             + killedType.GetVerb(true)
             + " "
-            + killed.unitName.AddColor(ColorFromFaction!(killed.GetHQ()));
+            + killed.unitName.AddColor(ColorFromFaction(killed.GetHQ()));
 
         SceneSingleton<GameplayUI>.i.KillFeed(line);
 
@@ -65,25 +64,11 @@ internal sealed class CrewKillFeed
         _authors.Clear();
     }
 
-    private static T? Resolve<T>(string name)
-        where T : Delegate
-    {
-        var method = AccessTools.Method(typeof(MessageManager), name);
-
-        if (method == null)
-        {
-            Plugin.Logger.LogError($"MessageManager.{name} not found: the killfeed stays vanilla for crew kills");
-            return null;
-        }
-
-        return AccessTools.MethodDelegate<T>(method);
-    }
-
     private static bool Shows(KillType killedType, PersistentUnit killer, PersistentUnit killed, int authorIndex)
     {
         if (killedType.GetFilterLevel() != PlayerSettings.KillFeedFilter.Player)
         {
-            return Filter!(killedType, killer, killed);
+            return Filter(killedType, killer, killed);
         }
 
         return killed.definition.value >= PlayerSettings.killFeedMinValue
