@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using NoMulticrew.Networking;
 using NoMulticrew.Patches;
 using NoMulticrew.Seats;

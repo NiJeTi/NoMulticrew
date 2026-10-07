@@ -317,8 +317,6 @@ internal sealed class SeatTable
                 }
             }
         }
-
-        DumpAuthoringData();
     }
 
     private static SeatDefinition[] Checked(string name, SeatDefinition[] seats)
@@ -341,56 +339,5 @@ internal sealed class SeatTable
         }
 
         return result;
-    }
-
-    private static void DumpAuthoringData()
-    {
-        foreach (var definition in Resources.FindObjectsOfTypeAll<AircraftDefinition>().OrderBy(x => x.jsonKey))
-        {
-            var aircraft = definition.unitPrefab != null ? definition.unitPrefab.GetComponent<Aircraft>() : null;
-            if (aircraft == null
-                || aircraft.weaponManager == null
-                || aircraft.cockpit == null
-                || aircraft.cockpitViewPoint == null)
-            {
-                continue;
-            }
-
-            var cockpit = aircraft.cockpit.transform;
-            var eye = cockpit.InverseTransformPoint(aircraft.cockpitViewPoint.position);
-
-            Plugin.Logger.LogDebug($"=== Seat authoring: {definition.jsonKey} ({definition.unitName}) ===");
-
-            foreach (var set in aircraft.weaponManager.hardpointSets)
-            {
-                var points = set.hardpoints
-                    .Where(x => x != null)
-                    .Select(x => cockpit.InverseTransformPoint(x.transform.position) - eye)
-                    .ToList();
-
-                var centre = points.Count > 0
-                    ? points.Aggregate(Vector3.zero, (sum, point) => sum + point) / points.Count
-                    : Vector3.zero;
-
-                Plugin.Logger.LogDebug(
-                    $"set '{set.name}': {points.Count} hardpoints, centre {centre:F2} from the pilot's view point"
-                );
-
-                foreach (var mount in set.weaponOptions)
-                {
-                    if (mount == null || mount.info == null)
-                    {
-                        continue;
-                    }
-
-                    var info = mount.info;
-
-                    Plugin.Logger.LogDebug(
-                        $"  '{info.name}' ({info.weaponName}) mount={mount.jsonKey} turret={mount.turret} "
-                        + $"gun={info.gun} laser={info.laserGuided} bomb={info.bomb} jammer={info.jammer}"
-                    );
-                }
-            }
-        }
     }
 }
