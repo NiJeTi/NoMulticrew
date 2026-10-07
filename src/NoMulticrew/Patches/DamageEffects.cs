@@ -30,9 +30,16 @@ internal static class DamageEffects_BlastFrag
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static void Prefix(PersistentID missileID, out bool __state)
     {
+        var server = Plugin.Server;
+        if (server == null)
+        {
+            __state = false;
+            return;
+        }
+
         UnitRegistry.TryGetUnit<Missile>(missileID, out var missile);
 
-        __state = Plugin.Server?.Economy.EnterMissileScope(missile) == true;
+        __state = server.Economy.EnterMissileScope(missile);
     }
 
     [SuppressMessage("ReSharper", "UnusedMember.Local")]

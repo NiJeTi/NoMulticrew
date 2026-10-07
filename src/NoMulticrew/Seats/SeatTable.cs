@@ -229,6 +229,19 @@ internal sealed class SeatTable
         return station == NoStation ? -1 : station;
     }
 
+    public static int StationOf(Unit unit, WeaponInfo weapon)
+    {
+        for (var i = 0; i < unit.weaponStations.Count; i++)
+        {
+            if (unit.weaponStations[i].WeaponInfo == weapon)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
     public IReadOnlyList<SeatDefinition> SeatsFor(string name)
     {
         return _config.GetValueOrDefault(name, EmptySeats);

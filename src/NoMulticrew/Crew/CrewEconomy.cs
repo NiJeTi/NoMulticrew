@@ -1,5 +1,6 @@
 using HarmonyLib;
 using NoMulticrew.Networking;
+using NoMulticrew.Seats;
 using NuclearOption.Networking;
 using UnityEngine;
 
@@ -210,7 +211,7 @@ internal sealed class CrewEconomy
             return false;
         }
 
-        var index = aircraft.weaponStations.FindIndex(x => x.WeaponInfo == weapon);
+        var index = SeatTable.StationOf(aircraft, weapon);
 
         return index >= 0 && Enter(aircraft.persistentID, _session.Crew.Holder(aircraft, index));
     }

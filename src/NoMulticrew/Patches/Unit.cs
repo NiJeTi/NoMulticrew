@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using HarmonyLib;
+using NoMulticrew.Seats;
 using UnityEngine;
 
 namespace NoMulticrew.Patches;
@@ -77,9 +78,10 @@ internal static class Unit_RegisterHit
         HidesNextDisplay = false;
 
         var client = Plugin.Client;
-        if (client != null)
+        if (client != null
+            && (GameManager.IsLocalAircraft(__instance) || ReferenceEquals(__instance, client.BackSeat.Aircraft)))
         {
-            var station = __instance.weaponStations.FindIndex(x => x.WeaponInfo == weaponInfo);
+            var station = SeatTable.StationOf(__instance, weaponInfo);
 
             if (client.Crew.BlocksStation(__instance, station))
             {
