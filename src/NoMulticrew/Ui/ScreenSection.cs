@@ -10,7 +10,6 @@ internal sealed class ScreenSection
     private const float SectionPadding = 24f;
     private const float RowSpacing = 4f;
     private const float ColumnSpacing = 8f;
-    private const float GapHeight = 10f;
     private const int SidePadding = 8;
 
     private readonly RectTransform _root;
@@ -75,16 +74,17 @@ internal sealed class ScreenSection
 
     public Transform AddRow()
     {
-        var row = AddLine("Row", ScreenRow.Height);
+        var row = new GameObject("NoMulticrew.CrewScreen.Row", typeof(RectTransform));
+        var rect = (RectTransform)row.transform;
 
-        Stack<HorizontalLayoutGroup>(row.gameObject, ColumnSpacing).childForceExpandWidth = false;
+        rect.SetParent(_container, false);
+        rect.sizeDelta = new Vector2(0f, ScreenRow.Height);
 
-        return row;
-    }
+        Fit();
 
-    public Transform AddGap()
-    {
-        return AddLine("Gap", GapHeight);
+        Stack<HorizontalLayoutGroup>(row, ColumnSpacing).childForceExpandWidth = false;
+
+        return rect;
     }
 
     public ScreenSection Fit()
@@ -131,19 +131,6 @@ internal sealed class ScreenSection
             new RectOffset(SidePadding, SidePadding, 0, 0);
 
         return Fit();
-    }
-
-    private RectTransform AddLine(string name, float height)
-    {
-        var line = new GameObject($"NoMulticrew.CrewScreen.{name}", typeof(RectTransform));
-        var rect = (RectTransform)line.transform;
-
-        rect.SetParent(_container, false);
-        rect.sizeDelta = new Vector2(0f, height);
-
-        Fit();
-
-        return rect;
     }
 
     private static T Stack<T>(GameObject target, float spacing) where T : HorizontalOrVerticalLayoutGroup
