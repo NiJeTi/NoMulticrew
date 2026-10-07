@@ -122,24 +122,19 @@ internal struct CrewJoinRequest : IMessage<CrewJoinRequest>
 {
     public PersistentID AircraftId { get; private set; }
 
-    public byte SeatIndex { get; private set; }
-
-    public CrewJoinRequest(PersistentID aircraftId, byte seatIndex)
+    public CrewJoinRequest(PersistentID aircraftId)
     {
         AircraftId = aircraftId;
-        SeatIndex = seatIndex;
     }
 
     public void Read(NetworkReader reader)
     {
         AircraftId = new PersistentID { Id = reader.ReadUInt32() };
-        SeatIndex = reader.ReadByte();
     }
 
     public void Write(NetworkWriter writer)
     {
         writer.WriteUInt32(AircraftId.Id);
-        writer.WriteByte(SeatIndex);
     }
 }
 
@@ -149,15 +144,12 @@ internal struct CrewJoinPrompt : IMessage<CrewJoinPrompt>
 
     public int JoinerPlayerIndex { get; private set; }
 
-    public byte SeatIndex { get; private set; }
-
     public float ExpiresInSeconds { get; private set; }
 
-    public CrewJoinPrompt(int requestId, int joinerPlayerIndex, byte seatIndex, float expiresInSeconds)
+    public CrewJoinPrompt(int requestId, int joinerPlayerIndex, float expiresInSeconds)
     {
         RequestId = requestId;
         JoinerPlayerIndex = joinerPlayerIndex;
-        SeatIndex = seatIndex;
         ExpiresInSeconds = expiresInSeconds;
     }
 
@@ -165,7 +157,6 @@ internal struct CrewJoinPrompt : IMessage<CrewJoinPrompt>
     {
         RequestId = reader.ReadPackedInt32();
         JoinerPlayerIndex = reader.ReadPackedInt32();
-        SeatIndex = reader.ReadByte();
         ExpiresInSeconds = reader.ReadSingleConverter();
     }
 
@@ -173,7 +164,6 @@ internal struct CrewJoinPrompt : IMessage<CrewJoinPrompt>
     {
         writer.WritePackedInt32(RequestId);
         writer.WritePackedInt32(JoinerPlayerIndex);
-        writer.WriteByte(SeatIndex);
         writer.WriteSingleConverter(ExpiresInSeconds);
     }
 }

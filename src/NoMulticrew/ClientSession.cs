@@ -21,7 +21,7 @@ internal sealed class ClientSession : IDisposable
     private VirtualMFD? _mfd;
     private CrewScreen? _crewScreen;
 
-    private (PersistentID AircraftId, byte SeatIndex, float SentAt)? _request;
+    private (PersistentID AircraftId, float SentAt)? _request;
 
     private int[] _closedPilots = [];
 
@@ -110,9 +110,9 @@ internal sealed class ClientSession : IDisposable
         return true;
     }
 
-    public bool IsRequested(PersistentID aircraftId, byte seatIndex)
+    public bool IsRequested(PersistentID aircraftId)
     {
-        return _request is { } request && request.AircraftId == aircraftId && request.SeatIndex == seatIndex;
+        return _request is { } request && request.AircraftId == aircraftId;
     }
 
     public bool TakesCrew(Player pilot)
@@ -130,14 +130,14 @@ internal sealed class ClientSession : IDisposable
         _request = null;
     }
 
-    public void RequestSeat(PersistentID aircraftId, byte seatIndex)
+    public void RequestSeat(PersistentID aircraftId)
     {
-        if (_request != null || !Send(new CrewJoinRequest(aircraftId, seatIndex)))
+        if (_request != null || !Send(new CrewJoinRequest(aircraftId)))
         {
             return;
         }
 
-        _request = (aircraftId, seatIndex, Time.unscaledTime);
+        _request = (aircraftId, Time.unscaledTime);
         Feedback.Play(CrewCue.Select);
     }
 

@@ -44,7 +44,6 @@ internal sealed class CrewScreen : IDisposable
         string Airbase,
         string Text,
         PersistentID AircraftId,
-        byte SeatIndex,
         OfferState State
     );
 
@@ -256,7 +255,7 @@ internal sealed class CrewScreen : IDisposable
                 var airbaseName = (string.IsNullOrEmpty(name) ? airbase.name : name).ToUpperInvariant();
                 var pilot = aircraft.Player.GetDisplayName(PlayerNameContext.Other);
 
-                var state = _session.IsRequested(aircraft.persistentID, 0)
+                var state = _session.IsRequested(aircraft.persistentID)
                     ? OfferState.Waiting
                     : _session.HasRequest ? OfferState.Blocked : OfferState.Request;
 
@@ -265,7 +264,6 @@ internal sealed class CrewScreen : IDisposable
                         airbaseName,
                         $"{aircraft.definition.unitName}  ·  {pilot}  {SeatTable.Label(Role.Wso).ToUpperInvariant()}",
                         aircraft.persistentID,
-                        0,
                         state
                     )
                 );
@@ -415,7 +413,7 @@ internal sealed class CrewScreen : IDisposable
                         template,
                         offer.State == OfferState.Waiting ? "WAITING" : "REQUEST",
                         () => offer.State == OfferState.Request,
-                        () => _session.RequestSeat(offer.AircraftId, offer.SeatIndex)
+                        () => _session.RequestSeat(offer.AircraftId)
                     ).FitToText("REQUEST", "WAITING")
                 );
             }

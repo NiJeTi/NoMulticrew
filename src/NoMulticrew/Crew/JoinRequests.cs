@@ -109,7 +109,7 @@ internal sealed class JoinRequests
             ExpiresAt = Time.unscaledTime + TimeoutSeconds
         };
 
-        var prompt = new CrewJoinPrompt(request.Id, joiner.PlayerIndex, 0, TimeoutSeconds);
+        var prompt = new CrewJoinPrompt(request.Id, joiner.PlayerIndex, TimeoutSeconds);
 
         if (!_session.SendToPlayer(aircraft.Player.Owner, prompt))
         {
