@@ -288,7 +288,6 @@ internal sealed class ClientSession : IDisposable
             _request = null;
         }
 
-        Prompt.Tick();
         BackSeat.Tick();
         PilotSeat.Tick();
         Screens.Tick();

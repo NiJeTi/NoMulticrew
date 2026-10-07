@@ -7,6 +7,8 @@ namespace NoMulticrew.Ui;
 
 internal sealed class CrewJoinPromptUi
 {
+    private const float NoticeSeconds = 5f;
+
     private readonly ClientSession _session;
 
     private readonly List<(CrewJoinPrompt Prompt, float ExpiresAt)> _prompts = [];
@@ -39,7 +41,10 @@ internal sealed class CrewJoinPromptUi
 
     public void Show(CrewJoinPrompt prompt)
     {
-        _prompts.Add((prompt, Time.unscaledTime + prompt.ExpiresInSeconds));
+        var now = Time.unscaledTime;
+
+        _prompts.RemoveAll(x => now > x.ExpiresAt);
+        _prompts.Add((prompt, now + prompt.ExpiresInSeconds));
 
         ShowNotice($"{CrewState.NameOf(prompt.JoinerPlayerIndex)} wants {SeatTable.Label(Role.Wso)} — open the map to answer");
         Feedback.Play(CrewCue.WeaponSwitch);
@@ -51,12 +56,12 @@ internal sealed class CrewJoinPromptUi
         var report = SceneSingleton<AircraftActionsReport>.i;
         if (hud != null && report != null && hud.aircraft != null)
         {
-            report.ReportText(text, 5f);
+            report.ReportText(text, NoticeSeconds);
             return;
         }
 
         _toast = text;
-        _toastUntil = Time.unscaledTime + 5f;
+        _toastUntil = Time.unscaledTime + NoticeSeconds;
     }
 
     public void Accept()
@@ -81,13 +86,6 @@ internal sealed class CrewJoinPromptUi
     {
         _prompts.Clear();
         _toastUntil = 0f;
-    }
-
-    public void Tick()
-    {
-        var now = Time.unscaledTime;
-
-        _prompts.RemoveAll(x => now > x.ExpiresAt);
     }
 
     public void Draw()
