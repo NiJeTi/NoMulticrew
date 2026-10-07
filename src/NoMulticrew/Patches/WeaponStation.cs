@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using HarmonyLib;
-using NoMulticrew.Seats;
 
 namespace NoMulticrew.Patches;
 
@@ -44,7 +43,7 @@ internal static class WeaponStation_SetStationActive
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prefix(WeaponStation __instance, Aircraft aircraft)
     {
-        if (!IsManned(aircraft, __instance))
+        if (!Plugin.SeatTable.IsManned(aircraft, __instance))
         {
             return true;
         }
@@ -55,21 +54,5 @@ internal static class WeaponStation_SetStationActive
         }
 
         return false;
-    }
-
-    public static bool IsManned(Aircraft aircraft, WeaponStation station)
-    {
-        if (!station.HasTurret())
-        {
-            return false;
-        }
-
-        var server = Plugin.Server;
-        if (server != null)
-        {
-            return server.Crew.WsoHolding(aircraft, station.Number) != null;
-        }
-
-        return Plugin.Client is { } client && client.Crew.RoleHolding(aircraft, station.Number) == Role.Wso;
     }
 }

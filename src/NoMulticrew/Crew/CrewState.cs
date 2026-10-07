@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using NoMulticrew.Networking;
-using NoMulticrew.Patches;
 using NoMulticrew.Seats;
 using NuclearOption.Networking;
 using UnityEngine;
@@ -35,7 +34,7 @@ internal sealed class CrewState
 
         if (UnitRegistry.TryGetUnit<Aircraft>(message.AircraftId, out var aircraft))
         {
-            ApplyTurrets(aircraft);
+            Plugin.SeatTable.ApplyTurrets(aircraft);
         }
     }
 
@@ -48,28 +47,6 @@ internal sealed class CrewState
     public bool HasRoster(PersistentID aircraftId)
     {
         return _rosters.ContainsKey(aircraftId);
-    }
-
-    public static void ApplyTurrets(Aircraft aircraft)
-    {
-        var current = aircraft.weaponManager.currentWeaponStation;
-        var flown = aircraft.Player != null;
-
-        foreach (var station in aircraft.weaponStations)
-        {
-            if (!station.HasTurret())
-            {
-                continue;
-            }
-
-            var manual = WeaponStation_SetStationActive.IsManned(aircraft, station)
-                || (flown && ReferenceEquals(station, current));
-
-            foreach (var turret in station.Turrets)
-            {
-                turret.SetManual(manual);
-            }
-        }
     }
 
     public bool TryGetRoster(PersistentID aircraftId, out CrewRoster roster)

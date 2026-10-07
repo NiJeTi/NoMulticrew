@@ -274,6 +274,39 @@ internal sealed class SeatTable
         return holder == Role.Wso || state.PilotStation != station;
     }
 
+    public bool IsManned(Aircraft aircraft, WeaponStation station)
+    {
+        if (!station.HasTurret())
+        {
+            return false;
+        }
+
+        var state = Plugin.Server?.Crew.ServerState(aircraft) ?? Plugin.Client?.Crew.ClientState(aircraft);
+
+        return state is { } known && Holder(aircraft, station.Number, known) == Role.Wso;
+    }
+
+    public void ApplyTurrets(Aircraft aircraft)
+    {
+        var current = aircraft.weaponManager.currentWeaponStation;
+        var flown = aircraft.Player != null;
+
+        foreach (var station in aircraft.weaponStations)
+        {
+            if (!station.HasTurret())
+            {
+                continue;
+            }
+
+            var manual = IsManned(aircraft, station) || (flown && ReferenceEquals(station, current));
+
+            foreach (var turret in station.Turrets)
+            {
+                turret.SetManual(manual);
+            }
+        }
+    }
+
     public void Audit()
     {
         if (_audited)
