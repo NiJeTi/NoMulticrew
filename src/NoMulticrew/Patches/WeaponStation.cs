@@ -31,9 +31,9 @@ internal static class WeaponStation_RemoteFireSingle
 internal static class WeaponStation_LaunchMount
 {
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static void Prefix(WeaponStation __instance, Unit owner)
+    private static void Prefix(WeaponStation __instance, Unit owner, int ___weaponIndex)
     {
-        Plugin.Server?.Economy.OnLaunch(owner, __instance);
+        Plugin.Server?.Economy.OnLaunch(owner, __instance, ___weaponIndex);
     }
 }
 

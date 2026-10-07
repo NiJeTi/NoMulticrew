@@ -59,9 +59,13 @@ internal sealed class CrewEconomy
         }
     }
 
-    public void OnLaunch(Unit owner, WeaponStation station)
+    public void OnLaunch(Unit owner, WeaponStation station, int weaponIndex)
     {
-        if (owner is not Aircraft aircraft || !_session.Crew.IsCrewed(aircraft.persistentID))
+        if (owner is not Aircraft aircraft
+            || !_session.Crew.IsCrewed(aircraft.persistentID)
+            || weaponIndex >= station.Weapons.Count
+            || station.Weapons[weaponIndex] is not MountedMissile mounted
+            || !mounted.IsAttached())
         {
             return;
         }
@@ -79,37 +83,50 @@ internal sealed class CrewEconomy
 
     public void OnSpawn(Missile missile, Unit? owner)
     {
-        if (owner == null || !_launches.TryGetValue((owner.persistentID, missile.GetWeaponInfo()), out var queue))
+        if (owner == null)
+        {
+            return;
+        }
+
+        var key = (owner.persistentID, missile.GetWeaponInfo());
+        if (!_launches.TryGetValue(key, out var queue))
         {
             return;
         }
 
         var now = Time.unscaledTime;
+        Player? launcher = null;
 
         while (queue.Count > 0)
         {
-            var (launcher, time) = queue.Dequeue();
-            if (now - time > LaunchLifetimeSeconds)
+            var (next, time) = queue.Dequeue();
+            if (now - time <= LaunchLifetimeSeconds)
             {
-                continue;
+                launcher = next;
+                break;
             }
+        }
 
-            if (launcher != null)
-            {
-                foreach (var spent in _launchers.Keys.Where(x => x == null).ToList())
-                {
-                    _launchers.Remove(spent);
-                }
+        if (queue.Count == 0)
+        {
+            _launches.Remove(key);
+        }
 
-                Plugin.Logger.LogDebug(
-                    $"{missile.GetWeaponInfo().weaponName} from {owner.persistentID} launched by "
-                    + launcher.GetDisplayName(PlayerNameContext.Other)
-                );
-                _launchers[missile] = launcher;
-            }
-
+        if (launcher == null)
+        {
             return;
         }
+
+        foreach (var spent in _launchers.Keys.Where(x => x == null).ToList())
+        {
+            _launchers.Remove(spent);
+        }
+
+        Plugin.Logger.LogDebug(
+            $"{missile.GetWeaponInfo().weaponName} from {owner.persistentID} launched by "
+            + launcher.GetDisplayName(PlayerNameContext.Other)
+        );
+        _launchers[missile] = launcher;
     }
 
     public void OnClaim(Unit claimer)
@@ -136,19 +153,24 @@ internal sealed class CrewEconomy
         }
 
         var now = Time.unscaledTime;
+        Player? claimant = null;
 
         while (queue.Count > 0)
         {
-            var (claimant, time) = queue.Dequeue();
-            if (now - time > ClaimLifetimeSeconds)
+            var (next, time) = queue.Dequeue();
+            if (now - time <= ClaimLifetimeSeconds)
             {
-                continue;
+                claimant = next;
+                break;
             }
-
-            return Enter(dealer, claimant);
         }
 
-        return false;
+        if (queue.Count == 0)
+        {
+            _claims.Remove(dealer);
+        }
+
+        return Enter(dealer, claimant);
     }
 
     public bool EnterMissileContext(Missile missile)
