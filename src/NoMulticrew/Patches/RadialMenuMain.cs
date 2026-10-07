@@ -12,12 +12,6 @@ namespace NoMulticrew.Patches;
 internal static class RadialMenuMain_SetupWeapons
 {
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prepare()
-    {
-        return WeaponWheel.Present();
-    }
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prefix(
         Aircraft ___aircraft,
         RadialMenuAction[] ___actionsWeapons,
@@ -130,12 +124,6 @@ internal static class RadialMenuMain_SetupWeapons
 internal static class RadialMenuMain_RefreshWeapons
 {
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prepare()
-    {
-        return WeaponWheel.Present();
-    }
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static void Postfix()
     {
         foreach (var action in WeaponWheel.Greyed)
@@ -149,16 +137,9 @@ internal static class RadialMenuMain_RefreshWeapons
 [HarmonyPatch(typeof(RadialMenuMain), nameof(RadialMenuMain.OpenMenu))]
 internal static class RadialMenuMain_OpenMenu
 {
-    private static readonly Action<RadialMenuMain>? SetupWeapons =
-        AccessTools.Method(typeof(RadialMenuMain), "SetupWeapons") is { } method
-            ? AccessTools.MethodDelegate<Action<RadialMenuMain>>(method)
-            : null;
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prepare()
-    {
-        return WeaponWheel.Present();
-    }
+    private static readonly Action<RadialMenuMain> SetupWeapons = AccessTools.MethodDelegate<Action<RadialMenuMain>>(
+        GameMembers.Method(typeof(RadialMenuMain), "SetupWeapons")
+    );
 
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prefix(
@@ -189,7 +170,7 @@ internal static class RadialMenuMain_OpenMenu
             {
                 ___aircraft = crewed;
                 WeaponWheel.Built = crewKey;
-                SetupWeapons!(__instance);
+                SetupWeapons(__instance);
             }
 
             __instance.RefreshWeapons();

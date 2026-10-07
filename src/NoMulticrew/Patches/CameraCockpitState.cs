@@ -8,71 +8,19 @@ namespace NoMulticrew.Patches;
 [HarmonyPatch(typeof(CameraCockpitState), nameof(CameraCockpitState.FixedUpdateState))]
 internal static class CameraCockpitState_FixedUpdateState
 {
-    private static readonly string[] CameraFields =
-    [
-        "aircraft",
-        "velocityPrev",
-        "accel",
-        "accelPrev",
-        "gForce",
-        "gForcePrev",
-        "jerk",
-        "camRelativePos",
-        "camRelativeVel",
-        "antiSlump",
-        "lowFreqShake",
-        "highFreqShake",
-    ];
-
-    private static readonly AccessTools.FieldRef<Aircraft?>? FeedbackAircraftRef = FeedbackRef<Aircraft?>("_aircraft");
-    private static readonly AccessTools.FieldRef<AudioSource?>? SourceRef = FeedbackRef<AudioSource?>("_source");
-    private static readonly AccessTools.FieldRef<AircraftParameters.OnboardAoAEffects?>? AoAEffectsRef =
+    private static readonly AccessTools.FieldRef<Aircraft?> FeedbackAircraftRef = FeedbackRef<Aircraft?>("_aircraft");
+    private static readonly AccessTools.FieldRef<AudioSource?> SourceRef = FeedbackRef<AudioSource?>("_source");
+    private static readonly AccessTools.FieldRef<AircraftParameters.OnboardAoAEffects?> AoAEffectsRef =
         FeedbackRef<AircraftParameters.OnboardAoAEffects?>("aoaEffects");
-    private static readonly AccessTools.FieldRef<float>? VolumeRef = FeedbackRef<float>("volume");
-    private static readonly AccessTools.FieldRef<float>? VolumeSmoothedRef = FeedbackRef<float>("volumeSmoothed");
-    private static readonly AccessTools.FieldRef<float>? ShakeRef = FeedbackRef<float>("shake");
-    private static readonly AccessTools.FieldRef<float>? ShakeSmoothedRef = FeedbackRef<float>("shakeSmoothed");
-    private static readonly AccessTools.FieldRef<float>? LastUpdateRef = FeedbackRef<float>("lastUpdate");
+    private static readonly AccessTools.FieldRef<float> VolumeRef = FeedbackRef<float>("volume");
+    private static readonly AccessTools.FieldRef<float> VolumeSmoothedRef = FeedbackRef<float>("volumeSmoothed");
+    private static readonly AccessTools.FieldRef<float> ShakeRef = FeedbackRef<float>("shake");
+    private static readonly AccessTools.FieldRef<float> ShakeSmoothedRef = FeedbackRef<float>("shakeSmoothed");
+    private static readonly AccessTools.FieldRef<float> LastUpdateRef = FeedbackRef<float>("lastUpdate");
 
-    private static readonly Action<Aircraft>? SetupAircraft =
-        AccessTools.Method(typeof(AoAFeedback), "SetupAircraft") is { } method
-            ? AccessTools.MethodDelegate<Action<Aircraft>>(method)
-            : null;
-
-    [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    private static bool Prepare()
-    {
-        var missing = CameraFields
-            .Where(x => AccessTools.Field(typeof(CameraCockpitState), x) == null)
-            .Select(x => $"CameraCockpitState.{x}")
-            .ToList();
-
-        if (FeedbackAircraftRef == null
-            || SourceRef == null
-            || AoAEffectsRef == null
-            || VolumeRef == null
-            || VolumeSmoothedRef == null
-            || ShakeRef == null
-            || ShakeSmoothedRef == null
-            || LastUpdateRef == null)
-        {
-            missing.Add("an AoAFeedback field");
-        }
-
-        if (SetupAircraft == null)
-        {
-            missing.Add("AoAFeedback.SetupAircraft");
-        }
-
-        if (missing.Count > 0)
-        {
-            Plugin.Logger.LogError(
-                $"{string.Join(", ", missing)} not found: the back seat rides with the vanilla cockpit shake"
-            );
-        }
-
-        return missing.Count == 0;
-    }
+    private static readonly Action<Aircraft> SetupAircraft = AccessTools.MethodDelegate<Action<Aircraft>>(
+        GameMembers.Method(typeof(AoAFeedback), "SetupAircraft")
+    );
 
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prefix(
@@ -143,28 +91,28 @@ internal static class CameraCockpitState_FixedUpdateState
 
     private static void RunAoAFeedback(Aircraft aircraft, Vector3 velocity)
     {
-        if (FeedbackAircraftRef!() != aircraft)
+        if (FeedbackAircraftRef() != aircraft)
         {
-            SetupAircraft!(aircraft);
+            SetupAircraft(aircraft);
         }
 
-        ref var volume = ref VolumeRef!();
-        ref var volumeSmoothed = ref VolumeSmoothedRef!();
-        ref var shake = ref ShakeRef!();
-        ref var shakeSmoothed = ref ShakeSmoothedRef!();
-        ref var lastUpdate = ref LastUpdateRef!();
+        ref var volume = ref VolumeRef();
+        ref var volumeSmoothed = ref VolumeSmoothedRef();
+        ref var shake = ref ShakeRef();
+        ref var shakeSmoothed = ref ShakeSmoothedRef();
+        ref var lastUpdate = ref LastUpdateRef();
 
         if (Time.timeSinceLevelLoad - lastUpdate < 0.1f)
         {
             volumeSmoothed = Mathf.Lerp(volumeSmoothed, volume, 8f * Time.fixedDeltaTime);
             shakeSmoothed = Mathf.Lerp(shakeSmoothed, shake, 8f * Time.fixedDeltaTime);
-            SourceRef!()!.volume = volumeSmoothed;
+            SourceRef()!.volume = volumeSmoothed;
             SceneSingleton<CameraStateManager>.i.ShakeCamera(0f, shakeSmoothed);
         }
         else
         {
             lastUpdate = Time.timeSinceLevelLoad;
-            var aoaEffects = AoAEffectsRef!()!;
+            var aoaEffects = AoAEffectsRef()!;
             var direction = velocity - NetworkSceneSingleton<LevelInfo>.i.GetWind(aircraft.cockpit.xform.GlobalPosition());
             var local = aircraft.cockpit.xform.InverseTransformDirection(direction);
             var alpha = Mathf.Atan2(local.y, local.z) * 57.29578f;
@@ -177,10 +125,8 @@ internal static class CameraCockpitState_FixedUpdateState
         }
     }
 
-    private static AccessTools.FieldRef<T>? FeedbackRef<T>(string name)
+    private static AccessTools.FieldRef<T> FeedbackRef<T>(string name)
     {
-        return AccessTools.Field(typeof(AoAFeedback), name) is { } field && field.FieldType == typeof(T)
-            ? AccessTools.StaticFieldRefAccess<T>(field)
-            : null;
+        return AccessTools.StaticFieldRefAccess<T>(GameMembers.Field(typeof(AoAFeedback), name));
     }
 }
