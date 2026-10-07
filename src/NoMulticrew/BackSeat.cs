@@ -1,6 +1,5 @@
 using Cysharp.Threading.Tasks;
 using HarmonyLib;
-using NoMulticrew.Crew;
 using NoMulticrew.Networking;
 using NoMulticrew.Seats;
 using NuclearOption.Networking;
@@ -108,7 +107,7 @@ internal sealed class BackSeat : IDisposable
             return false;
         }
 
-        if (JoinRequests.IsValidExit(Aircraft) || BailOutArmed)
+        if (SeatTable.IsValidExit(Aircraft) || BailOutArmed)
         {
             _bailOutArmedAt = float.NegativeInfinity;
             _session.Send(new CrewLeaveRequest());

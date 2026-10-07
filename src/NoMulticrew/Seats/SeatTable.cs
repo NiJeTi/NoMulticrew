@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+using NuclearOption.Networking;
 using UnityEngine;
 
 namespace NoMulticrew.Seats;
@@ -5,6 +7,10 @@ namespace NoMulticrew.Seats;
 internal sealed class SeatTable
 {
     public const byte NoStation = 255;
+
+    private const float BoardingSpeed = 50f / 3.6f;
+    private const float BoardingRadarAltitude = 5f;
+    private const float ExitSpeed = 2f;
 
     private static readonly Dictionary<string, SeatDefinition> Config = new()
     {
@@ -212,6 +218,53 @@ internal sealed class SeatTable
         }
 
         return -1;
+    }
+
+    public static bool CanBoard(
+        Aircraft aircraft,
+        Player joiner,
+        [NotNullWhen(true)] out Airbase? airbase,
+        [NotNullWhen(false)] out string? reason
+    )
+    {
+        airbase = null;
+
+        if (aircraft.disabled || aircraft.Player == null)
+        {
+            reason = "That aircraft has no pilot";
+            return false;
+        }
+
+        if (aircraft.NetworkHQ == null || joiner.HQ != aircraft.NetworkHQ)
+        {
+            reason = "That aircraft belongs to the opposing faction";
+            return false;
+        }
+
+        if (joiner.Aircraft != null)
+        {
+            reason = "You need to leave your aircraft first";
+            return false;
+        }
+
+        if (!(aircraft.radarAlt < BoardingRadarAltitude
+                && aircraft.speed < BoardingSpeed
+                && aircraft.NetworkHQ.AnyNearAirbase(aircraft.transform.position, out airbase)))
+        {
+            reason = "The aircraft is not at an airbase";
+            return false;
+        }
+
+        reason = null;
+        return true;
+    }
+
+    public static bool IsValidExit(Aircraft aircraft)
+    {
+        return aircraft.speed < ExitSpeed
+            && aircraft.NetworkHQ != null
+            && aircraft.NetworkHQ.AnyNearAirbase(aircraft.transform.position, out _)
+            && aircraft.transform.position.y > Datum.LocalSeaY;
     }
 
     public SeatDefinition? WsoSeat(Aircraft aircraft)

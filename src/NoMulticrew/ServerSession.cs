@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Mirage;
 using NoMulticrew.Crew;
 using NoMulticrew.Networking;
+using NoMulticrew.Seats;
 using NuclearOption.DedicatedServer.Commands;
 using NuclearOption.Networking;
 using UnityEngine;
@@ -248,7 +249,7 @@ internal sealed class ServerSession : IDisposable
         }
 
         var valid = UnitRegistry.TryGetUnit<Aircraft>(aircraftId.Value, out var aircraft)
-            && JoinRequests.IsValidExit(aircraft);
+            && SeatTable.IsValidExit(aircraft);
 
         Plugin.Logger.LogInfo(
             $"{player.GetDisplayName(PlayerNameContext.Other)} leaves {aircraftId.Value} "

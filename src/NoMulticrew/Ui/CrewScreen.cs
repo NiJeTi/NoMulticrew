@@ -1,5 +1,4 @@
 using HarmonyLib;
-using NoMulticrew.Crew;
 using NoMulticrew.Networking;
 using NoMulticrew.Seats;
 using NuclearOption.Networking;
@@ -243,7 +242,7 @@ internal sealed class CrewScreen : IDisposable
             foreach (var aircraft in Object.FindObjectsOfType<Aircraft>())
             {
                 if (Plugin.SeatTable.WsoSeat(aircraft) == null
-                    || !JoinRequests.CanBoard(aircraft, local, out var airbase, out _)
+                    || !SeatTable.CanBoard(aircraft, local, out var airbase, out _)
                     || !_session.TakesCrew(aircraft.Player)
                     || _session.Crew.HasRoster(aircraft.persistentID)
                     || !Plugin.SeatTable.Offered(aircraft))
