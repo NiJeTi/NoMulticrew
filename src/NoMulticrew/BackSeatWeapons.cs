@@ -12,7 +12,7 @@ internal sealed class BackSeatWeapons
     private readonly ClientSession _session;
     private readonly BackSeat _seat;
 
-    private readonly HashSet<byte> _firing = [];
+    private int _firing;
 
     private float _aimSentAt = float.NegativeInfinity;
 
@@ -40,7 +40,7 @@ internal sealed class BackSeatWeapons
 
     public void Clear()
     {
-        _firing.Clear();
+        _firing = 0;
         _aimSentAt = float.NegativeInfinity;
     }
 
@@ -48,21 +48,25 @@ internal sealed class BackSeatWeapons
     {
         var aircraft = _seat.Aircraft!;
 
-        foreach (var station in _firing)
+        for (var station = 0; station < 32; station++)
         {
-            Stop(aircraft, station);
+            if ((_firing & (1 << station)) != 0)
+            {
+                Stop(aircraft, (byte)station);
+            }
         }
 
-        _firing.Clear();
+        _firing = 0;
     }
 
     public void SetFiring(int station, bool firing)
     {
-        if (!firing || !_firing.Add((byte)station))
+        if (!firing || station is < 0 or >= 32 || (_firing & (1 << station)) != 0)
         {
             return;
         }
 
+        _firing |= 1 << station;
         _session.SendCommand(CrewCommand.FiringState(_seat.Aircraft!.persistentID, (byte)station, true));
     }
 
@@ -211,23 +215,25 @@ internal sealed class BackSeatWeapons
 
     private void Release(Aircraft aircraft)
     {
-        if (_firing.Count == 0)
+        if (_firing == 0)
         {
             return;
         }
 
         var now = Time.timeSinceLevelLoad;
 
-        foreach (var station in _firing.ToList())
+        for (var station = 0; station < 32; station++)
         {
-            if (station < aircraft.weaponStations.Count
-                && now - aircraft.weaponStations[station].LastFiredTime <= FiringReleaseSeconds)
+            var bit = 1 << station;
+            if ((_firing & bit) == 0
+                || (station < aircraft.weaponStations.Count
+                    && now - aircraft.weaponStations[station].LastFiredTime <= FiringReleaseSeconds))
             {
                 continue;
             }
 
-            _firing.Remove(station);
-            Stop(aircraft, station);
+            _firing &= ~bit;
+            Stop(aircraft, (byte)station);
         }
     }
 
