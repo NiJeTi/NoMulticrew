@@ -331,12 +331,12 @@ internal sealed class BackSeat : IDisposable
 
         aircraft.weaponManager.GetTargetList().Clear();
 
-        var seats = Plugin.SeatTable.SeatsFor(aircraft.definition.jsonKey);
-        if (seatIndex >= seats.Count)
+        var seat = Plugin.SeatTable.WsoSeat(aircraft);
+        if (seat == null)
         {
             Plugin.Logger.LogError(
-                $"Seated in seat {seatIndex} of {aircraft.definition.jsonKey}, but the local seat table has "
-                + $"{seats.Count}. This client's seat table differs from the server's."
+                $"Seated as WSO of {aircraft.definition.jsonKey}, but the local seat table has no WSO for it. "
+                + "This client's seat table differs from the server's."
             );
 
             return;
@@ -353,7 +353,7 @@ internal sealed class BackSeat : IDisposable
         _originalViewPoint = original;
         _rearViewPoint = new GameObject("NoMulticrew.RearViewPoint");
         var cockpit = aircraft.cockpit.transform;
-        var eye = cockpit.InverseTransformPoint(original.position) + seats[seatIndex].View;
+        var eye = cockpit.InverseTransformPoint(original.position) + seat.View;
         _rearViewPoint.transform.SetParent(cockpit, false);
         _rearViewPoint.transform.localPosition = eye;
         _rearViewPoint.transform.rotation = original.rotation;
@@ -370,7 +370,7 @@ internal sealed class BackSeat : IDisposable
         camera.SetFollowingUnit(aircraft);
         camera.SwitchState(camera.cockpitState);
 
-        _session.Screens.Board(aircraft, seats[seatIndex], _rearViewPoint.transform, eye);
+        _session.Screens.Board(aircraft, seat, _rearViewPoint.transform, eye);
 
         SceneSingleton<DynamicMap>.i.Minimize();
 
@@ -378,7 +378,7 @@ internal sealed class BackSeat : IDisposable
 
         StartScanLoops(aircraft);
 
-        Plugin.Logger.LogInfo($"Entered seat {seatIndex} of {aircraft.definition.jsonKey}: {seats[seatIndex]}");
+        Plugin.Logger.LogInfo($"Entered seat {seatIndex} of {aircraft.definition.jsonKey}: {seat}");
     }
 
     private static void ShowCountermeasures(CombatHUD hud, bool visible)

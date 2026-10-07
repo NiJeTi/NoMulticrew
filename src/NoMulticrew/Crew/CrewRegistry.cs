@@ -85,7 +85,7 @@ internal sealed class CrewRegistry
 
         if (!_crews.TryGetValue(aircraft.persistentID, out var seats))
         {
-            seats = new Player?[Plugin.SeatTable.SeatsFor(key).Count];
+            seats = new Player?[1];
             _crews[aircraft.persistentID] = seats;
         }
 

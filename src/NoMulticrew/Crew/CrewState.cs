@@ -121,7 +121,7 @@ internal sealed class CrewState
 
     public void RecordTargets(Unit unit, byte station, ReadOnlySpan<PersistentID> targets)
     {
-        if (unit is not Aircraft aircraft || Plugin.SeatTable.SeatsFor(aircraft.definition.jsonKey).Count == 0)
+        if (unit is not Aircraft aircraft || Plugin.SeatTable.WsoSeat(aircraft) == null)
         {
             return;
         }

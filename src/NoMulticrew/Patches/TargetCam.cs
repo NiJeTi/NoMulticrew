@@ -67,7 +67,7 @@ internal static class TargetCam_Update
             || ___aircraft == null
             || ReferenceEquals(client.BackSeat.Aircraft, ___aircraft)
             || (___aircraft.Player != null && ___aircraft.Player.IsLocalPlayer)
-            || Plugin.SeatTable.SeatsFor(___aircraft.definition.jsonKey).Count == 0)
+            || Plugin.SeatTable.WsoSeat(___aircraft) == null)
         {
             return true;
         }

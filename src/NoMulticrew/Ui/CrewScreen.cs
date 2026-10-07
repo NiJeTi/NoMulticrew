@@ -243,12 +243,11 @@ internal sealed class CrewScreen : IDisposable
         {
             foreach (var aircraft in Object.FindObjectsOfType<Aircraft>())
             {
-                var key = aircraft.definition.jsonKey;
-                var seats = Plugin.SeatTable.SeatsFor(key);
-
-                if (seats.Count == 0
+                if (Plugin.SeatTable.WsoSeat(aircraft) == null
                     || !JoinRequests.CanBoard(aircraft, local, out var airbase, out _)
-                    || !_session.TakesCrew(aircraft.Player))
+                    || !_session.TakesCrew(aircraft.Player)
+                    || _session.Crew.IsTaken(aircraft.persistentID, SeatTable.Wso)
+                    || !Plugin.SeatTable.Offered(aircraft))
                 {
                     continue;
                 }
@@ -257,27 +256,19 @@ internal sealed class CrewScreen : IDisposable
                 var airbaseName = (string.IsNullOrEmpty(name) ? airbase.name : name).ToUpperInvariant();
                 var pilot = aircraft.Player.GetDisplayName(PlayerNameContext.Other);
 
-                for (var i = 0; i < seats.Count; i++)
-                {
-                    if (_session.Crew.IsTaken(aircraft.persistentID, i) || !Plugin.SeatTable.Offered(aircraft, i))
-                    {
-                        continue;
-                    }
+                var state = _session.IsRequested(aircraft.persistentID, SeatTable.Wso)
+                    ? OfferState.Waiting
+                    : _session.HasRequest ? OfferState.Blocked : OfferState.Request;
 
-                    var state = _session.IsRequested(aircraft.persistentID, (byte)i)
-                        ? OfferState.Waiting
-                        : _session.HasRequest ? OfferState.Blocked : OfferState.Request;
-
-                    offers.Add(
-                        new SeatOffer(
-                            airbaseName,
-                            $"{aircraft.definition.unitName}  ·  {pilot}  {SeatTable.Label(i).ToUpperInvariant()}",
-                            aircraft.persistentID,
-                            (byte)i,
-                            state
-                        )
-                    );
-                }
+                offers.Add(
+                    new SeatOffer(
+                        airbaseName,
+                        $"{aircraft.definition.unitName}  ·  {pilot}  {SeatTable.Label(SeatTable.Wso).ToUpperInvariant()}",
+                        aircraft.persistentID,
+                        SeatTable.Wso,
+                        state
+                    )
+                );
             }
         }
 

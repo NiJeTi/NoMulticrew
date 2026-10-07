@@ -238,14 +238,13 @@ internal sealed class JoinRequests
             return false;
         }
 
-        var seats = Plugin.SeatTable.SeatsFor(aircraft.definition.jsonKey);
-        if (seatIndex >= seats.Count)
+        if (seatIndex != SeatTable.Wso || Plugin.SeatTable.WsoSeat(aircraft) == null)
         {
             reason = "That aircraft has no such seat";
             return false;
         }
 
-        if (!Plugin.SeatTable.Offered(aircraft, seatIndex))
+        if (!Plugin.SeatTable.Offered(aircraft))
         {
             reason = "That seat has no weapons in this loadout";
             return false;
