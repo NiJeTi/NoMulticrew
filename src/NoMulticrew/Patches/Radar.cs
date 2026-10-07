@@ -10,6 +10,6 @@ internal static class Radar_TargetSearch
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prefix(Radar __instance)
     {
-        return TargetDetector_TargetSearch.Searches(__instance);
+        return Plugin.Client?.BackSeat.Searches(__instance) ?? true;
     }
 }

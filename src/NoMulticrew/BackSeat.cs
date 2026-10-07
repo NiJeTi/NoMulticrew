@@ -400,6 +400,13 @@ internal sealed class BackSeat : IDisposable
         return true;
     }
 
+    public bool Searches(TargetDetector detector)
+    {
+        var unit = detector.GetAttachedUnit();
+
+        return Plugin.IsServer || GameManager.IsLocalAircraft(unit) || ReferenceEquals(unit, Aircraft);
+    }
+
     private void StartScanLoops(Aircraft aircraft)
     {
         if (Plugin.IsServer)
