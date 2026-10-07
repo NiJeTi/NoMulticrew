@@ -10,7 +10,7 @@ internal static class PylonIndicator_Start
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
     {
-        return TargetCam_Initialize.Replace(
+        return Transpilers.ReplaceCall(
             instructions,
             AccessTools.Method(typeof(GameManager), nameof(GameManager.GetLocalAircraft)),
             AccessTools.Method(typeof(PylonIndicator_Start), nameof(GetAircraft)),
