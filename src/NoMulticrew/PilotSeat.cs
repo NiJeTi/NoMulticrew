@@ -64,21 +64,12 @@ internal sealed class PilotSeat
             return false;
         }
 
-        var count = aircraft.weaponStations.Count;
-
-        for (var step = 1; step < count; step++)
+        var next = _session.Crew.NextSelectable(aircraft, Role.Pilot, current.Number, direction);
+        if (next >= 0 && next != current.Number)
         {
-            var candidate = ((current.Number + direction * step) % count + count) % count;
-            if (!_session.Crew.CanSelect(aircraft, Role.Pilot, candidate))
-            {
-                continue;
-            }
-
-            manager.currentWeaponStation = aircraft.weaponStations[candidate];
-            aircraft.SetActiveStation((byte)candidate);
+            manager.currentWeaponStation = aircraft.weaponStations[next];
+            aircraft.SetActiveStation((byte)next);
             SceneSingleton<CombatHUD>.i.ShowWeaponStation(manager.currentWeaponStation);
-
-            return true;
         }
 
         return true;

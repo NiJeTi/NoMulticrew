@@ -184,4 +184,20 @@ internal sealed class CrewState
     {
         return Plugin.SeatTable.CanSelect(aircraft, role, station, ClientState(aircraft));
     }
+
+    public int NextSelectable(Aircraft aircraft, Role role, int from, int direction)
+    {
+        var count = aircraft.weaponStations.Count;
+
+        for (var step = 1; step <= count; step++)
+        {
+            var candidate = ((from + direction * step) % count + count) % count;
+            if (CanSelect(aircraft, role, candidate))
+            {
+                return candidate;
+            }
+        }
+
+        return -1;
+    }
 }

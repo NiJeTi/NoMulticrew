@@ -153,17 +153,21 @@ internal sealed class BackSeat : IDisposable
 
             var confirmed = _session.Crew.ClientState(Aircraft).WsoStation;
 
-            Select(_session.Crew.CanSelect(Aircraft, Role.Wso, confirmed) ? confirmed : Next(Station, 1));
+            Select(
+                _session.Crew.CanSelect(Aircraft, Role.Wso, confirmed)
+                    ? confirmed
+                    : _session.Crew.NextSelectable(Aircraft, Role.Wso, Station, 1)
+            );
         }
 
         if (Controls.IsNextWeaponPressed())
         {
-            Select(Next(Station, 1));
+            Select(_session.Crew.NextSelectable(Aircraft, Role.Wso, Station, 1));
         }
 
         if (Controls.IsPreviousWeaponPressed())
         {
-            Select(Next(Station, -1));
+            Select(_session.Crew.NextSelectable(Aircraft, Role.Wso, Station, -1));
         }
 
         if (Controls.IsEjectDown() && RequestLeave())
@@ -199,23 +203,6 @@ internal sealed class BackSeat : IDisposable
         Plugin.Logger.LogDebug($"Back seat selected station {station}");
 
         SceneSingleton<CombatHUD>.i.ShowWeaponStation(station >= 0 ? aircraft.weaponStations[station] : null);
-    }
-
-    private int Next(int from, int direction)
-    {
-        var aircraft = Aircraft!;
-        var count = aircraft.weaponStations.Count;
-
-        for (var step = 1; step <= count; step++)
-        {
-            var candidate = ((from + direction * step) % count + count) % count;
-            if (_session.Crew.CanSelect(aircraft, Role.Wso, candidate))
-            {
-                return candidate;
-            }
-        }
-
-        return -1;
     }
 
     public bool Owns(Unit unit, int station)
