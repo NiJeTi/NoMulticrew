@@ -42,7 +42,7 @@ internal sealed class CrewRegistry
 
     public Player? WsoHolding(Aircraft aircraft, int station)
     {
-        return Plugin.SeatTable.Holder(aircraft, station, ServerState(aircraft)) == SeatTable.Wso
+        return Plugin.SeatTable.Holder(aircraft, station, ServerState(aircraft)) == Role.Wso
             ? _wsos[aircraft.persistentID]
             : null;
     }
@@ -130,7 +130,7 @@ internal sealed class CrewRegistry
         {
             _session.Notify(
                 aircraft.Player,
-                $"{player.GetDisplayName(PlayerNameContext.Other)} left {SeatTable.Label(SeatTable.Wso)}",
+                $"{player.GetDisplayName(PlayerNameContext.Other)} left {SeatTable.Label(Role.Wso)}",
                 CrewCue.Deselect
             );
         }

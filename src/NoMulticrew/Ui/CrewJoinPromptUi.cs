@@ -41,7 +41,7 @@ internal sealed class CrewJoinPromptUi
     {
         _prompts.Add((prompt, Time.unscaledTime + prompt.ExpiresInSeconds));
 
-        ShowNotice($"{NameOf(prompt.JoinerPlayerIndex)} wants {SeatLabel(prompt)} — open the map to answer");
+        ShowNotice($"{NameOf(prompt.JoinerPlayerIndex)} wants {SeatTable.Label(Role.Wso)} — open the map to answer");
         Feedback.Play(CrewCue.WeaponSwitch);
     }
 
@@ -103,11 +103,6 @@ internal sealed class CrewJoinPromptUi
         _prompts.RemoveAll(x => x.Prompt.RequestId == prompt.RequestId);
 
         _session.Send(new CrewJoinResponse(prompt.RequestId, accepted));
-    }
-
-    public static string SeatLabel(CrewJoinPrompt prompt)
-    {
-        return SeatTable.Label(prompt.SeatIndex);
     }
 
     public static string NameOf(int playerIndex)

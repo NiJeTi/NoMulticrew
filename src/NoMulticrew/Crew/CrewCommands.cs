@@ -323,7 +323,7 @@ internal sealed class CrewCommands
         }
 
         if (station != SeatTable.NoStation
-            && !Plugin.SeatTable.CanSelect(aircraft, SeatTable.Wso, station, _session.Crew.ServerState(aircraft)))
+            && !Plugin.SeatTable.CanSelect(aircraft, Role.Wso, station, _session.Crew.ServerState(aircraft)))
         {
             if (!Plugin.SeatTable.IsShared(aircraft))
             {

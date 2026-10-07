@@ -109,7 +109,7 @@ internal sealed class JoinRequests
             ExpiresAt = Time.unscaledTime + TimeoutSeconds
         };
 
-        var prompt = new CrewJoinPrompt(request.Id, joiner.PlayerIndex, SeatTable.Wso, TimeoutSeconds);
+        var prompt = new CrewJoinPrompt(request.Id, joiner.PlayerIndex, 0, TimeoutSeconds);
 
         if (!_session.SendToPlayer(aircraft.Player.Owner, prompt))
         {
@@ -171,7 +171,7 @@ internal sealed class JoinRequests
 
         _session.Notify(
             request.Aircraft.Player,
-            $"{request.Joiner.GetDisplayName(PlayerNameContext.Other)} joined as {SeatTable.Label(SeatTable.Wso)}",
+            $"{request.Joiner.GetDisplayName(PlayerNameContext.Other)} joined as {SeatTable.Label(Role.Wso)}",
             CrewCue.Select
         );
 

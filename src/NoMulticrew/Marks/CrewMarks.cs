@@ -1,4 +1,5 @@
 using HarmonyLib;
+using NoMulticrew.Seats;
 using UnityEngine;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
@@ -127,12 +128,12 @@ internal sealed class CrewMarks : IDisposable
         if (seat.Aircraft != null)
         {
             _aircraft = seat.Aircraft;
-            _session.Crew.CollectCrewmateTargets(seat.Aircraft, seat.SeatIndex, _next);
+            _session.Crew.CollectCrewmateTargets(seat.Aircraft, Role.Wso, _next);
         }
         else if (GameManager.GetLocalAircraft(out var own))
         {
             _aircraft = own;
-            _session.Crew.CollectCrewmateTargets(own, -1, _next);
+            _session.Crew.CollectCrewmateTargets(own, Role.Pilot, _next);
         }
         else
         {

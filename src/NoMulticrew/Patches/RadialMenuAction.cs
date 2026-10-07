@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using HarmonyLib;
+using NoMulticrew.Seats;
 
 namespace NoMulticrew.Patches;
 
@@ -21,7 +22,7 @@ internal static class RadialMenuAction_TriggerAction
 
         if (ReferenceEquals(backSeat.Aircraft, aircraft))
         {
-            if (!client.Crew.CanSelect(aircraft, backSeat.SeatIndex, station))
+            if (!client.Crew.CanSelect(aircraft, Role.Wso, station))
             {
                 return client.Crew.RefuseSelection(aircraft, station);
             }

@@ -32,7 +32,7 @@ internal static class RadialMenuMain_SetupWeapons
             return true;
         }
 
-        var seat = WeaponWheel.SeatOf(client, ___aircraft);
+        var role = WeaponWheel.RoleOf(client, ___aircraft);
 
         ___showWeaponWheel = false;
 
@@ -54,7 +54,7 @@ internal static class RadialMenuMain_SetupWeapons
 
         ___actionObjectsWeapons.Clear();
 
-        if (seat == SeatTable.Pilot)
+        if (role == Role.Pilot)
         {
             foreach (var action in ___actionsWeapons)
             {
@@ -72,7 +72,7 @@ internal static class RadialMenuMain_SetupWeapons
             action.SetWeapon(station.WeaponInfo, station.Number);
             ___allowedActionsWeapons.Add(action);
 
-            if (!client.Crew.CanSelect(___aircraft, seat, station.Number))
+            if (!client.Crew.CanSelect(___aircraft, role, station.Number))
             {
                 WeaponWheel.Greyed.Add(action);
             }
@@ -165,7 +165,7 @@ internal static class RadialMenuMain_OpenMenu
                 return false;
             }
 
-            var crewKey = WeaponWheel.Key(client, crewed, client.BackSeat.SeatIndex);
+            var crewKey = WeaponWheel.Key(client, crewed, Role.Wso);
             if (crewKey != WeaponWheel.Built || !ReferenceEquals(___aircraft, crewed))
             {
                 ___aircraft = crewed;
@@ -187,7 +187,7 @@ internal static class RadialMenuMain_OpenMenu
             return true;
         }
 
-        var key = WeaponWheel.Key(client, flown, SeatTable.Pilot);
+        var key = WeaponWheel.Key(client, flown, Role.Pilot);
         if (key != WeaponWheel.Built)
         {
             ___aircraft = null;

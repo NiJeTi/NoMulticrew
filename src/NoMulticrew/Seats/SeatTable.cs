@@ -4,8 +4,6 @@ namespace NoMulticrew.Seats;
 
 internal sealed class SeatTable
 {
-    public const int Pilot = -1;
-    public const int Wso = 0;
     public const byte NoStation = 255;
 
     private static readonly Dictionary<string, SeatDefinition> Config = new()
@@ -193,9 +191,9 @@ internal sealed class SeatTable
         }
     }
 
-    public static string Label(int seat)
+    public static string Label(Role role)
     {
-        return seat == Pilot ? "Pilot" : "WSO";
+        return role == Role.Pilot ? "Pilot" : "WSO";
     }
 
     public static int StationIndex(byte station)
@@ -244,22 +242,22 @@ internal sealed class SeatTable
             : aircraft.weaponStations.Any(x => seat.Operates(x.WeaponInfo.name));
     }
 
-    public int Holder(Aircraft aircraft, int station, SeatState state)
+    public Role Holder(Aircraft aircraft, int station, SeatState state)
     {
         var seat = WsoSeat(aircraft);
         if (!state.WsoAboard || seat == null || station < 0 || station >= aircraft.weaponStations.Count)
         {
-            return Pilot;
+            return Role.Pilot;
         }
 
         var held = seat.IsShared
             ? state.WsoStation == station
             : seat.Operates(aircraft.weaponStations[station].WeaponInfo.name);
 
-        return held ? Wso : Pilot;
+        return held ? Role.Wso : Role.Pilot;
     }
 
-    public bool CanSelect(Aircraft aircraft, int seat, int station, SeatState state)
+    public bool CanSelect(Aircraft aircraft, Role role, int station, SeatState state)
     {
         if (station < 0 || station >= aircraft.weaponStations.Count)
         {
@@ -268,12 +266,12 @@ internal sealed class SeatTable
 
         var holder = Holder(aircraft, station, state);
 
-        if (seat == Pilot || !IsShared(aircraft))
+        if (role == Role.Pilot || !IsShared(aircraft))
         {
-            return holder == seat;
+            return holder == role;
         }
 
-        return holder == Wso || state.PilotStation != station;
+        return holder == Role.Wso || state.PilotStation != station;
     }
 
     public void Audit()

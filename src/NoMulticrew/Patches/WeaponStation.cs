@@ -70,6 +70,6 @@ internal static class WeaponStation_SetStationActive
             return server.Crew.WsoHolding(aircraft, station.Number) != null;
         }
 
-        return Plugin.Client is { } client && client.Crew.Holder(aircraft, station.Number) != SeatTable.Pilot;
+        return Plugin.Client is { } client && client.Crew.RoleHolding(aircraft, station.Number) == Role.Wso;
     }
 }

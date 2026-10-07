@@ -209,7 +209,7 @@ internal sealed class CrewScreen : IDisposable
         }
 
         var request = _session.Prompt.Pending is { } prompt
-            ? $"{CrewJoinPromptUi.NameOf(prompt.JoinerPlayerIndex)} WANTS {CrewJoinPromptUi.SeatLabel(prompt).ToUpperInvariant()}"
+            ? $"{CrewJoinPromptUi.NameOf(prompt.JoinerPlayerIndex)} WANTS {SeatTable.Label(Role.Wso).ToUpperInvariant()}"
             : null;
 
         var boarding = backSeat == null && aircraft == null;
@@ -246,7 +246,7 @@ internal sealed class CrewScreen : IDisposable
                 if (Plugin.SeatTable.WsoSeat(aircraft) == null
                     || !JoinRequests.CanBoard(aircraft, local, out var airbase, out _)
                     || !_session.TakesCrew(aircraft.Player)
-                    || _session.Crew.IsTaken(aircraft.persistentID, SeatTable.Wso)
+                    || _session.Crew.IsTaken(aircraft.persistentID, 0)
                     || !Plugin.SeatTable.Offered(aircraft))
                 {
                     continue;
@@ -256,16 +256,16 @@ internal sealed class CrewScreen : IDisposable
                 var airbaseName = (string.IsNullOrEmpty(name) ? airbase.name : name).ToUpperInvariant();
                 var pilot = aircraft.Player.GetDisplayName(PlayerNameContext.Other);
 
-                var state = _session.IsRequested(aircraft.persistentID, SeatTable.Wso)
+                var state = _session.IsRequested(aircraft.persistentID, 0)
                     ? OfferState.Waiting
                     : _session.HasRequest ? OfferState.Blocked : OfferState.Request;
 
                 offers.Add(
                     new SeatOffer(
                         airbaseName,
-                        $"{aircraft.definition.unitName}  ·  {pilot}  {SeatTable.Label(SeatTable.Wso).ToUpperInvariant()}",
+                        $"{aircraft.definition.unitName}  ·  {pilot}  {SeatTable.Label(Role.Wso).ToUpperInvariant()}",
                         aircraft.persistentID,
-                        SeatTable.Wso,
+                        0,
                         state
                     )
                 );
@@ -287,7 +287,7 @@ internal sealed class CrewScreen : IDisposable
                 ? " <"
                 : "";
 
-            crew.Add($"{SeatTable.Label(seat).ToUpperInvariant()}  {name}{here}");
+            crew.Add($"{SeatTable.Label(Role.Wso).ToUpperInvariant()}  {name}{here}");
         }
 
         var mine = ReferenceEquals(_session.BackSeat.Aircraft, aircraft) ? _session.BackSeat.SeatIndex : -1;
@@ -299,18 +299,18 @@ internal sealed class CrewScreen : IDisposable
 
     private void DescribeStations(Aircraft aircraft, List<(string, bool)> stations)
     {
-        var mine = ReferenceEquals(_session.BackSeat.Aircraft, aircraft) ? _session.BackSeat.SeatIndex : SeatTable.Pilot;
-        var selected = mine != SeatTable.Pilot
+        var mine = ReferenceEquals(_session.BackSeat.Aircraft, aircraft) ? Role.Wso : Role.Pilot;
+        var selected = mine == Role.Wso
             ? _session.BackSeat.Station
             : aircraft.weaponManager.currentWeaponStation?.Number ?? -1;
-        var state = _session.Crew.StateOf(aircraft);
+        var state = _session.Crew.ClientState(aircraft);
         var shared = Plugin.SeatTable.IsShared(aircraft);
 
         for (var i = 0; i < aircraft.weaponStations.Count; i++)
         {
             var weapon = aircraft.weaponStations[i].WeaponInfo;
             var holder = Plugin.SeatTable.Holder(aircraft, i, state);
-            var label = shared && holder == SeatTable.Pilot && state.PilotStation != i
+            var label = shared && holder == Role.Pilot && state.PilotStation != i
                 ? ""
                 : SeatTable.Label(holder).ToUpperInvariant();
             var usable = Plugin.SeatTable.CanSelect(aircraft, mine, i, state);

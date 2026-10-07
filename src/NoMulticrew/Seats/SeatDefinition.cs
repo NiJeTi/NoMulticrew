@@ -2,6 +2,12 @@ using UnityEngine;
 
 namespace NoMulticrew.Seats;
 
+internal enum Role : byte
+{
+    Pilot,
+    Wso,
+}
+
 internal readonly record struct SeatState(bool WsoAboard, int WsoStation, int PilotStation);
 
 internal sealed record ScreenPlacement(Vector3 Centre, Vector3 Normal, Rect Uv);

@@ -17,18 +17,18 @@ internal static class WeaponWheel
 
     public static string? Built { get; set; }
 
-    public static int SeatOf(ClientSession client, Aircraft aircraft)
+    public static Role RoleOf(ClientSession client, Aircraft aircraft)
     {
-        return ReferenceEquals(client.BackSeat.Aircraft, aircraft) ? client.BackSeat.SeatIndex : SeatTable.Pilot;
+        return ReferenceEquals(client.BackSeat.Aircraft, aircraft) ? Role.Wso : Role.Pilot;
     }
 
-    public static string Key(ClientSession client, Aircraft aircraft, int seat)
+    public static string Key(ClientSession client, Aircraft aircraft, Role role)
     {
-        var key = new StringBuilder().Append(seat).Append(':');
+        var key = new StringBuilder().Append(role).Append(':');
 
         foreach (var station in aircraft.weaponStations)
         {
-            key.Append(client.Crew.CanSelect(aircraft, seat, station.Number) ? 'o' : 'x');
+            key.Append(client.Crew.CanSelect(aircraft, role, station.Number) ? 'o' : 'x');
         }
 
         return key.ToString();

@@ -32,7 +32,7 @@ internal sealed class PilotSeat
 
         for (var i = 0; i < stations.Count; i++)
         {
-            if (states.Get(i) && _session.Crew.Holder(aircraft, i) != SeatTable.Pilot)
+            if (states.Get(i) && _session.Crew.RoleHolding(aircraft, i) == Role.Wso)
             {
                 stations[i].RemoteFireAuto(aircraft);
             }
@@ -42,7 +42,7 @@ internal sealed class PilotSeat
     private void KeepOffCrewStations(Aircraft aircraft)
     {
         var current = aircraft.weaponManager.currentWeaponStation;
-        if (current == null || _session.Crew.CanSelect(aircraft, SeatTable.Pilot, current.Number))
+        if (current == null || _session.Crew.CanSelect(aircraft, Role.Pilot, current.Number))
         {
             return;
         }
@@ -69,7 +69,7 @@ internal sealed class PilotSeat
         for (var step = 1; step < count; step++)
         {
             var candidate = ((current.Number + direction * step) % count + count) % count;
-            if (!_session.Crew.CanSelect(aircraft, SeatTable.Pilot, candidate))
+            if (!_session.Crew.CanSelect(aircraft, Role.Pilot, candidate))
             {
                 continue;
             }

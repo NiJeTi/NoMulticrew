@@ -120,7 +120,7 @@ internal sealed class CrewScreens
 
         if (seat.Panel != null)
         {
-            _crewmate = CrewmateScreen.Create(aircraft, SeatTable.Pilot, seat.Panel);
+            _crewmate = CrewmateScreen.Create(aircraft, Role.Pilot, seat.Panel);
         }
     }
 
@@ -186,7 +186,7 @@ internal sealed class CrewScreens
         }
 
         _attempted = aircraft;
-        _crewmate = CrewmateScreen.Create(aircraft, SeatTable.Wso, Plugin.SeatTable.PanelOf(aircraft)!);
+        _crewmate = CrewmateScreen.Create(aircraft, Role.Wso, Plugin.SeatTable.PanelOf(aircraft)!);
     }
 
     private Aircraft? CrewedLocalAircraft()
@@ -196,7 +196,7 @@ internal sealed class CrewScreens
             return null;
         }
 
-        return Plugin.SeatTable.PanelOf(aircraft) != null && _session.Crew.StateOf(aircraft).WsoAboard ? aircraft : null;
+        return Plugin.SeatTable.PanelOf(aircraft) != null && _session.Crew.ClientState(aircraft).WsoAboard ? aircraft : null;
     }
 
     private void BuildQuad(Aircraft aircraft, ScreenPlacement placement, Transform viewPoint, Vector3 eye)

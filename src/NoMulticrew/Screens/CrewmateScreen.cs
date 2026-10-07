@@ -20,7 +20,7 @@ internal sealed class CrewmateScreen : IDisposable
         AccessTools.FieldRefAccess<TacScreen, GameObject?>("landingCamDisplay");
 
     private readonly List<Unit> _targets = [];
-    private readonly int _seat;
+    private readonly Role _seat;
 
     private GameObject? _holder;
     private TacScreen? _screen;
@@ -35,13 +35,13 @@ internal sealed class CrewmateScreen : IDisposable
 
     public Aircraft Aircraft { get; }
 
-    private CrewmateScreen(Aircraft aircraft, int seat)
+    private CrewmateScreen(Aircraft aircraft, Role seat)
     {
         Aircraft = aircraft;
         _seat = seat;
     }
 
-    public static CrewmateScreen? Create(Aircraft aircraft, int seat, PanelPlacement panel)
+    public static CrewmateScreen? Create(Aircraft aircraft, Role seat, PanelPlacement panel)
     {
         var screen = new CrewmateScreen(aircraft, seat);
 
@@ -69,8 +69,8 @@ internal sealed class CrewmateScreen : IDisposable
         var overlay = _source != null && _source.enabled;
         _overlay?.Show(overlay);
 
-        var state = crew.StateOf(Aircraft);
-        var station = _seat == SeatTable.Pilot ? state.PilotStation : state.WsoStation;
+        var state = crew.ClientState(Aircraft);
+        var station = _seat == Role.Pilot ? state.PilotStation : state.WsoStation;
         var ids = crew.TargetsOf(Aircraft, station);
 
         _targets.Clear();
@@ -237,7 +237,7 @@ internal sealed class CrewmateScreen : IDisposable
 
     private ScreenQuad Overlay(PanelPlacement panel, Renderer source, Material material)
     {
-        var mirror = _seat == SeatTable.Wso;
+        var mirror = _seat == Role.Wso;
 
         Vector3 Side(Vector3 point)
         {

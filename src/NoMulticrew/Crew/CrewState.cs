@@ -116,7 +116,7 @@ internal sealed class CrewState
     {
         return unit is Aircraft aircraft
             && GameManager.IsLocalAircraft(aircraft)
-            && Holder(aircraft, stationIndex) != SeatTable.Pilot;
+            && RoleHolding(aircraft, stationIndex) != Role.Pilot;
     }
 
     public void RecordTargets(Unit unit, byte station, ReadOnlySpan<PersistentID> targets)
@@ -137,7 +137,7 @@ internal sealed class CrewState
         Plugin.Logger.LogDebug($"Recorded {targets.Length} targets for station {station} of {aircraft.persistentID}");
     }
 
-    public void CollectCrewmateTargets(Aircraft aircraft, int localSeat, HashSet<PersistentID> into)
+    public void CollectCrewmateTargets(Aircraft aircraft, Role local, HashSet<PersistentID> into)
     {
         into.Clear();
 
@@ -149,7 +149,7 @@ internal sealed class CrewState
 
         foreach (var (station, targets) in stations)
         {
-            if (Holder(aircraft, station) != localSeat)
+            if (RoleHolding(aircraft, station) != local)
             {
                 into.UnionWith(targets);
             }
@@ -180,17 +180,17 @@ internal sealed class CrewState
 
     public bool RefuseStation(Aircraft aircraft, int stationIndex)
     {
-        return Refuse($"{SeatTable.Label(Holder(aircraft, stationIndex))} has this weapon");
+        return Refuse($"{SeatTable.Label(RoleHolding(aircraft, stationIndex))} has this weapon");
     }
 
     public bool RefuseSelection(Aircraft aircraft, int station)
     {
-        var holder = SeatTable.Label(Holder(aircraft, station));
+        var holder = SeatTable.Label(RoleHolding(aircraft, station));
 
         return Refuse(Plugin.SeatTable.IsShared(aircraft) ? $"{holder} is using this weapon" : $"{holder}-only weapon");
     }
 
-    public SeatState StateOf(Aircraft aircraft)
+    public SeatState ClientState(Aircraft aircraft)
     {
         var local = GameManager.IsLocalAircraft(aircraft);
         var own = local ? aircraft.weaponManager.currentWeaponStation?.Number ?? -1 : -1;
@@ -201,19 +201,19 @@ internal sealed class CrewState
         }
 
         return new SeatState(
-            crew.Occupants[SeatTable.Wso] >= 0,
-            SeatTable.StationIndex(crew.Selected[SeatTable.Wso]),
+            crew.Occupants[0] >= 0,
+            SeatTable.StationIndex(crew.Selected[0]),
             local ? own : SeatTable.StationIndex(crew.PilotStation)
         );
     }
 
-    public int Holder(Aircraft aircraft, int station)
+    public Role RoleHolding(Aircraft aircraft, int station)
     {
-        return Plugin.SeatTable.Holder(aircraft, station, StateOf(aircraft));
+        return Plugin.SeatTable.Holder(aircraft, station, ClientState(aircraft));
     }
 
-    public bool CanSelect(Aircraft aircraft, int seat, int station)
+    public bool CanSelect(Aircraft aircraft, Role role, int station)
     {
-        return Plugin.SeatTable.CanSelect(aircraft, seat, station, StateOf(aircraft));
+        return Plugin.SeatTable.CanSelect(aircraft, role, station, ClientState(aircraft));
     }
 }
