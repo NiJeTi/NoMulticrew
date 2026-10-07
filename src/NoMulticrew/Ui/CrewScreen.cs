@@ -1,4 +1,5 @@
 using HarmonyLib;
+using NoMulticrew.Crew;
 using NoMulticrew.Networking;
 using NoMulticrew.Seats;
 using NuclearOption.Networking;
@@ -207,7 +208,7 @@ internal sealed class CrewScreen : IDisposable
         }
 
         var request = _session.Prompt.Pending is { } prompt
-            ? $"{CrewJoinPromptUi.NameOf(prompt.JoinerPlayerIndex)} WANTS {SeatTable.Label(Role.Wso).ToUpperInvariant()}"
+            ? $"{CrewState.NameOf(prompt.JoinerPlayerIndex)} WANTS {SeatTable.Label(Role.Wso).ToUpperInvariant()}"
             : null;
 
         var boarding = backSeat == null && aircraft == null;
@@ -277,7 +278,7 @@ internal sealed class CrewScreen : IDisposable
     private void DescribeSeats(Aircraft aircraft, CrewRoster roster, List<string> crew)
     {
         var here = ReferenceEquals(_session.BackSeat.Aircraft, aircraft);
-        var name = CrewJoinPromptUi.NameOf(roster.WsoPlayerIndex);
+        var name = CrewState.NameOf(roster.WsoPlayerIndex);
 
         crew.Add($"{SeatTable.Label(Role.Wso).ToUpperInvariant()}  {name}{(here ? " <" : "")}");
 

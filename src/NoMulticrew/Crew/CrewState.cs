@@ -54,6 +54,19 @@ internal sealed class CrewState
         return _rosters.TryGetValue(aircraftId, out roster);
     }
 
+    public static string NameOf(int playerIndex)
+    {
+        foreach (var player in UnitRegistry.playerLookup.Values)
+        {
+            if (player.PlayerIndex == playerIndex)
+            {
+                return player.GetDisplayName(PlayerNameContext.Other);
+            }
+        }
+
+        return $"Player {playerIndex}";
+    }
+
     public bool TryGetSeatedAircraft([NotNullWhen(true)] out Aircraft? aircraft)
     {
         aircraft = null;

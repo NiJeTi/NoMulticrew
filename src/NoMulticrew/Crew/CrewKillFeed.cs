@@ -1,5 +1,4 @@
 using HarmonyLib;
-using NoMulticrew.Ui;
 using NuclearOption.Networking;
 using UnityEngine;
 
@@ -47,7 +46,7 @@ internal sealed class CrewKillFeed
             return true;
         }
 
-        var name = $"{CrewJoinPromptUi.NameOf(author.PlayerIndex)} [{killer.definition.unitName}]";
+        var name = $"{CrewState.NameOf(author.PlayerIndex)} [{killer.definition.unitName}]";
         var line = name.AddColor(ColorFromFaction(killer.GetHQ()))
             + " "
             + killedType.GetVerb(true)

@@ -1,6 +1,6 @@
+using NoMulticrew.Crew;
 using NoMulticrew.Networking;
 using NoMulticrew.Seats;
-using NuclearOption.Networking;
 using UnityEngine;
 
 namespace NoMulticrew.Ui;
@@ -41,7 +41,7 @@ internal sealed class CrewJoinPromptUi
     {
         _prompts.Add((prompt, Time.unscaledTime + prompt.ExpiresInSeconds));
 
-        ShowNotice($"{NameOf(prompt.JoinerPlayerIndex)} wants {SeatTable.Label(Role.Wso)} — open the map to answer");
+        ShowNotice($"{CrewState.NameOf(prompt.JoinerPlayerIndex)} wants {SeatTable.Label(Role.Wso)} — open the map to answer");
         Feedback.Play(CrewCue.WeaponSwitch);
     }
 
@@ -103,18 +103,5 @@ internal sealed class CrewJoinPromptUi
         _prompts.RemoveAll(x => x.Prompt.RequestId == prompt.RequestId);
 
         _session.Send(new CrewJoinResponse(prompt.RequestId, accepted));
-    }
-
-    public static string NameOf(int playerIndex)
-    {
-        foreach (var player in UnityEngine.Object.FindObjectsOfType<Player>())
-        {
-            if (player.PlayerIndex == playerIndex)
-            {
-                return player.GetDisplayName(PlayerNameContext.Other);
-            }
-        }
-
-        return $"Player {playerIndex}";
     }
 }
