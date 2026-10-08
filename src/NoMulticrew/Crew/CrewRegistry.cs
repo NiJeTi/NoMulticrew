@@ -160,7 +160,13 @@ internal sealed class CrewRegistry
 
     public void Dissolve(PersistentID aircraftId)
     {
-        if (!_entries.Remove(aircraftId, out var entry) || entry.Wso is not { } wso)
+        if (!_entries.Remove(aircraftId, out var entry))
+        {
+            return;
+        }
+
+        var wso = entry.Wso;
+        if (ReferenceEquals(wso, null))
         {
             return;
         }
