@@ -3,6 +3,7 @@ using NoMulticrew.Crew;
 using NoMulticrew.Marks;
 using NoMulticrew.Networking;
 using NoMulticrew.Screens;
+using NoMulticrew.Seats;
 using NoMulticrew.Ui;
 using NuclearOption.Networking;
 using UnityEngine;
@@ -108,6 +109,21 @@ internal sealed class ClientSession : IDisposable
         _server.Send(message);
 
         return true;
+    }
+
+    public Role? LocalRole(Aircraft? aircraft)
+    {
+        if (aircraft == null)
+        {
+            return null;
+        }
+
+        if (ReferenceEquals(BackSeat.Aircraft, aircraft))
+        {
+            return Role.Wso;
+        }
+
+        return GameManager.IsLocalAircraft(aircraft) ? Role.Pilot : null;
     }
 
     public bool IsRequested(PersistentID aircraftId)

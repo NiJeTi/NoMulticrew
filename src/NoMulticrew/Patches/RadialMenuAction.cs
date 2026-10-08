@@ -36,6 +36,6 @@ internal static class RadialMenuAction_TriggerAction
             return false;
         }
 
-        return !client.Crew.BlocksStation(aircraft, station) || client.Crew.RefuseSelection(aircraft, station);
+        return !client.PilotSeat.Blocks(aircraft, station) || client.Crew.RefuseSelection(aircraft, station);
     }
 }

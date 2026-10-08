@@ -13,6 +13,13 @@ internal sealed class PilotSeat
         _session = session;
     }
 
+    public bool Blocks(Unit unit, int station)
+    {
+        return unit is Aircraft aircraft
+            && GameManager.IsLocalAircraft(aircraft)
+            && _session.Crew.RoleHolding(aircraft, station) != Role.Pilot;
+    }
+
     public void Tick()
     {
         if (!GameManager.GetLocalAircraft(out var aircraft) || aircraft.disabled)
@@ -42,7 +49,7 @@ internal sealed class PilotSeat
     private void KeepOffCrewStations(Aircraft aircraft)
     {
         var current = aircraft.weaponManager.currentWeaponStation;
-        if (current == null || _session.Crew.CanSelect(aircraft, Role.Pilot, current.Number))
+        if (current == null || !Blocks(aircraft, current.Number))
         {
             return;
         }
@@ -104,7 +111,7 @@ internal sealed class PilotSeat
     private Aircraft? Flown(PersistentID aircraftId, byte station)
     {
         if (UnitRegistry.TryGetUnit<Aircraft>(aircraftId, out var aircraft)
-            && _session.Crew.BlocksStation(aircraft, station))
+            && Blocks(aircraft, station))
         {
             return aircraft;
         }

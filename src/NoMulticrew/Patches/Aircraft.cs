@@ -43,7 +43,7 @@ internal static class Aircraft_CmdLaunchMissile
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prefix(Aircraft __instance, byte stationIndex)
     {
-        return Plugin.Client?.Crew.BlocksStation(__instance, stationIndex) != true;
+        return Plugin.Client?.PilotSeat.Blocks(__instance, stationIndex) != true;
     }
 }
 
@@ -54,7 +54,7 @@ internal static class Aircraft_SetActiveStation
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prefix(Aircraft __instance, byte stationIndex)
     {
-        return Plugin.Client?.Crew.BlocksStation(__instance, stationIndex) != true;
+        return Plugin.Client?.PilotSeat.Blocks(__instance, stationIndex) != true;
     }
 }
 

@@ -49,7 +49,7 @@ internal static class Unit_SetFiringState
             return false;
         }
 
-        if (!firing || !client.Crew.BlocksStation(__instance, index))
+        if (!firing || !client.PilotSeat.Blocks(__instance, index))
         {
             return true;
         }
@@ -83,7 +83,7 @@ internal static class Unit_RegisterHit
         {
             var station = SeatTable.StationOf(__instance, weaponInfo);
 
-            if (client.Crew.BlocksStation(__instance, station))
+            if (client.PilotSeat.Blocks(__instance, station))
             {
                 HidesNextDisplay = true;
 
@@ -142,7 +142,7 @@ internal static class Unit_SingleRemoteFire
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prefix(Unit __instance, byte stationIndex)
     {
-        return Plugin.Client?.Crew.BlocksStation(__instance, stationIndex) != true;
+        return Plugin.Client?.PilotSeat.Blocks(__instance, stationIndex) != true;
     }
 }
 

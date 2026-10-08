@@ -10,15 +10,15 @@ internal static class WeaponManager_Fire
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prefix(WeaponManager __instance, Aircraft ___aircraft)
     {
-        var crew = Plugin.Client?.Crew;
+        var client = Plugin.Client;
         var station = __instance.currentWeaponStation;
 
-        if (crew == null || station == null || !crew.BlocksStation(___aircraft, station.Number))
+        if (client == null || station == null || !client.PilotSeat.Blocks(___aircraft, station.Number))
         {
             return true;
         }
 
-        return crew.RefuseStation(___aircraft, station.Number);
+        return client.Crew.RefuseStation(___aircraft, station.Number);
     }
 }
 
@@ -55,7 +55,7 @@ internal static class WeaponManager_TargetListChanged
 
         var station = __instance.currentWeaponStation;
 
-        return station == null || !client.Crew.BlocksStation(___aircraft, station.Number);
+        return station == null || !client.PilotSeat.Blocks(___aircraft, station.Number);
     }
 }
 

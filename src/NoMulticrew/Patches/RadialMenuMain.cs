@@ -32,7 +32,7 @@ internal static class RadialMenuMain_SetupWeapons
             return true;
         }
 
-        var role = WeaponWheel.RoleOf(client, ___aircraft);
+        var role = client.LocalRole(___aircraft) ?? Role.Pilot;
 
         ___showWeaponWheel = false;
 

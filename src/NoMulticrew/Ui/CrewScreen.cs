@@ -240,7 +240,7 @@ internal sealed class CrewScreen : IDisposable
 
     private void DescribeStations(Aircraft aircraft, List<(string, bool)> stations)
     {
-        var mine = ReferenceEquals(_session.BackSeat.Aircraft, aircraft) ? Role.Wso : Role.Pilot;
+        var mine = _session.LocalRole(aircraft) ?? Role.Pilot;
         var selected = mine == Role.Wso
             ? _session.BackSeat.Station
             : aircraft.weaponManager.currentWeaponStation?.Number ?? -1;

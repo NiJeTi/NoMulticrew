@@ -128,17 +128,23 @@ internal sealed class CrewMarks : IDisposable
         if (seat.Aircraft != null)
         {
             _aircraft = seat.Aircraft;
-            _session.Crew.CollectCrewmateTargets(seat.Aircraft, Role.Wso, _next);
         }
         else if (GameManager.GetLocalAircraft(out var own))
         {
             _aircraft = own;
-            _session.Crew.CollectCrewmateTargets(own, Role.Pilot, _next);
         }
         else
         {
             _aircraft = null;
+        }
+
+        if (_aircraft == null)
+        {
             _next.Clear();
+        }
+        else
+        {
+            _session.Crew.CollectCrewmateTargets(_aircraft, _session.LocalRole(_aircraft)!.Value, _next);
         }
 
         _next.RemoveWhere(static id =>

@@ -17,11 +17,6 @@ internal static class WeaponWheel
 
     public static string? Built { get; set; }
 
-    public static Role RoleOf(ClientSession client, Aircraft aircraft)
-    {
-        return ReferenceEquals(client.BackSeat.Aircraft, aircraft) ? Role.Wso : Role.Pilot;
-    }
-
     public static string Key(ClientSession client, Aircraft aircraft, Role role)
     {
         var key = new StringBuilder().Append(role).Append(':');

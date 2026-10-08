@@ -93,13 +93,6 @@ internal sealed class CrewState
         return false;
     }
 
-    public bool BlocksStation(Unit unit, int stationIndex)
-    {
-        return unit is Aircraft aircraft
-            && GameManager.IsLocalAircraft(aircraft)
-            && RoleHolding(aircraft, stationIndex) != Role.Pilot;
-    }
-
     public void RecordTargets(Unit unit, byte station, ReadOnlySpan<PersistentID> targets)
     {
         if (unit is not Aircraft aircraft || Plugin.SeatTable.WsoSeat(aircraft) == null)
