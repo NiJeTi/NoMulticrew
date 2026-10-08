@@ -163,13 +163,18 @@ internal sealed class ClientSession : IDisposable
 
     public void RequestSeat(PersistentID aircraftId)
     {
-        if (_request != null || !Send(new CrewJoinRequest(aircraftId)))
+        if (_request != null)
         {
             return;
         }
 
         _request = (aircraftId, Time.unscaledTime);
         Feedback.Play(CrewCue.Select);
+
+        if (!Send(new CrewJoinRequest(aircraftId)))
+        {
+            _request = null;
+        }
     }
 
     private void Register<T>(MessageDelegateWithPlayer<T> handler)
