@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using HarmonyLib;
-using NoMulticrew.Theming;
+using NoMulticrew.Client.Theming;
 
 namespace NoMulticrew.Patches;
 

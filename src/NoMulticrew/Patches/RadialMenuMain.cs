@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using HarmonyLib;
+using NoMulticrew.Client;
 using NoMulticrew.Seats;
 using UnityEngine;
 

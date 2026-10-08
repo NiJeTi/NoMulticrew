@@ -3,11 +3,12 @@ using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
 using Mirage;
+using NoMulticrew.Client;
+using NoMulticrew.Client.Theming;
 using NoMulticrew.Networking;
 using NoMulticrew.Seats;
-using NoMulticrew.Theming;
+using NoMulticrew.Server;
 using NuclearOption.Networking;
-
 namespace NoMulticrew;
 
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
