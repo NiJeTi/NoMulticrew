@@ -331,7 +331,7 @@ internal sealed class ServerSession : IDisposable
             ServerCommandName, (server, _) =>
             {
                 var (ok, description) = server.RunOnMainThreadBlocking(
-                    () => (true, $"multicrew-capable connections: {_validPlayers.Count}")
+                    () => (true, $"multicrew-capable connections: {_validPlayers.Count}, crew entries: {Crew.Count}")
                 );
 
                 return ok
