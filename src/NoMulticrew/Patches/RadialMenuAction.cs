@@ -39,3 +39,19 @@ internal static class RadialMenuAction_TriggerAction
         return !client.PilotSeat.Blocks(aircraft, station) || client.Crew.RefuseSelection(aircraft, station);
     }
 }
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[HarmonyPatch(typeof(RadialMenuAction), nameof(RadialMenuAction.AllowedOnAircraft))]
+internal static class RadialMenuAction_AllowedOnAircraft
+{
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static void Postfix(RadialMenuAction __instance, Aircraft aircraft, ref bool __result)
+    {
+        if (__result
+            && __instance.GetActionType() != RadialMenuAction.ActionType.SelectWeapon
+            && Plugin.Client?.LocalRole(aircraft) == Role.Wso)
+        {
+            __result = false;
+        }
+    }
+}

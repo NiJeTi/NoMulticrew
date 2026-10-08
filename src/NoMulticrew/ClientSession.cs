@@ -46,6 +46,8 @@ internal sealed class ClientSession : IDisposable
 
     public CrewScreens Screens { get; }
 
+    public WeaponWheel Wheel { get; } = new();
+
     public ClientSession(NetworkClient client)
     {
         _client = client;
@@ -158,6 +160,7 @@ internal sealed class ClientSession : IDisposable
         Crew.Clear();
         Kills.Clear();
         Prompt.Clear();
+        Wheel.Clear();
         _request = null;
     }
 

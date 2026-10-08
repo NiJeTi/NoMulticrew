@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace NoMulticrew;
 
-internal static class WeaponWheel
+internal sealed class WeaponWheel
 {
     private static readonly AccessTools.FieldRef<RadialMenuAction, Color> DefaultColorRef =
         AccessTools.FieldRefAccess<RadialMenuAction, Color>("defaultColor");
@@ -13,11 +13,11 @@ internal static class WeaponWheel
     private static readonly AccessTools.FieldRef<RadialMenuAction, Color> SelectedColorRef =
         AccessTools.FieldRefAccess<RadialMenuAction, Color>("selectedColor");
 
-    public static HashSet<RadialMenuAction> Greyed { get; } = [];
+    public HashSet<RadialMenuAction> Greyed { get; } = [];
 
-    public static string? Built { get; set; }
+    public string? Built { get; set; }
 
-    public static string Key(ClientSession client, Aircraft aircraft, Role role)
+    public string Key(ClientSession client, Aircraft aircraft, Role role)
     {
         var key = new StringBuilder().Append(role).Append(':');
 
@@ -27,6 +27,12 @@ internal static class WeaponWheel
         }
 
         return key.ToString();
+    }
+
+    public void Clear()
+    {
+        Greyed.Clear();
+        Built = null;
     }
 
     public static void Grey(RadialMenuAction action)
