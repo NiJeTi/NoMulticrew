@@ -94,7 +94,14 @@ internal sealed class ServerSession : IDisposable
     public void Receive<T>(T message)
         where T : struct, IMessage<T>
     {
-        ((MessageDelegateWithPlayer<T>)_handlers[typeof(T)])(_server.LocalPlayer, message);
+        try
+        {
+            ((MessageDelegateWithPlayer<T>)_handlers[typeof(T)])(_server.LocalPlayer, message);
+        }
+        catch (Exception e)
+        {
+            Plugin.Logger.LogError($"Exception handling {typeof(T).Name}: {e}");
+        }
     }
 
     public void Notify(Player player, string text, CrewCue cue = CrewCue.None)
@@ -127,7 +134,9 @@ internal sealed class ServerSession : IDisposable
 
     public void AnnounceKillAuthor(PersistentID killedId)
     {
-        if (Economy.KillAuthorOf(killedId) is { } author)
+        var author = Economy.KillAuthorOf(killedId);
+
+        if (!ReferenceEquals(author, null))
         {
             SendToAllCapable(new CrewKillAuthor(killedId, author.PlayerIndex));
         }
@@ -146,7 +155,7 @@ internal sealed class ServerSession : IDisposable
         if (_validPlayers.Contains(player))
         {
             Crew.SendRosters(player);
-            player.Send(new CrewClosedPilots(_closedSent));
+            Deliver(player, new CrewClosedPilots(_closedSent));
         }
     }
 

@@ -165,10 +165,15 @@ internal sealed class CrewEconomy
 
         _open = true;
 
-        if (missile != null && LauncherOf(missile) is { } launcher)
+        if (missile != null)
         {
-            _contextAircraft = missile.ownerID;
-            _contextCrew = launcher;
+            var launcher = LauncherOf(missile);
+
+            if (launcher != null)
+            {
+                _contextAircraft = missile.ownerID;
+                _contextCrew = launcher;
+            }
         }
 
         return true;

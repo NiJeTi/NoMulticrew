@@ -9,6 +9,7 @@ using NoMulticrew.Networking;
 using NoMulticrew.Seats;
 using NoMulticrew.Server;
 using NuclearOption.Networking;
+
 namespace NoMulticrew;
 
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]

@@ -201,7 +201,7 @@ internal sealed class CrewRegistry
 
     public void SendRosters(INetworkPlayer player)
     {
-        foreach (var (aircraftId, entry) in _entries)
+        foreach (var (aircraftId, entry) in _entries.ToList())
         {
             if (entry.Wso != null)
             {

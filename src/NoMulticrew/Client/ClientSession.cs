@@ -6,6 +6,7 @@ using NoMulticrew.Seats;
 using NoMulticrew.Server;
 using NuclearOption.Networking;
 using UnityEngine;
+
 namespace NoMulticrew.Client;
 
 internal sealed class ClientSession : IDisposable
@@ -93,7 +94,14 @@ internal sealed class ClientSession : IDisposable
     public void Receive<T>(T message)
         where T : struct, IMessage<T>
     {
-        ((MessageDelegateWithPlayer<T>)_handlers[typeof(T)])(_server!, message);
+        try
+        {
+            ((MessageDelegateWithPlayer<T>)_handlers[typeof(T)])(_server!, message);
+        }
+        catch (Exception e)
+        {
+            Plugin.Logger.LogError($"Exception handling {typeof(T).Name}: {e}");
+        }
     }
 
     public void AttachMfd(VirtualMFD mfd)
