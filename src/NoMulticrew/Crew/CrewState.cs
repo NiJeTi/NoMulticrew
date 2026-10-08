@@ -34,7 +34,7 @@ internal sealed class CrewState
 
         if (UnitRegistry.TryGetUnit<Aircraft>(message.AircraftId, out var aircraft))
         {
-            Plugin.SeatTable.ApplyTurrets(aircraft);
+            Plugin.SeatTable.ApplyTurrets(aircraft, ClientState(aircraft));
         }
     }
 

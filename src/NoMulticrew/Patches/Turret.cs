@@ -28,7 +28,8 @@ internal static class Turret_FixedUpdate
             || ___stowed
             || ___disabled
             || ___aircraft.disabled
-            || !Plugin.SeatTable.IsManned(___aircraft, ___currentWeaponStation)
+            || Plugin.SeatStateOf(___aircraft) is not { } state
+            || !Plugin.SeatTable.IsManned(___aircraft, ___currentWeaponStation, state)
             || ___target != null)
         {
             return true;

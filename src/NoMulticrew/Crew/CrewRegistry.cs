@@ -204,7 +204,7 @@ internal sealed class CrewRegistry
 
         if (UnitRegistry.TryGetUnit<Aircraft>(aircraftId, out var aircraft))
         {
-            Plugin.SeatTable.ApplyTurrets(aircraft);
+            Plugin.SeatTable.ApplyTurrets(aircraft, ServerState(aircraft));
         }
     }
 }

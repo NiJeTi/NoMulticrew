@@ -25,6 +25,11 @@ internal sealed class Plugin : BaseUnityPlugin
 
     public static bool IsServer => Server != null;
 
+    public static SeatState? SeatStateOf(Aircraft aircraft)
+    {
+        return Server?.Crew.ServerState(aircraft) ?? Client?.Crew.ClientState(aircraft);
+    }
+
     private static AccessTools.FieldRef<ResourcesAsyncLoader<NetworkManagerNuclearOption>> NetworkManagerLoaderRef = null!;
 
     private static NetworkManagerNuclearOption? _manager;

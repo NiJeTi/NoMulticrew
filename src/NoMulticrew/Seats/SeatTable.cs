@@ -327,19 +327,12 @@ internal sealed class SeatTable
         return holder == Role.Wso || state.PilotStation != station;
     }
 
-    public bool IsManned(Aircraft aircraft, WeaponStation station)
+    public bool IsManned(Aircraft aircraft, WeaponStation station, SeatState state)
     {
-        if (!station.HasTurret())
-        {
-            return false;
-        }
-
-        var state = Plugin.Server?.Crew.ServerState(aircraft) ?? Plugin.Client?.Crew.ClientState(aircraft);
-
-        return state is { } known && Holder(aircraft, station.Number, known) == Role.Wso;
+        return station.HasTurret() && Holder(aircraft, station.Number, state) == Role.Wso;
     }
 
-    public void ApplyTurrets(Aircraft aircraft)
+    public void ApplyTurrets(Aircraft aircraft, SeatState state)
     {
         var current = aircraft.weaponManager.currentWeaponStation;
         var flown = aircraft.Player != null;
@@ -351,7 +344,7 @@ internal sealed class SeatTable
                 continue;
             }
 
-            var manual = IsManned(aircraft, station) || (flown && ReferenceEquals(station, current));
+            var manual = IsManned(aircraft, station, state) || (flown && ReferenceEquals(station, current));
 
             foreach (var turret in station.Turrets)
             {

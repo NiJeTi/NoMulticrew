@@ -43,7 +43,7 @@ internal static class WeaponStation_SetStationActive
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prefix(WeaponStation __instance, Aircraft aircraft)
     {
-        if (!Plugin.SeatTable.IsManned(aircraft, __instance))
+        if (Plugin.SeatStateOf(aircraft) is not { } state || !Plugin.SeatTable.IsManned(aircraft, __instance, state))
         {
             return true;
         }
