@@ -128,23 +128,13 @@ internal sealed class BackSeat : IDisposable
         }
     }
 
-    public Vector3? RideVelocity(Rigidbody rb)
+    public Vector3 SmoothVelocity(Vector3 velocity, bool restart)
     {
-        if (Aircraft == null || !ReferenceEquals(rb, Aircraft.CockpitRB()))
-        {
-            return null;
-        }
-
-        _rideVelocity = Vector3.Lerp(_rideVelocity, rb.velocity, 1f - Mathf.Exp(-Time.fixedDeltaTime / RideTimeConstant));
+        _rideVelocity = restart
+            ? velocity
+            : Vector3.Lerp(_rideVelocity, velocity, 1f - Mathf.Exp(-Time.fixedDeltaTime / RideTimeConstant));
 
         return _rideVelocity;
-    }
-
-    private void ResetRide()
-    {
-        var rb = Aircraft != null ? Aircraft.CockpitRB() : null;
-
-        _rideVelocity = rb != null ? rb.velocity : Vector3.zero;
     }
 
     private void Employ()
@@ -244,17 +234,14 @@ internal sealed class BackSeat : IDisposable
     private void OnSwitchCamera()
     {
         var camera = _camera!;
-        if (camera.currentState != camera.cockpitState || !ReferenceEquals(camera.followingUnit, Aircraft))
+        if (camera.currentState != camera.cockpitState
+            || !ReferenceEquals(camera.followingUnit, Aircraft)
+            || DynamicMap.mapMaximized)
         {
             return;
         }
 
-        ResetRide();
-
-        if (!DynamicMap.mapMaximized)
-        {
-            FlightHud.EnableCanvas(true);
-        }
+        FlightHud.EnableCanvas(true);
     }
 
     public void Leave(bool showMap)
@@ -358,7 +345,6 @@ internal sealed class BackSeat : IDisposable
         FlightHud.EnableCanvas(true);
 
         StartScanLoops(aircraft);
-        ResetRide();
 
         Plugin.Logger.LogInfo($"Entered the WSO seat of {aircraft.definition.jsonKey}: {seat}");
     }
