@@ -170,7 +170,7 @@ internal sealed class CrewScreen : IDisposable
             stations.Add(("NONE", true));
         }
 
-        var request = _session.Prompt.Pending is { } prompt
+        var request = _session.Notices.Pending is { } prompt
             ? $"{CrewState.NameOf(prompt.JoinerPlayerIndex)} WANTS {SeatTable.Label(Role.Wso).ToUpperInvariant()}"
             : null;
 
@@ -298,8 +298,8 @@ internal sealed class CrewScreen : IDisposable
                 _rows.Add(ScreenRow.CreateLabel(actions, template, content.Request));
 
                 var answer = _layout.Actions.AddRow();
-                _rows.Add(ScreenRow.CreateButton(answer, template, "ACCEPT", _session.Prompt.Accept));
-                _rows.Add(ScreenRow.CreateButton(answer, template, "DECLINE", _session.Prompt.Decline));
+                _rows.Add(ScreenRow.CreateButton(answer, template, "ACCEPT", _session.Notices.Accept));
+                _rows.Add(ScreenRow.CreateButton(answer, template, "DECLINE", _session.Notices.Decline));
             }
 
             _rows.Add(

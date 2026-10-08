@@ -36,7 +36,7 @@ internal sealed class ClientSession : IDisposable
 
     public bool HasRequest => _request != null;
 
-    public CrewJoinPromptUi Prompt { get; }
+    public CrewNotices Notices { get; }
 
     public BackSeat BackSeat { get; }
 
@@ -53,7 +53,7 @@ internal sealed class ClientSession : IDisposable
         _client = client;
         _advertised = Discovery.TakeCurrentLobbyState();
 
-        Prompt = new CrewJoinPromptUi(this);
+        Notices = new CrewNotices(this);
         BackSeat = new BackSeat(this);
         PilotSeat = new PilotSeat(this);
         Marks = new CrewMarks(this);
@@ -159,7 +159,7 @@ internal sealed class ClientSession : IDisposable
         Screens.Clear();
         Crew.Clear();
         Kills.Clear();
-        Prompt.Clear();
+        Notices.Clear();
         Wheel.Clear();
         _request = null;
     }
@@ -205,7 +205,7 @@ internal sealed class ClientSession : IDisposable
             Plugin.Logger.LogWarning(
                 $"Server runs NoMulticrew {message.PluginVersion}, this client {MyPluginInfo.PLUGIN_VERSION}: multicrew is off"
             );
-            Prompt.ShowNotice($"Multicrew needs NoMulticrew {message.PluginVersion}");
+            Notices.ShowNotice($"Multicrew needs NoMulticrew {message.PluginVersion}");
             return;
         }
 
@@ -260,7 +260,7 @@ internal sealed class ClientSession : IDisposable
             return;
         }
 
-        Prompt.Show(message);
+        Notices.Show(message);
     }
 
     private void OnNotice(INetworkPlayer player, CrewNotice message)
@@ -271,7 +271,7 @@ internal sealed class ClientSession : IDisposable
         }
 
         _request = null;
-        Prompt.ShowNotice(message.Text);
+        Notices.ShowNotice(message.Text);
         Feedback.Play(message.Cue);
     }
 

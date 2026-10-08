@@ -54,7 +54,7 @@ internal static class Unit_SetFiringState
             return true;
         }
 
-        return client.Crew.RefuseStation((Aircraft)__instance, index);
+        return client.Notices.RefuseStation((Aircraft)__instance, index);
     }
 }
 

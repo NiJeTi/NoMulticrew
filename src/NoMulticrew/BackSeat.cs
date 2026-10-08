@@ -115,7 +115,7 @@ internal sealed class BackSeat : IDisposable
         }
 
         _bailOutArmedAt = Time.unscaledTime;
-        _session.Prompt.ShowNotice("Press Eject again to bail out — your sortie earnings go to the pilot");
+        _session.Notices.ShowNotice("Press Eject again to bail out — your sortie earnings go to the pilot");
 
         return true;
     }
@@ -148,7 +148,7 @@ internal sealed class BackSeat : IDisposable
         {
             if (Station >= 0 && Plugin.SeatTable.IsShared(Aircraft))
             {
-                _session.Crew.RefuseStation(Aircraft, Station);
+                _session.Notices.RefuseStation(Aircraft, Station);
             }
 
             var confirmed = _session.Crew.ClientState(Aircraft).WsoStation;

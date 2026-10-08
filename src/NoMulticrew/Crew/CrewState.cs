@@ -2,18 +2,13 @@ using System.Diagnostics.CodeAnalysis;
 using NoMulticrew.Networking;
 using NoMulticrew.Seats;
 using NuclearOption.Networking;
-using UnityEngine;
 
 namespace NoMulticrew.Crew;
 
 internal sealed class CrewState
 {
-    private const float RefusalIntervalSeconds = 2f;
-
     private readonly Dictionary<PersistentID, CrewRoster> _rosters = [];
     private readonly Dictionary<PersistentID, Dictionary<byte, PersistentID[]>> _stationTargets = [];
-
-    private float _lastRefusal = float.NegativeInfinity;
 
     public void Apply(CrewRoster message)
     {
@@ -137,31 +132,6 @@ internal sealed class CrewState
             && stations.TryGetValue((byte)station, out var targets)
                 ? targets
                 : Array.Empty<PersistentID>();
-    }
-
-    public bool Refuse(string text)
-    {
-        Plugin.Logger.LogDebug($"Suppressed: {text}");
-
-        if (Time.unscaledTime - _lastRefusal >= RefusalIntervalSeconds)
-        {
-            _lastRefusal = Time.unscaledTime;
-            SceneSingleton<AircraftActionsReport>.i.ReportText(text, RefusalIntervalSeconds);
-        }
-
-        return false;
-    }
-
-    public bool RefuseStation(Aircraft aircraft, int stationIndex)
-    {
-        return Refuse($"{SeatTable.Label(RoleHolding(aircraft, stationIndex))} has this weapon");
-    }
-
-    public bool RefuseSelection(Aircraft aircraft, int station)
-    {
-        var holder = SeatTable.Label(RoleHolding(aircraft, station));
-
-        return Refuse(Plugin.SeatTable.IsShared(aircraft) ? $"{holder} is using this weapon" : $"{holder}-only weapon");
     }
 
     public SeatState ClientState(Aircraft aircraft)

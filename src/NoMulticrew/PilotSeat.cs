@@ -58,7 +58,7 @@ internal sealed class PilotSeat
 
         if (!ReferenceEquals(aircraft.weaponManager.currentWeaponStation, current))
         {
-            _session.Crew.RefuseStation(aircraft, current.Number);
+            _session.Notices.RefuseStation(aircraft, current.Number);
         }
     }
 

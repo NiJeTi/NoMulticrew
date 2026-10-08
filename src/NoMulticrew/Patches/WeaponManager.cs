@@ -18,7 +18,7 @@ internal static class WeaponManager_Fire
             return true;
         }
 
-        return client.Crew.RefuseStation(___aircraft, station.Number);
+        return client.Notices.RefuseStation(___aircraft, station.Number);
     }
 }
 

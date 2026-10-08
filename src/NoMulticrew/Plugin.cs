@@ -82,7 +82,7 @@ internal sealed class Plugin : BaseUnityPlugin
 
     private void OnGUI()
     {
-        Client?.Prompt.Draw();
+        Client?.Notices.Draw();
     }
 
     private void OnDestroy()

@@ -5,9 +5,10 @@ using UnityEngine;
 
 namespace NoMulticrew.Ui;
 
-internal sealed class CrewJoinPromptUi
+internal sealed class CrewNotices
 {
     private const float NoticeSeconds = 5f;
+    private const float RefusalIntervalSeconds = 2f;
 
     private readonly ClientSession _session;
 
@@ -15,8 +16,9 @@ internal sealed class CrewJoinPromptUi
 
     private string _toast = "";
     private float _toastUntil;
+    private float _lastRefusal = float.NegativeInfinity;
 
-    public CrewJoinPromptUi(ClientSession session)
+    public CrewNotices(ClientSession session)
     {
         _session = session;
     }
@@ -62,6 +64,31 @@ internal sealed class CrewJoinPromptUi
 
         _toast = text;
         _toastUntil = Time.unscaledTime + NoticeSeconds;
+    }
+
+    public bool Refuse(string text)
+    {
+        Plugin.Logger.LogDebug($"Suppressed: {text}");
+
+        if (Time.unscaledTime - _lastRefusal >= RefusalIntervalSeconds)
+        {
+            _lastRefusal = Time.unscaledTime;
+            SceneSingleton<AircraftActionsReport>.i.ReportText(text, RefusalIntervalSeconds);
+        }
+
+        return false;
+    }
+
+    public bool RefuseStation(Aircraft aircraft, int station)
+    {
+        return Refuse($"{SeatTable.Label(_session.Crew.RoleHolding(aircraft, station))} has this weapon");
+    }
+
+    public bool RefuseSelection(Aircraft aircraft, int station)
+    {
+        var holder = SeatTable.Label(_session.Crew.RoleHolding(aircraft, station));
+
+        return Refuse(Plugin.SeatTable.IsShared(aircraft) ? $"{holder} is using this weapon" : $"{holder}-only weapon");
     }
 
     public void Accept()
