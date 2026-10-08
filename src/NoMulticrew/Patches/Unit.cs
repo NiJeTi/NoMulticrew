@@ -107,7 +107,7 @@ internal static class Unit_RegisterHit
         }
 
         var server = Plugin.Server;
-        __state = server?.Economy.EnterHitContext(__instance, weaponInfo) == true;
+        __state = server?.Economy.EnterHit(__instance, weaponInfo) == true;
 
         if (__state)
         {
@@ -127,7 +127,7 @@ internal static class Unit_RegisterHit
     {
         if (__state)
         {
-            Plugin.Server!.Economy.ExitContext();
+            Plugin.Server!.Economy.Exit();
         }
     }
 }

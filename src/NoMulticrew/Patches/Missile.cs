@@ -10,7 +10,7 @@ internal static class Missile_PenetrateObject
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static void Prefix(Missile __instance, out bool __state)
     {
-        __state = Plugin.Server?.Economy.EnterMissileScope(__instance) == true;
+        __state = Plugin.Server?.Economy.EnterMissile(__instance) == true;
     }
 
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
@@ -18,7 +18,7 @@ internal static class Missile_PenetrateObject
     {
         if (__state)
         {
-            Plugin.Server!.Economy.ExitMissileScope();
+            Plugin.Server!.Economy.Exit();
         }
     }
 }

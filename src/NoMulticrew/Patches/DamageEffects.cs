@@ -10,7 +10,7 @@ internal static class DamageEffects_ArmorPenetrate
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static void Prefix(PersistentID dealerID, out bool __state)
     {
-        __state = Plugin.Server?.Economy.EnterGunContext(dealerID) == true;
+        __state = Plugin.Server?.Economy.EnterGun(dealerID) == true;
     }
 
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
@@ -18,7 +18,7 @@ internal static class DamageEffects_ArmorPenetrate
     {
         if (__state)
         {
-            Plugin.Server!.Economy.ExitContext();
+            Plugin.Server!.Economy.Exit();
         }
     }
 }
@@ -39,7 +39,7 @@ internal static class DamageEffects_BlastFrag
 
         UnitRegistry.TryGetUnit<Missile>(missileID, out var missile);
 
-        __state = server.Economy.EnterMissileScope(missile);
+        __state = server.Economy.EnterMissile(missile);
     }
 
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
@@ -47,7 +47,7 @@ internal static class DamageEffects_BlastFrag
     {
         if (__state)
         {
-            Plugin.Server!.Economy.ExitMissileScope();
+            Plugin.Server!.Economy.Exit();
         }
     }
 }

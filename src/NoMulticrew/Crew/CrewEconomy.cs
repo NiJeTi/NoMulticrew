@@ -34,8 +34,8 @@ internal sealed class CrewEconomy
 
     private PersistentID _contextAircraft;
     private Player? _contextCrew;
+    private bool _open;
     private bool _paying;
-    private bool _missileScope;
     private Player? _sender;
     private (PersistentID Target, Player Author)? _killAuthor;
 
@@ -146,78 +146,47 @@ internal sealed class CrewEconomy
         queue.Enqueue((_sender, Time.unscaledTime));
     }
 
-    public bool EnterGunContext(PersistentID dealer)
+    public bool EnterGun(PersistentID dealer)
     {
-        if (_missileScope || _contextCrew != null || !_claims.TryGetValue(dealer, out var queue))
+        if (_open || !_claims.ContainsKey(dealer))
         {
             return false;
         }
 
-        var now = Time.unscaledTime;
-        Player? claimant = null;
-
-        while (queue.Count > 0)
-        {
-            var (next, time) = queue.Dequeue();
-            if (now - time <= ClaimLifetimeSeconds)
-            {
-                claimant = next;
-                break;
-            }
-        }
-
-        if (queue.Count == 0)
-        {
-            _claims.Remove(dealer);
-        }
-
-        return Enter(dealer, claimant);
+        return Open(dealer, ClaimantOf(dealer));
     }
 
-    public bool EnterMissileContext(Missile missile)
+    public bool EnterMissile(Missile? missile)
     {
-        return _contextCrew == null
-            && _launchers.TryGetValue(missile, out var launcher)
-            && Enter(missile.ownerID, launcher);
-    }
-
-    public bool EnterMissileScope(Missile? missile)
-    {
-        if (_missileScope || _contextCrew != null)
+        if (_open)
         {
             return false;
         }
 
-        _missileScope = true;
+        _open = true;
 
-        if (missile != null)
+        if (missile != null && LauncherOf(missile) is { } launcher)
         {
-            EnterMissileContext(missile);
+            _contextAircraft = missile.ownerID;
+            _contextCrew = launcher;
         }
 
         return true;
     }
 
-    public void ExitMissileScope()
+    public bool EnterHit(Unit shooter, WeaponInfo weapon)
     {
-        _missileScope = false;
-        ExitContext();
-    }
-
-    public bool EnterHitContext(Unit shooter, WeaponInfo weapon)
-    {
-        if (_contextCrew != null || shooter is not Aircraft aircraft || !_session.Crew.IsCrewed(aircraft.persistentID))
+        if (_open || shooter is not Aircraft aircraft || !_session.Crew.IsCrewed(aircraft.persistentID))
         {
             return false;
         }
 
-        var index = SeatTable.StationOf(aircraft, weapon);
-
-        return index >= 0 && Enter(aircraft.persistentID, _session.Crew.WsoHolding(aircraft, index));
+        return Open(aircraft.persistentID, HolderOf(aircraft, weapon));
     }
 
-    public void ExitContext()
+    public void Exit()
     {
+        _open = false;
         _contextAircraft = PersistentID.None;
         _contextCrew = null;
     }
@@ -442,17 +411,54 @@ internal sealed class CrewEconomy
             : null;
     }
 
-    private bool Enter(PersistentID aircraft, Player? crew)
+    private bool Open(PersistentID aircraft, Player? crew)
     {
         if (crew == null)
         {
             return false;
         }
 
+        _open = true;
         _contextAircraft = aircraft;
         _contextCrew = crew;
 
         return true;
+    }
+
+    private Player? ClaimantOf(PersistentID dealer)
+    {
+        var queue = _claims[dealer];
+        var now = Time.unscaledTime;
+        Player? claimant = null;
+
+        while (queue.Count > 0)
+        {
+            var (next, time) = queue.Dequeue();
+            if (now - time <= ClaimLifetimeSeconds)
+            {
+                claimant = next;
+                break;
+            }
+        }
+
+        if (queue.Count == 0)
+        {
+            _claims.Remove(dealer);
+        }
+
+        return claimant;
+    }
+
+    private Player? LauncherOf(Missile missile)
+    {
+        return _launchers.GetValueOrDefault(missile);
+    }
+
+    private Player? HolderOf(Aircraft aircraft, WeaponInfo weapon)
+    {
+        var index = SeatTable.StationOf(aircraft, weapon);
+
+        return index >= 0 ? _session.Crew.WsoHolding(aircraft, index) : null;
     }
 
     private static List<(PersistentID Dealer, float Value, PersistentUnit Unit)> Counted(Unit target)
