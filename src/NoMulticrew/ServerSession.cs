@@ -15,6 +15,7 @@ internal sealed class ServerSession : IDisposable
 
     private readonly HashSet<INetworkPlayer> _validPlayers = [];
     private readonly HashSet<INetworkPlayer> _closedPilots = [];
+    private readonly Dictionary<Type, Delegate> _handlers = [];
 
     private int[] _closedSent = [];
 
@@ -35,12 +36,12 @@ internal sealed class ServerSession : IDisposable
 
         StartMission();
 
-        _server.MessageHandler.RegisterHandler<MulticrewHello>(OnHello, allowUnauthenticated: false);
-        _server.MessageHandler.RegisterHandler<CrewJoinRequest>((c, m) => Requests.OnRequest(c, m), allowUnauthenticated: false);
-        _server.MessageHandler.RegisterHandler<CrewJoinResponse>((c, m) => Requests.OnResponse(c, m), allowUnauthenticated: false);
-        _server.MessageHandler.RegisterHandler<CrewLeaveRequest>(OnLeave, allowUnauthenticated: false);
-        _server.MessageHandler.RegisterHandler<CrewCommand>((c, m) => Commands.OnCommand(c, m), allowUnauthenticated: false);
-        _server.MessageHandler.RegisterHandler<CrewAvailability>(OnAvailability, allowUnauthenticated: false);
+        Register<MulticrewHello>(OnHello);
+        Register<CrewJoinRequest>((c, m) => Requests.OnRequest(c, m));
+        Register<CrewJoinResponse>((c, m) => Requests.OnResponse(c, m));
+        Register<CrewLeaveRequest>(OnLeave);
+        Register<CrewCommand>((c, m) => Commands.OnCommand(c, m));
+        Register<CrewAvailability>(OnAvailability);
 
         _commandRegistered = TryRegisterServerCommand();
     }
@@ -53,6 +54,7 @@ internal sealed class ServerSession : IDisposable
         _server.MessageHandler.UnregisterHandler<CrewLeaveRequest>();
         _server.MessageHandler.UnregisterHandler<CrewCommand>();
         _server.MessageHandler.UnregisterHandler<CrewAvailability>();
+        _handlers.Clear();
 
         if (_commandRegistered)
         {
@@ -90,9 +92,10 @@ internal sealed class ServerSession : IDisposable
         return !_closedPilots.Contains(pilot.Owner);
     }
 
-    public void DispatchLocal(CrewCommand message)
+    public void Receive<T>(T message)
+        where T : struct, IMessage<T>
     {
-        Commands.OnCommand(_server.LocalPlayer, message);
+        ((MessageDelegateWithPlayer<T>)_handlers[typeof(T)])(_server.LocalPlayer, message);
     }
 
     public void Notify(Player player, string text, CrewCue cue = CrewCue.None)
@@ -109,42 +112,30 @@ internal sealed class ServerSession : IDisposable
             return false;
         }
 
-        player.Send(message);
+        Deliver(player, message);
 
         return true;
     }
 
-    public void SendToAllCapable<T>(T message, INetworkPlayer? except = null)
+    public void SendToAllCapable<T>(T message)
         where T : struct, IMessage<T>
     {
         foreach (var player in _validPlayers.ToArray())
         {
-            if (!ReferenceEquals(player, except))
-            {
-                player.Send(message);
-            }
+            Deliver(player, message);
         }
     }
 
     public void AnnounceKillAuthor(PersistentID killedId)
     {
-        if (Economy.KillAuthorOf(killedId) is not { } author)
+        if (Economy.KillAuthorOf(killedId) is { } author)
         {
-            return;
+            SendToAllCapable(new CrewKillAuthor(killedId, author.PlayerIndex));
         }
-
-        SendToAllCapable(new CrewKillAuthor(killedId, author.PlayerIndex), except: _server.LocalPlayer);
-
-        Plugin.Client?.Kills.Record(killedId, author.PlayerIndex);
     }
 
     public void ShowCrewHit(Player crew, Unit target, Vector3 relativePos)
     {
-        if (GameManager.IsLocalPlayer(crew))
-        {
-            return;
-        }
-
         SendToPlayer(
             crew.Owner,
             new CrewHit(target.persistentID, NetworkFloatHelper.CompressIfValid(relativePos, logErrors: false, "relativePos"))
@@ -192,6 +183,25 @@ internal sealed class ServerSession : IDisposable
         Economy = new CrewEconomy(this);
         Commands = new CrewCommands(this);
         Requests = new JoinRequests(this);
+    }
+
+    private void Register<T>(MessageDelegateWithPlayer<T> handler)
+        where T : struct, IMessage<T>
+    {
+        _handlers[typeof(T)] = handler;
+        _server.MessageHandler.RegisterHandler(handler, allowUnauthenticated: false);
+    }
+
+    private void Deliver<T>(INetworkPlayer player, T message)
+        where T : struct, IMessage<T>
+    {
+        if (ReferenceEquals(player, _server.LocalPlayer) && Plugin.Client is { Confirmed: true } client)
+        {
+            client.Receive(message);
+            return;
+        }
+
+        player.Send(message);
     }
 
     private void Add(INetworkPlayer player)

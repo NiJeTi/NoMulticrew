@@ -26,6 +26,8 @@ internal sealed class ClientSession : IDisposable
 
     private int[] _closedPilots = [];
 
+    private readonly Dictionary<Type, Delegate> _handlers = [];
+
     public bool Confirmed => _server != null;
 
     public CrewState Crew { get; } = new();
@@ -55,15 +57,15 @@ internal sealed class ClientSession : IDisposable
         Marks = new CrewMarks(this);
         Screens = new CrewScreens(this);
 
-        _client.MessageHandler.RegisterHandler<MulticrewWelcome>(OnWelcome, allowUnauthenticated: false);
-        _client.MessageHandler.RegisterHandler<CrewRoster>(OnRoster, allowUnauthenticated: false);
-        _client.MessageHandler.RegisterHandler<CrewJoinPrompt>(OnJoinPrompt, allowUnauthenticated: false);
-        _client.MessageHandler.RegisterHandler<CrewNotice>(OnNotice, allowUnauthenticated: false);
-        _client.MessageHandler.RegisterHandler<CrewTurretVector>(OnTurretVector, allowUnauthenticated: false);
-        _client.MessageHandler.RegisterHandler<CrewLaunch>(OnLaunch, allowUnauthenticated: false);
-        _client.MessageHandler.RegisterHandler<CrewKillAuthor>(OnKillAuthor, allowUnauthenticated: false);
-        _client.MessageHandler.RegisterHandler<CrewHit>(OnHit, allowUnauthenticated: false);
-        _client.MessageHandler.RegisterHandler<CrewClosedPilots>(OnClosedPilots, allowUnauthenticated: false);
+        Register<MulticrewWelcome>(OnWelcome);
+        Register<CrewRoster>(OnRoster);
+        Register<CrewJoinPrompt>(OnJoinPrompt);
+        Register<CrewNotice>(OnNotice);
+        Register<CrewTurretVector>(OnTurretVector);
+        Register<CrewLaunch>(OnLaunch);
+        Register<CrewKillAuthor>(OnKillAuthor);
+        Register<CrewHit>(OnHit);
+        Register<CrewClosedPilots>(OnClosedPilots);
         Plugin.Settings.RejectAllRequests.SettingChanged += OnRejectAllRequestsChanged;
         _client.Authenticated.AddListener(OnAuthenticated);
     }
@@ -84,7 +86,14 @@ internal sealed class ClientSession : IDisposable
         _client.MessageHandler.UnregisterHandler<CrewKillAuthor>();
         _client.MessageHandler.UnregisterHandler<CrewHit>();
         _client.MessageHandler.UnregisterHandler<CrewClosedPilots>();
+        _handlers.Clear();
         Plugin.Settings.RejectAllRequests.SettingChanged -= OnRejectAllRequestsChanged;
+    }
+
+    public void Receive<T>(T message)
+        where T : struct, IMessage<T>
+    {
+        ((MessageDelegateWithPlayer<T>)_handlers[typeof(T)])(_server!, message);
     }
 
     public void AttachMfd(VirtualMFD mfd)
@@ -104,6 +113,12 @@ internal sealed class ClientSession : IDisposable
             );
 
             return false;
+        }
+
+        if (Plugin.Server is { } server)
+        {
+            server.Receive(message);
+            return true;
         }
 
         _server.Send(message);
@@ -157,16 +172,11 @@ internal sealed class ClientSession : IDisposable
         Feedback.Play(CrewCue.Select);
     }
 
-    public void SendCommand(CrewCommand message)
+    private void Register<T>(MessageDelegateWithPlayer<T> handler)
+        where T : struct, IMessage<T>
     {
-        var server = Plugin.Server;
-        if (server != null)
-        {
-            server.DispatchLocal(message);
-            return;
-        }
-
-        Send(message);
+        _handlers[typeof(T)] = handler;
+        _client.MessageHandler.RegisterHandler(handler, allowUnauthenticated: false);
     }
 
     private void OnAuthenticated(INetworkPlayer player)

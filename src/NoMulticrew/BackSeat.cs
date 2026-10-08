@@ -190,7 +190,7 @@ internal sealed class BackSeat : IDisposable
         Weapons.ReleaseAll();
         Station = station;
 
-        _session.SendCommand(
+        _session.Send(
             CrewCommand.SelectStation(aircraft.persistentID, station >= 0 ? (byte)station : SeatTable.NoStation)
         );
 

@@ -93,7 +93,7 @@ internal static class Unit_RegisterHit
                 }
             }
 
-            if (client.BackSeat.Owns(__instance, station))
+            if (client.BackSeat.Owns(__instance, station) && !__instance.IsServer)
             {
                 var hud = SceneSingleton<CombatHUD>.i;
                 if (hud != null)
@@ -101,11 +101,8 @@ internal static class Unit_RegisterHit
                     hud.DisplayHit(hitUnit.transform.TransformPoint(relativePos).ToGlobalPosition(), hitUnit);
                 }
 
-                if (!__instance.IsServer)
-                {
-                    client.BackSeat.Weapons.ClaimHit(hitUnit, relativePos, bulletVelocity, (byte)station);
-                    return false;
-                }
+                client.BackSeat.Weapons.ClaimHit(hitUnit, relativePos, bulletVelocity, (byte)station);
+                return false;
             }
         }
 
