@@ -29,7 +29,7 @@ internal static class Transpilers
 
         if (replaced != 1)
         {
-            throw new InvalidOperationException($"{where}: expected one {target.Name} call, replaced {replaced}");
+            throw new InvalidOperationException($"{where}: expected one {target.Name} call, replaced {replaced}.");
         }
     }
 }

@@ -351,7 +351,7 @@ internal struct CrewCommand : IMessage<CrewCommand>
                 var count = reader.ReadByte();
                 if (count > MaxTargets)
                 {
-                    throw new InvalidOperationException($"Crew target list of {count} exceeds {MaxTargets}");
+                    throw new InvalidOperationException($"Crew target list of {count} exceeds {MaxTargets}.");
                 }
 
                 Targets = new PersistentID[count];
@@ -362,7 +362,7 @@ internal struct CrewCommand : IMessage<CrewCommand>
 
                 break;
             default:
-                throw new InvalidOperationException($"Unknown crew command {Kind}");
+                throw new InvalidOperationException($"Unknown crew command {Kind}.");
         }
     }
 
@@ -392,7 +392,7 @@ internal struct CrewCommand : IMessage<CrewCommand>
             case CrewCommandKind.SetStationTargets:
                 if (Targets.Length > MaxTargets)
                 {
-                    throw new InvalidOperationException($"Crew target list of {Targets.Length} exceeds {MaxTargets}");
+                    throw new InvalidOperationException($"Crew target list of {Targets.Length} exceeds {MaxTargets}.");
                 }
 
                 writer.WriteByte((byte)Targets.Length);
@@ -557,7 +557,7 @@ internal struct CrewClosedPilots : IMessage<CrewClosedPilots>
         var count = reader.ReadPackedInt32();
         if (count < 0 || count > MaxCount)
         {
-            throw new InvalidOperationException($"Closed pilot list of {count} is outside 0..{MaxCount}");
+            throw new InvalidOperationException($"Closed pilot list of {count} is outside 0..{MaxCount}.");
         }
 
         PlayerIndices = new int[count];

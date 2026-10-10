@@ -156,7 +156,7 @@ internal sealed class CrewmateCam : IDisposable
         var source = _aircraft.GetComponentInChildren<TargetCam>(true);
         if (source == null)
         {
-            throw new InvalidOperationException($"{_aircraft.definition.jsonKey} has no target camera");
+            throw new InvalidOperationException($"{_aircraft.definition.jsonKey} has no target camera.");
         }
 
         var part = CrewTargetCam.AttachedPartRef(source);
@@ -164,7 +164,7 @@ internal sealed class CrewmateCam : IDisposable
         var rear = RearMountRef(source);
         if (part == null || forward == null || rear == null)
         {
-            throw new InvalidOperationException("the target camera has no part or mounts");
+            throw new InvalidOperationException("The target camera has no part or mounts.");
         }
 
         _part = part.transform;
@@ -177,7 +177,7 @@ internal sealed class CrewmateCam : IDisposable
         var cameras = _root.GetComponentsInChildren<Camera>(true);
         if (cameras.Length == 0)
         {
-            throw new InvalidOperationException("the target camera prefab has no camera");
+            throw new InvalidOperationException("The target camera prefab has no camera.");
         }
 
         foreach (var camera in cameras)
@@ -190,7 +190,7 @@ internal sealed class CrewmateCam : IDisposable
         var shared = _camera.targetTexture;
         if (shared == null)
         {
-            throw new InvalidOperationException("the target camera has no render texture");
+            throw new InvalidOperationException("The target camera has no render texture.");
         }
 
         Texture = new RenderTexture(shared.descriptor) { name = "NoMulticrew.CrewmateTargetView" };

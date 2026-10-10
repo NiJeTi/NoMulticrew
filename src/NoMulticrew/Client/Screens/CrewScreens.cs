@@ -105,7 +105,7 @@ internal sealed class CrewScreens
             var own = instance.GetComponent<TacScreen>();
             if (own == null)
             {
-                throw new InvalidOperationException("the tactical screen prefab has no TacScreen");
+                throw new InvalidOperationException("The tactical screen prefab has no TacScreen.");
             }
 
             _own = own;

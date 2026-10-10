@@ -137,19 +137,19 @@ internal sealed class CrewmateScreen : IDisposable
         var prefab = CrewScreens.PrefabOf(Aircraft, out var cockpit);
         if (prefab == null || cockpit == null)
         {
-            throw new InvalidOperationException($"{Aircraft.definition.jsonKey} has no tactical screen prefab");
+            throw new InvalidOperationException($"{Aircraft.definition.jsonKey} has no tactical screen prefab.");
         }
 
         var source = CrewScreens.ScreenRendererOf(Aircraft);
         if (source == null)
         {
-            throw new InvalidOperationException($"{Aircraft.definition.jsonKey} has no screen renderer");
+            throw new InvalidOperationException($"{Aircraft.definition.jsonKey} has no screen renderer.");
         }
 
         var targetCam = Aircraft.targetCam;
         if (targetCam == null)
         {
-            throw new InvalidOperationException("the aircraft has no target camera on this client");
+            throw new InvalidOperationException("The aircraft has no target camera on this client.");
         }
 
         _source = source;
@@ -165,7 +165,7 @@ internal sealed class CrewmateScreen : IDisposable
         _screen = instance.GetComponent<TacScreen>();
         if (_screen == null)
         {
-            throw new InvalidOperationException("the tactical screen prefab has no TacScreen");
+            throw new InvalidOperationException("The tactical screen prefab has no TacScreen.");
         }
 
         Strip<MFDAppManager>(instance);
@@ -202,13 +202,13 @@ internal sealed class CrewmateScreen : IDisposable
 
         if (_texture == null)
         {
-            throw new InvalidOperationException("the tactical screen has no screen camera");
+            throw new InvalidOperationException("The tactical screen has no screen camera.");
         }
 
         var shared = CrewScreens.MaterialRef(_screen);
         if (shared == null)
         {
-            throw new InvalidOperationException("the tactical screen has no screen material");
+            throw new InvalidOperationException("The tactical screen has no screen material.");
         }
 
         _material = new Material(shared) { name = "NoMulticrew.CrewmateScreen" };
