@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Mirage;
 using NoMulticrew.Networking;
+using NoMulticrew.Networking.Messages;
 using NoMulticrew.Seats;
 using NuclearOption.DedicatedServer.Commands;
 using NuclearOption.Networking;

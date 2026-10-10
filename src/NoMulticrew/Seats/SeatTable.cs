@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using NoMulticrew.Networking;
+using NoMulticrew.Networking.Messages;
 using NuclearOption.Networking;
 using UnityEngine;
 

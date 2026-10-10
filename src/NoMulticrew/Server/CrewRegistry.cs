@@ -1,5 +1,5 @@
 using Mirage;
-using NoMulticrew.Networking;
+using NoMulticrew.Networking.Messages;
 using NoMulticrew.Seats;
 using NuclearOption.Networking;
 

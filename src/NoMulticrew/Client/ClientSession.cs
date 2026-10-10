@@ -2,6 +2,7 @@ using Mirage;
 using NoMulticrew.Client.Screens;
 using NoMulticrew.Client.Ui;
 using NoMulticrew.Networking;
+using NoMulticrew.Networking.Messages;
 using NoMulticrew.Seats;
 using NoMulticrew.Server;
 using NuclearOption.Networking;

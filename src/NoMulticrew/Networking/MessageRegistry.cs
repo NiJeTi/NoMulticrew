@@ -1,4 +1,5 @@
 using Mirage.Serialization;
+using NoMulticrew.Networking.Messages;
 
 namespace NoMulticrew.Networking;
 

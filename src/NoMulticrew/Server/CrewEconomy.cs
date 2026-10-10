@@ -1,5 +1,4 @@
 using HarmonyLib;
-using NoMulticrew.Networking;
 using NoMulticrew.Seats;
 using NuclearOption.Networking;
 using UnityEngine;

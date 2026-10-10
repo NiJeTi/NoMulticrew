@@ -1,5 +1,5 @@
 using HarmonyLib;
-using NoMulticrew.Networking;
+using NoMulticrew.Networking.Messages;
 using UnityEngine;
 
 namespace NoMulticrew.Client;
