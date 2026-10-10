@@ -24,8 +24,7 @@ internal sealed class CrewKillFeed
     {
         var now = Time.unscaledTime;
 
-        foreach (var stale in _authors.Where(x => now - x.Value.Time > RecordLifetimeSeconds).Select(x => x.Key)
-            .ToList())
+        foreach (var stale in _authors.Where(x => now - x.Value.Time > RecordLifetimeSeconds).Select(x => x.Key))
         {
             _authors.Remove(stale);
         }
