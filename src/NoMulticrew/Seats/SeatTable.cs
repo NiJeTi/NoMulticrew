@@ -210,11 +210,6 @@ internal sealed class SeatTable
         }
     }
 
-    public static string Label(Role role)
-    {
-        return role == Role.Pilot ? "Pilot" : "WSO";
-    }
-
     public static int StationOf(Unit unit, WeaponInfo weapon)
     {
         for (var i = 0; i < unit.weaponStations.Count; i++)
@@ -241,26 +236,21 @@ internal sealed class SeatTable
 
         if (aircraft.disabled || aircraft.Player == null)
         {
-            reason = "That aircraft has no pilot";
-            return false;
-        }
-
-        if (aircraft.NetworkHQ == null || joiner.HQ != aircraft.NetworkHQ)
-        {
-            reason = "That aircraft belongs to the opposing faction";
+            reason = Texts.Requests.NoPilot;
             return false;
         }
 
         if (joiner.Aircraft != null)
         {
-            reason = "You need to leave your aircraft first";
+            reason = Texts.Requests.LeaveAircraftFirst;
             return false;
         }
 
         if (!(aircraft is { radarAlt: < BoardingRadarAltitude, speed: < BoardingSpeed }
+            && aircraft.NetworkHQ != null
             && aircraft.NetworkHQ.AnyNearAirbase(aircraft.transform.position, out airbase)))
         {
-            reason = "The aircraft is not at an airbase";
+            reason = Texts.Requests.NotAtAirbase;
             return false;
         }
 

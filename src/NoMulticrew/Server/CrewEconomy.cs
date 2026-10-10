@@ -396,11 +396,6 @@ internal sealed class CrewEconomy
             $"Crew escrow of {held.Allocation:F0} {(forfeit ? "forfeited to" : "paid to")} "
             + recipient.GetDisplayName(PlayerNameContext.Other)
         );
-
-        if (!forfeit)
-        {
-            _session.Notify(crew, $"Crew earnings paid: +{held.Allocation:F0}", CrewCue.Select);
-        }
     }
 
     public void PayAll()

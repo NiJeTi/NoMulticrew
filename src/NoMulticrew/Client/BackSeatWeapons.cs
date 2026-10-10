@@ -28,7 +28,7 @@ internal sealed class BackSeatWeapons
 
         if (triggerHeld && _seat.Station < 0)
         {
-            _session.Notices.Refuse("No weapons for this seat");
+            _session.Notices.Refuse(Texts.Weapons.NoneForSeat);
         }
         else if (triggerHeld)
         {

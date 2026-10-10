@@ -16,7 +16,7 @@ internal sealed class ServerSession : IDisposable
     private readonly HashSet<INetworkPlayer> _closedPilots = [];
     private readonly Dictionary<Type, Delegate> _handlers = [];
 
-    private int[] _closedSent = [];
+    private int[] _openSent = [];
 
     private readonly NetworkServer _server;
     private readonly bool _commandRegistered;
@@ -64,7 +64,7 @@ internal sealed class ServerSession : IDisposable
     public void Tick()
     {
         Requests.Tick();
-        SendClosedPilots();
+        SendOpenPilots();
     }
 
     public void EndMission()
@@ -88,7 +88,7 @@ internal sealed class ServerSession : IDisposable
 
     public bool TakesCrew(Player pilot)
     {
-        return !_closedPilots.Contains(pilot.Owner);
+        return _validPlayers.Contains(pilot.Owner) && !_closedPilots.Contains(pilot.Owner);
     }
 
     public void Receive<T>(T message)
@@ -157,7 +157,7 @@ internal sealed class ServerSession : IDisposable
         if (_validPlayers.Contains(player))
         {
             Crew.SendRosters(player);
-            Deliver(player, new CrewClosedPilots(_closedSent));
+            Deliver(player, new CrewOpenPilots(_openSent));
         }
     }
 
@@ -173,7 +173,7 @@ internal sealed class ServerSession : IDisposable
 
             Plugin.Logger.LogInfo(
                 seatedIn is { } aircraftId
-                    ? $"{name} disconnected, released {SeatTable.Label(Role.Wso)} seat of {aircraftId}"
+                    ? $"{name} disconnected, released {Texts.Roles.Wso} seat of {aircraftId}"
                     : $"{name} disconnected, not seated"
             );
 
@@ -273,7 +273,6 @@ internal sealed class ServerSession : IDisposable
         );
 
         Crew.Release(player, forfeit: !valid);
-        Notify(player, valid ? "Left the seat" : "Bailed out", CrewCue.Deselect);
     }
 
     private void OnAvailability(INetworkPlayer connection, CrewAvailability message)
@@ -290,38 +289,36 @@ internal sealed class ServerSession : IDisposable
         }
     }
 
-    private void SendClosedPilots()
+    private void SendOpenPilots()
     {
-        if (_closedPilots.Count == 0 && _closedSent.Length == 0)
-        {
-            return;
-        }
-
         var count = 0;
         var unchanged = true;
 
-        foreach (var connection in _closedPilots)
+        foreach (var connection in _validPlayers)
         {
-            if (connection.TryGetPlayer<Player>(out var player) && player.PlayerIndex > 0)
+            if (!_closedPilots.Contains(connection)
+                && connection.TryGetPlayer<Player>(out var player)
+                && player.PlayerIndex > 0)
             {
                 count++;
-                unchanged &= Array.BinarySearch(_closedSent, player.PlayerIndex) >= 0;
+                unchanged &= Array.BinarySearch(_openSent, player.PlayerIndex) >= 0;
             }
         }
 
-        if (unchanged && count == _closedSent.Length)
+        if (unchanged && count == _openSent.Length)
         {
             return;
         }
 
-        var indices = _closedPilots
+        var indices = _validPlayers
+            .Where(x => !_closedPilots.Contains(x))
             .Select(x => x.TryGetPlayer<Player>(out var player) ? player.PlayerIndex : 0)
             .Where(x => x > 0)
             .OrderBy(x => x)
             .ToArray();
 
-        _closedSent = indices;
-        SendToAllCapable(new CrewClosedPilots(indices));
+        _openSent = indices;
+        SendToAllCapable(new CrewOpenPilots(indices));
     }
 
     private bool TryRegisterServerCommand()
@@ -346,9 +343,7 @@ internal sealed class ServerSession : IDisposable
 
                 return ok
                     ? CommandResponse.Create(StatusCode.Success, description)
-                    : CommandResponse.Create(
-                        StatusCode.CommandError, "Could not read multicrew state on the main thread."
-                    );
+                    : CommandResponse.Create(StatusCode.CommandError, "Could not read multicrew state on the main thread.");
             }
         );
         instance.AddCommands([command]);

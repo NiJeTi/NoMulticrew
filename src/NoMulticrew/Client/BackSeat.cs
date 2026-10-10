@@ -85,7 +85,11 @@ internal sealed class BackSeat : IDisposable
             return;
         }
 
-        Leave(showMap: true);
+        if (Aircraft is not null)
+        {
+            Leave(showMap: true);
+            Feedback.Play(CrewCue.Deselect);
+        }
 
         if (aircraft == null)
         {
@@ -115,7 +119,7 @@ internal sealed class BackSeat : IDisposable
         }
 
         _bailOutArmedAt = Time.unscaledTime;
-        _session.Notices.ShowNotice("Press Eject again to bail out — your sortie earnings go to the pilot");
+        _session.Notices.ShowNotice(Texts.Crew.BailOutWarning);
 
         return true;
     }

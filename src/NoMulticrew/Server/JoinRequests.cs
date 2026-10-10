@@ -39,13 +39,16 @@ internal sealed class JoinRequests
 
         if (!UnitRegistry.TryGetUnit(message.AircraftId, out var unit) || unit is not Aircraft aircraft)
         {
-            _session.Notify(joiner, "That aircraft no longer exists");
+            _session.Notify(joiner, Texts.Requests.AircraftGone);
             return;
         }
 
-        if (_requests.Any(x => ReferenceEquals(x.Joiner, joiner)))
+        if (Violation(aircraft, joiner) is { } violation)
         {
-            _session.Notify(joiner, "You already have a request outstanding");
+            Plugin.Logger.LogWarning(
+                $"Refused crew request of {joiner.GetDisplayName(PlayerNameContext.Other)} "
+                + $"for {aircraft.persistentID}: {violation}"
+            );
             return;
         }
 
@@ -65,11 +68,7 @@ internal sealed class JoinRequests
 
         var prompt = new CrewJoinPrompt(request.Id, joiner.PlayerIndex, TimeoutSeconds);
 
-        if (!_session.SendToPlayer(aircraft.Player.Owner, prompt))
-        {
-            _session.Notify(joiner, "The pilot cannot take crew");
-            return;
-        }
+        _session.SendToPlayer(aircraft.Player.Owner, prompt);
 
         _requests.Add(request);
 
@@ -95,7 +94,7 @@ internal sealed class JoinRequests
         if (request.Aircraft == null)
         {
             _requests.Remove(request);
-            _session.Notify(request.Joiner, "That aircraft no longer exists");
+            _session.Notify(request.Joiner, Texts.Requests.AircraftGone);
             return;
         }
 
@@ -110,7 +109,13 @@ internal sealed class JoinRequests
         if (!message.Accepted)
         {
             Plugin.Logger.LogInfo($"Crew request {request.Id} declined");
-            _session.Notify(request.Joiner, "The pilot declined", CrewCue.Deselect);
+            _session.Notify(request.Joiner, Texts.Requests.PilotDeclined, CrewCue.Deselect);
+            return;
+        }
+
+        if (Violation(request.Aircraft, request.Joiner) is { } violation)
+        {
+            Plugin.Logger.LogWarning($"Crew request {request.Id} accepted but refused: {violation}");
             return;
         }
 
@@ -125,11 +130,11 @@ internal sealed class JoinRequests
 
         _session.Notify(
             request.Aircraft.Player,
-            $"{request.Joiner.GetDisplayName(PlayerNameContext.Other)} joined as {SeatTable.Label(Role.Wso)}",
+            Texts.Requests.Joined(request.Joiner.GetDisplayName(PlayerNameContext.Other)),
             CrewCue.Select
         );
 
-        _session.Notify(request.Joiner, "Seated", CrewCue.Select);
+        _session.Notify(request.Joiner, Texts.Requests.Seated, CrewCue.Select);
     }
 
     public void Tick()
@@ -146,7 +151,7 @@ internal sealed class JoinRequests
 
             _requests.RemoveAt(i);
             Plugin.Logger.LogInfo($"Crew request {request.Id} timed out");
-            _session.Notify(request.Joiner, "The pilot did not answer", CrewCue.Deselect);
+            _session.Notify(request.Joiner, Texts.Requests.PilotSilent, CrewCue.Deselect);
         }
     }
 
@@ -169,7 +174,7 @@ internal sealed class JoinRequests
 
             if (toPilot)
             {
-                _session.Notify(request.Joiner, "The pilot left", CrewCue.Deselect);
+                _session.Notify(request.Joiner, Texts.Requests.PilotLeft, CrewCue.Deselect);
             }
         }
     }
@@ -183,34 +188,46 @@ internal sealed class JoinRequests
 
         if (!_session.TakesCrew(aircraft.Player))
         {
-            reason = "The pilot is not taking crew";
-            return false;
-        }
-
-        if (Plugin.SeatTable.WsoSeat(aircraft) == null)
-        {
-            reason = "That aircraft has no such seat";
-            return false;
-        }
-
-        if (!Plugin.SeatTable.Offered(aircraft))
-        {
-            reason = "That seat has no weapons in this loadout";
-            return false;
-        }
-
-        if (_session.Crew.AircraftOf(joiner) != null)
-        {
-            reason = "You need to leave your current seat first";
+            reason = Texts.Requests.NotTakingCrew;
             return false;
         }
 
         if (_session.Crew.IsCrewed(aircraft.persistentID))
         {
-            reason = "That seat is taken";
+            reason = Texts.Requests.SeatTaken;
             return false;
         }
 
         return true;
+    }
+
+    private string? Violation(Aircraft aircraft, Player joiner)
+    {
+        if (_requests.Any(x => ReferenceEquals(x.Joiner, joiner)))
+        {
+            return "request already pending";
+        }
+
+        if (aircraft.NetworkHQ == null || joiner.HQ != aircraft.NetworkHQ)
+        {
+            return "opposing faction";
+        }
+
+        if (Plugin.SeatTable.WsoSeat(aircraft) == null)
+        {
+            return "aircraft has no WSO seat";
+        }
+
+        if (!Plugin.SeatTable.Offered(aircraft))
+        {
+            return "loadout has no WSO weapons";
+        }
+
+        if (_session.Crew.AircraftOf(joiner) != null)
+        {
+            return "joiner already seated";
+        }
+
+        return null;
     }
 }

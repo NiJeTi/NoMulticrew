@@ -146,7 +146,7 @@ internal sealed class CrewRegistry
         {
             _session.Notify(
                 aircraft.Player,
-                $"{player.GetDisplayName(PlayerNameContext.Other)} left {SeatTable.Label(Role.Wso)}",
+                Texts.Crew.CrewmateLeft(player.GetDisplayName(PlayerNameContext.Other)),
                 CrewCue.Deselect
             );
         }
@@ -175,8 +175,6 @@ internal sealed class CrewRegistry
         _session.Commands.Released(wso, aircraftId);
 
         Plugin.Logger.LogInfo($"Crew of {aircraftId} dissolved");
-
-        _session.Notify(wso, "The crew was dissolved", CrewCue.Deselect);
 
         Broadcast(aircraftId);
     }

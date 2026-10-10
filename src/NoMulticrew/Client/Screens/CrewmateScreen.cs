@@ -48,14 +48,14 @@ internal sealed class CrewmateScreen : IDisposable
         }
         catch (Exception e)
         {
-            Plugin.Logger.LogError($"Failed to build the {SeatTable.Label(seat)}'s screen on the panel: {e}");
+            Plugin.Logger.LogError($"Failed to build the {Texts.Roles.Label(seat)}'s screen on the panel: {e}");
             screen.Dispose();
 
             return null;
         }
 
         Plugin.Logger.LogDebug(
-            $"Built the {SeatTable.Label(seat)}'s screen on the panel of {aircraft.definition.jsonKey}"
+            $"Built the {Texts.Roles.Label(seat)}'s screen on the panel of {aircraft.definition.jsonKey}"
         );
 
         return screen;
@@ -88,7 +88,7 @@ internal sealed class CrewmateScreen : IDisposable
         {
             _logged = logged;
             Plugin.Logger.LogDebug(
-                $"{SeatTable.Label(_seat)}'s screen on {Aircraft.definition.jsonKey}: station {station}, "
+                $"{Texts.Roles.Label(_seat)}'s screen on {Aircraft.definition.jsonKey}: station {station}, "
                 + $"{ids.Count} target ids, {_targets.Count} live, overlay {(overlay ? "shown" : "hidden")}, camera {camera}"
             );
         }

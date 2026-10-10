@@ -23,7 +23,7 @@ internal sealed class ClientSession : IDisposable
 
     private (PersistentID AircraftId, float SentAt)? _request;
 
-    private int[] _closedPilots = [];
+    private int[] _openPilots = [];
 
     private readonly Dictionary<Type, Delegate> _handlers = [];
 
@@ -66,7 +66,7 @@ internal sealed class ClientSession : IDisposable
         Register<CrewLaunch>(OnLaunch);
         Register<CrewKillAuthor>(OnKillAuthor);
         Register<CrewHit>(OnHit);
-        Register<CrewClosedPilots>(OnClosedPilots);
+        Register<CrewOpenPilots>(OnOpenPilots);
         Plugin.Settings.RejectAllRequests.SettingChanged += OnRejectAllRequestsChanged;
         _client.Authenticated.AddListener(OnAuthenticated);
     }
@@ -86,7 +86,7 @@ internal sealed class ClientSession : IDisposable
         _client.MessageHandler.UnregisterHandler<CrewLaunch>();
         _client.MessageHandler.UnregisterHandler<CrewKillAuthor>();
         _client.MessageHandler.UnregisterHandler<CrewHit>();
-        _client.MessageHandler.UnregisterHandler<CrewClosedPilots>();
+        _client.MessageHandler.UnregisterHandler<CrewOpenPilots>();
         _handlers.Clear();
         Plugin.Settings.RejectAllRequests.SettingChanged -= OnRejectAllRequestsChanged;
     }
@@ -156,7 +156,7 @@ internal sealed class ClientSession : IDisposable
 
     public bool TakesCrew(Player pilot)
     {
-        return !_closedPilots.Contains(pilot.PlayerIndex);
+        return _openPilots.Contains(pilot.PlayerIndex);
     }
 
     public void EndMission()
@@ -211,7 +211,6 @@ internal sealed class ClientSession : IDisposable
             Plugin.Logger.LogWarning(
                 $"Server runs NoMulticrew {message.PluginVersion}, this client {MyPluginInfo.PLUGIN_VERSION}: multicrew disabled"
             );
-            Notices.ShowNotice($"Multicrew needs NoMulticrew {message.PluginVersion}");
             return;
         }
 
@@ -235,11 +234,11 @@ internal sealed class ClientSession : IDisposable
         }
     }
 
-    private void OnClosedPilots(INetworkPlayer player, CrewClosedPilots message)
+    private void OnOpenPilots(INetworkPlayer player, CrewOpenPilots message)
     {
         if (Confirmed)
         {
-            _closedPilots = message.PlayerIndices;
+            _openPilots = message.PlayerIndices;
         }
     }
 

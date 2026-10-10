@@ -10,11 +10,6 @@ namespace NoMulticrew.Client.Theming;
 
 internal sealed class MarkPaletteSection : IDisposable
 {
-    private const string Title = "NoMulticrew Marks";
-    private const string CrewTargetLabel = "Crew target";
-
-    private const string CrewTargetTooltip = "Color of targets selected by the other seats of your aircraft.";
-
     private const string NoWingmenSectionName = "NoWingmen.PaletteSection";
 
     private static readonly AccessTools.FieldRef<AccessibilityMenu, ColorPicker> ColorPickerPrefabRef =
@@ -134,7 +129,7 @@ internal sealed class MarkPaletteSection : IDisposable
 
         var title = Object.Instantiate(CategoryTitlePrefabRef(menu), container.transform);
         title.name = "NoMulticrew.MarkPaletteSection.Title";
-        title.Text = Title;
+        title.Text = "NoMulticrew Marks";
         title.transform.SetSiblingIndex(0);
 
         var picker = Object.Instantiate(ColorPickerPrefabRef(menu), container.transform);
@@ -146,7 +141,7 @@ internal sealed class MarkPaletteSection : IDisposable
 
     private void Show()
     {
-        _picker.SetValues(CrewTargetLabel, Plugin.Palette.Active, CrewTargetTooltip);
+        _picker.SetValues("Crew target", Plugin.Palette.Active, "Color of targets selected by the other seats of your aircraft.");
 
         _container.SetActive(SliderToggleRef(_menu).isOn);
 

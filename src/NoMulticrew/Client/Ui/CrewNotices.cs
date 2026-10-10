@@ -1,5 +1,4 @@
 using NoMulticrew.Networking;
-using NoMulticrew.Seats;
 using UnityEngine;
 
 namespace NoMulticrew.Client.Ui;
@@ -47,9 +46,7 @@ internal sealed class CrewNotices
         _prompts.RemoveAll(x => now > x.ExpiresAt);
         _prompts.Add((prompt, now + prompt.ExpiresInSeconds));
 
-        ShowNotice(
-            $"{CrewState.NameOf(prompt.JoinerPlayerIndex)} wants {SeatTable.Label(Role.Wso)} — open the map to answer"
-        );
+        ShowNotice(Texts.Requests.Incoming(CrewState.NameOf(prompt.JoinerPlayerIndex)));
         Feedback.Play(CrewCue.WeaponSwitch);
     }
 
@@ -82,14 +79,16 @@ internal sealed class CrewNotices
 
     public bool RefuseStation(Aircraft aircraft, int station)
     {
-        return Refuse($"{SeatTable.Label(_session.Crew.RoleHolding(aircraft, station))} has this weapon");
+        return Refuse(Texts.Weapons.HeldBy(_session.Crew.RoleHolding(aircraft, station)));
     }
 
     public bool RefuseSelection(Aircraft aircraft, int station)
     {
-        var holder = SeatTable.Label(_session.Crew.RoleHolding(aircraft, station));
+        var holder = _session.Crew.RoleHolding(aircraft, station);
 
-        return Refuse(Plugin.SeatTable.IsShared(aircraft) ? $"{holder} is using this weapon" : $"{holder}-only weapon");
+        return Refuse(
+            Plugin.SeatTable.IsShared(aircraft) ? Texts.Weapons.InUseBy(holder) : Texts.Weapons.ExclusiveTo(holder)
+        );
     }
 
     public void Accept()

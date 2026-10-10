@@ -8,15 +8,6 @@ namespace NoMulticrew.Client.Ui;
 
 internal sealed class CrewScreenLayout : IDisposable
 {
-    private const string ShortName = "CRW";
-
-    private const string ScreenTitle = "CREW";
-
-    private const string CrewTitle = "CREW";
-    private const string StationsTitle = "STATIONS";
-    private const string ActionsTitle = "ACTIONS";
-    private const string SeatsTitle = "SEATS";
-
     private static readonly AccessTools.FieldRef<VirtualMFD, List<Button>> LeftButtonsRef =
         AccessTools.FieldRefAccess<VirtualMFD, List<Button>>("leftButtons");
 
@@ -94,13 +85,13 @@ internal sealed class CrewScreenLayout : IDisposable
 
         StripPanel(panel, rowContainer, panelHeading.transform, sectionHeading.transform);
 
-        panelHeading.text = ScreenTitle;
+        panelHeading.text = Texts.CrewScreen.Title;
         ScreenSection.StackFromTop(sectionRoot.parent);
 
-        var crew = ScreenSection.Claim(rowContainer, sectionHeading, CrewTitle);
-        var stations = crew.Clone(StationsTitle);
-        var actions = crew.Clone(ActionsTitle);
-        var seats = crew.Clone(SeatsTitle);
+        var crew = ScreenSection.Claim(rowContainer, sectionHeading, Texts.CrewScreen.CrewTitle);
+        var stations = crew.Clone(Texts.CrewScreen.StationsTitle);
+        var actions = crew.Clone(Texts.CrewScreen.ActionsTitle);
+        var seats = crew.Clone(Texts.CrewScreen.SeatsTitle);
 
         var layout = new CrewScreenLayout(mfd, screen, crew, stations, actions, seats, rowTemplate);
 
@@ -174,7 +165,7 @@ internal sealed class CrewScreenLayout : IDisposable
         button.onClick.AddListener(() => Mfd.PressLeftButton(button));
         button.enabled = true;
 
-        Screen.Setup(Mfd, ShortName);
+        Screen.Setup(Mfd, Texts.CrewScreen.ShortName);
         Mfd.SetupButtons();
 
         return true;

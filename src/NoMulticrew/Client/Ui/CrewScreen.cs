@@ -135,30 +135,29 @@ internal sealed class CrewScreen : IDisposable
 
         if (aircraft == null)
         {
-            crew.Add("NOT IN AN AIRCRAFT");
+            crew.Add(Texts.CrewScreen.NotInAircraft);
         }
         else
         {
-            var pilot = aircraft.Player != null ? aircraft.Player.GetDisplayName(PlayerNameContext.Other) : "NONE";
-            crew.Add($"PILOT  {pilot}");
+            var pilot = aircraft.Player != null
+                ? aircraft.Player.GetDisplayName(PlayerNameContext.Other)
+                : Texts.CrewScreen.None;
+            crew.Add(Texts.CrewScreen.Pilot(pilot));
 
             if (_session.Crew.TryGetRoster(aircraft.persistentID, out var roster))
             {
                 var here = backSeat != null;
 
-                crew.Add(
-                    $"{SeatTable.Label(Role.Wso).ToUpperInvariant()}  "
-                    + $"{CrewState.NameOf(roster.WsoPlayerIndex)}{(here ? " <" : "")}"
-                );
+                crew.Add(Texts.CrewScreen.Wso(CrewState.NameOf(roster.WsoPlayerIndex), here));
 
                 if (here)
                 {
-                    crew.Add($"PENDING  +{roster.Pending:F0}");
+                    crew.Add(Texts.CrewScreen.Pending(roster.Pending));
                 }
             }
             else
             {
-                crew.Add("NO CREW");
+                crew.Add(Texts.CrewScreen.NoCrew);
             }
 
             DescribeStations(aircraft, stations);
@@ -166,11 +165,11 @@ internal sealed class CrewScreen : IDisposable
 
         if (stations.Count == 0)
         {
-            stations.Add(("NONE", true));
+            stations.Add((Texts.CrewScreen.None, true));
         }
 
         var request = _session.Notices.Pending is { } prompt
-            ? $"{CrewState.NameOf(prompt.JoinerPlayerIndex)} WANTS {SeatTable.Label(Role.Wso).ToUpperInvariant()}"
+            ? Texts.CrewScreen.Incoming(CrewState.NameOf(prompt.JoinerPlayerIndex))
             : null;
 
         var boarding = backSeat == null && aircraft == null;
@@ -205,6 +204,8 @@ internal sealed class CrewScreen : IDisposable
             foreach (var aircraft in Object.FindObjectsOfType<Aircraft>())
             {
                 if (Plugin.SeatTable.WsoSeat(aircraft) == null
+                    || aircraft.NetworkHQ == null
+                    || aircraft.NetworkHQ != local.HQ
                     || !SeatTable.CanBoard(aircraft, local, out var airbase, out _)
                     || !_session.TakesCrew(aircraft.Player)
                     || _session.Crew.HasRoster(aircraft.persistentID)
@@ -226,7 +227,7 @@ internal sealed class CrewScreen : IDisposable
                 offers.Add(
                     new SeatOffer(
                         airbaseName,
-                        $"{aircraft.definition.unitName}  ·  {pilot}  {SeatTable.Label(Role.Wso).ToUpperInvariant()}",
+                        Texts.CrewScreen.Offer(aircraft.definition.unitName, pilot),
                         aircraft.persistentID,
                         state
                     )
@@ -252,12 +253,12 @@ internal sealed class CrewScreen : IDisposable
         {
             var weapon = aircraft.weaponStations[i].WeaponInfo;
             var holder = Plugin.SeatTable.Holder(aircraft, i, state);
-            var label = shared && holder == Role.Pilot && state.PilotStation != i
-                ? ""
-                : SeatTable.Label(holder).ToUpperInvariant();
+            var labeled = !(shared && holder == Role.Pilot && state.PilotStation != i);
             var usable = Plugin.SeatTable.CanSelect(aircraft, mine, i, state);
 
-            stations.Add(($"{i}  {weapon.shortName}  {label}{(i == selected ? " >" : "")}", usable));
+            var text = Texts.CrewScreen.Station(i, weapon.shortName, labeled ? holder : null, i == selected);
+
+            stations.Add((text, usable));
         }
     }
 
@@ -297,15 +298,15 @@ internal sealed class CrewScreen : IDisposable
                 _rows.Add(ScreenRow.CreateLabel(actions, template, content.Request));
 
                 var answer = _layout.Actions.AddRow();
-                _rows.Add(ScreenRow.CreateButton(answer, template, "ACCEPT", _session.Notices.Accept));
-                _rows.Add(ScreenRow.CreateButton(answer, template, "DECLINE", _session.Notices.Decline));
+                _rows.Add(ScreenRow.CreateButton(answer, template, Texts.CrewScreen.Accept, _session.Notices.Accept));
+                _rows.Add(ScreenRow.CreateButton(answer, template, Texts.CrewScreen.Decline, _session.Notices.Decline));
             }
 
             _rows.Add(
                 ScreenRow.CreateToggle(
                     actions,
                     template,
-                    "REQUESTS",
+                    Texts.CrewScreen.Requests,
                     () => !Plugin.Settings.RejectAllRequests.Value,
                     () => Plugin.Settings.RejectAllRequests.Value = !Plugin.Settings.RejectAllRequests.Value
                 )
@@ -318,7 +319,7 @@ internal sealed class CrewScreen : IDisposable
                 ScreenRow.CreateButton(
                     actions,
                     template,
-                    content.LeaveArmed ? "CONFIRM BAIL OUT" : "LEAVE",
+                    content.LeaveArmed ? Texts.CrewScreen.ConfirmLeave : Texts.CrewScreen.Leave,
                     () => _session.BackSeat.RequestLeave()
                 )
             );
@@ -336,7 +337,7 @@ internal sealed class CrewScreen : IDisposable
 
         if (content.Seats.Length == 0)
         {
-            _rows.Add(ScreenRow.CreateLabel(container, template, "NO SEATS AVAILABLE"));
+            _rows.Add(ScreenRow.CreateLabel(container, template, Texts.CrewScreen.NoSeats));
             return;
         }
 
@@ -353,10 +354,10 @@ internal sealed class CrewScreen : IDisposable
                     ScreenRow.CreateToggle(
                         row,
                         template,
-                        offer.State == OfferState.Waiting ? "WAITING" : "REQUEST",
+                        offer.State == OfferState.Waiting ? Texts.CrewScreen.Waiting : Texts.CrewScreen.Request,
                         () => offer.State == OfferState.Request,
                         () => _session.RequestSeat(offer.AircraftId)
-                    ).FitToText("REQUEST", "WAITING")
+                    ).FitToText(Texts.CrewScreen.Request, Texts.CrewScreen.Waiting)
                 );
             }
         }

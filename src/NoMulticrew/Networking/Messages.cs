@@ -541,13 +541,13 @@ internal struct CrewAvailability : IMessage<CrewAvailability>
     }
 }
 
-internal struct CrewClosedPilots : IMessage<CrewClosedPilots>
+internal struct CrewOpenPilots : IMessage<CrewOpenPilots>
 {
     private const int MaxCount = 1024;
 
     public int[] PlayerIndices { get; private set; }
 
-    public CrewClosedPilots(int[] playerIndices)
+    public CrewOpenPilots(int[] playerIndices)
     {
         PlayerIndices = playerIndices;
     }
@@ -557,7 +557,7 @@ internal struct CrewClosedPilots : IMessage<CrewClosedPilots>
         var count = reader.ReadPackedInt32();
         if (count < 0 || count > MaxCount)
         {
-            throw new InvalidOperationException($"Closed pilot list of {count} is outside 0..{MaxCount}.");
+            throw new InvalidOperationException($"Open pilot list of {count} is outside 0..{MaxCount}.");
         }
 
         PlayerIndices = new int[count];
