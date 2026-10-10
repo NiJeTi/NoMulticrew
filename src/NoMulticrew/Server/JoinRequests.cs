@@ -101,7 +101,7 @@ internal sealed class JoinRequests
 
         if (!ReferenceEquals(request.Aircraft.Player, responder))
         {
-            Plugin.Logger.LogWarning($"Crew join response {message.RequestId} came from someone other than the pilot");
+            Plugin.Logger.LogWarning($"Crew join response {message.RequestId} ignored: responder is not the pilot");
             return;
         }
 

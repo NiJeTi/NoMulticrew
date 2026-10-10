@@ -73,8 +73,7 @@ internal sealed class SeatDefinition
 
     public override string ToString()
     {
-        var weapons = IsShared ? "sharing every station" : $"operating [{string.Join(", ", _weapons)}]";
-
-        return $"WSO {weapons}, view at {View:F2}";
+        return $"shared={IsShared}, weapons=[{string.Join(", ", _weapons)}], view={View:F2}, "
+            + $"screen={Screen != null}, panel={Panel != null}";
     }
 }

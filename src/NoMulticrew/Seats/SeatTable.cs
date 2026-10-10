@@ -193,7 +193,7 @@ internal sealed class SeatTable
                 Plugin.Logger.LogError($"The WSO of {name} lists no weapons");
             }
 
-            Plugin.Logger.LogDebug($"Seat of {name}: {seat}");
+            Plugin.Logger.LogDebug($"Seat {name}: {seat}");
         }
     }
 

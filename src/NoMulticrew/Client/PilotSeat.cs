@@ -117,8 +117,8 @@ internal sealed class PilotSeat
         }
 
         Plugin.Logger.LogWarning(
-            $"Crew replay for station {station} of {aircraftId} reached a client that does not fly it "
-            + "or whose crew does not own that station"
+            $"Crew replay for station {station} of {aircraftId} ignored: "
+            + "aircraft not flown here or station not owned by crew"
         );
 
         return null;

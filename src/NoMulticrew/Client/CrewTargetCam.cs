@@ -68,7 +68,7 @@ internal sealed class CrewTargetCam
 
         if (!ReferenceEquals(aircraft.targetCam, cam))
         {
-            Plugin.Logger.LogError("The crew's target camera did not initialize");
+            Plugin.Logger.LogError("Crew target camera not initialized");
             return;
         }
 

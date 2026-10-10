@@ -224,8 +224,8 @@ internal sealed class CrewEconomy
                 if (amount > pilotOwn)
                 {
                     Plugin.Logger.LogDebug(
-                        $"Kill of {target.persistentID} authored by {member.GetDisplayName(PlayerNameContext.Other)}: "
-                        + $"{amount:F1} against the pilot's {pilotOwn:F1}"
+                        $"Kill of {target.persistentID} credited to {member.GetDisplayName(PlayerNameContext.Other)}: "
+                        + $"crew {amount:F1} > pilot {pilotOwn:F1}"
                     );
 
                     _killAuthor = (target.persistentID, member);
@@ -372,7 +372,7 @@ internal sealed class CrewEconomy
         var recipient = forfeit ? PilotOf(aircraftId, crew) : crew;
         if (recipient == null || recipient.HQ == null)
         {
-            Plugin.Logger.LogInfo($"Crew escrow of {held.Allocation:F0} dropped: nobody to receive it");
+            Plugin.Logger.LogInfo($"Crew escrow of {held.Allocation:F0} dropped: no recipient");
             return;
         }
 

@@ -33,7 +33,7 @@ internal static class TargetClaimIndex_IsClaimer
         if (Target == null && NoWingmen.Installed)
         {
             Plugin.Logger.LogWarning(
-                "NoWingmen TargetClaimIndex.IsClaimer not found: a WSO's own targets show as claimed"
+                "NoWingmen TargetClaimIndex.IsClaimer not found, patch skipped"
             );
         }
 
@@ -71,7 +71,7 @@ internal static class MarkColorResolver_TryResolveIdentity
         if (Target == null && NoWingmen.Installed)
         {
             Plugin.Logger.LogWarning(
-                "NoWingmen MarkColorResolver.TryResolveIdentity not found: a WSO's aircraft shows as a teammate's"
+                "NoWingmen MarkColorResolver.TryResolveIdentity not found, patch skipped"
             );
         }
 

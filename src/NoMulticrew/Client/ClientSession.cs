@@ -197,7 +197,7 @@ internal sealed class ClientSession : IDisposable
     {
         if (!_advertised && !Plugin.IsServer)
         {
-            Plugin.Logger.LogDebug("Server does not advertise multicrew; staying vanilla");
+            Plugin.Logger.LogDebug("Server does not advertise multicrew");
             return;
         }
 
@@ -209,7 +209,7 @@ internal sealed class ClientSession : IDisposable
         if (message.PluginVersion != MyPluginInfo.PLUGIN_VERSION)
         {
             Plugin.Logger.LogWarning(
-                $"Server runs NoMulticrew {message.PluginVersion}, this client {MyPluginInfo.PLUGIN_VERSION}: multicrew is off"
+                $"Server runs NoMulticrew {message.PluginVersion}, this client {MyPluginInfo.PLUGIN_VERSION}: multicrew disabled"
             );
             Notices.ShowNotice($"Multicrew needs NoMulticrew {message.PluginVersion}");
             return;

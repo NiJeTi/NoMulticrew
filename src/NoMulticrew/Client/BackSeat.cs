@@ -346,7 +346,7 @@ internal sealed class BackSeat : IDisposable
 
         StartScanLoops(aircraft);
 
-        Plugin.Logger.LogInfo($"Entered the WSO seat of {aircraft.definition.jsonKey}: {seat}");
+        Plugin.Logger.LogInfo($"Entered WSO seat of {aircraft.definition.jsonKey} {aircraft.persistentID}: {seat}");
     }
 
     private static void ShowCountermeasures(CombatHUD hud, bool visible)

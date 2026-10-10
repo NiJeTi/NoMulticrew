@@ -97,8 +97,8 @@ internal sealed class CrewCommands
             }
 
             Plugin.Logger.LogWarning(
-                $"Crew {message.Kind} for {message.AircraftId} from {sender.GetDisplayName(PlayerNameContext.Other)}, "
-                + "who has no seat in it"
+                $"Crew {message.Kind} for {message.AircraftId} from {sender.GetDisplayName(PlayerNameContext.Other)}: "
+                + "sender not seated"
             );
             connection.SetError(NoAuthorityCost, PlayerErrorFlags.NoAuthority);
             return;
@@ -121,14 +121,14 @@ internal sealed class CrewCommands
             {
                 Plugin.Logger.LogDebug(
                     $"Dropped crew {message.Kind} from {sender.GetDisplayName(PlayerNameContext.Other)} "
-                    + $"for station {message.Station} of {message.AircraftId}, which their seat no longer holds"
+                    + $"for station {message.Station} of {message.AircraftId}: station no longer owned by sender's seat"
                 );
                 return;
             }
 
             Plugin.Logger.LogWarning(
                 $"Crew {message.Kind} from {sender.GetDisplayName(PlayerNameContext.Other)} "
-                + $"names station {message.Station} of {message.AircraftId}, which their seat does not hold"
+                + $"for station {message.Station} of {message.AircraftId}: station not owned by sender's seat"
             );
             connection.SetError(NoAuthorityCost, PlayerErrorFlags.NoAuthority);
             return;
@@ -340,7 +340,7 @@ internal sealed class CrewCommands
             {
                 Plugin.Logger.LogWarning(
                     $"Crew station {station} from {sender.GetDisplayName(PlayerNameContext.Other)} "
-                    + $"is not their seat's on {aircraft.persistentID}"
+                    + $"is not owned by sender's seat on {aircraft.persistentID}"
                 );
                 connection.SetError(NoAuthorityCost, PlayerErrorFlags.NoAuthority);
                 return;
@@ -348,7 +348,7 @@ internal sealed class CrewCommands
 
             Plugin.Logger.LogDebug(
                 $"Refused station {station} of {aircraft.persistentID} "
-                + $"to {sender.GetDisplayName(PlayerNameContext.Other)}: the pilot has it"
+                + $"to {sender.GetDisplayName(PlayerNameContext.Other)}: held by pilot"
             );
             _session.Crew.SendRoster(aircraft.persistentID);
             return;

@@ -79,7 +79,7 @@ internal sealed class ServerSession : IDisposable
 
         if (!_validPlayers.Contains(connection))
         {
-            Plugin.Logger.LogError($"Crew message received from a connection that never said hello: {connection}");
+            Plugin.Logger.LogError($"Crew message from {connection} before handshake");
             return false;
         }
 
@@ -173,8 +173,8 @@ internal sealed class ServerSession : IDisposable
 
             Plugin.Logger.LogInfo(
                 seatedIn is { } aircraftId
-                    ? $"{name} disconnected, freeing {SeatTable.Label(Role.Wso)} of {aircraftId}"
-                    : $"{name} disconnected, in no crew seat"
+                    ? $"{name} disconnected, released {SeatTable.Label(Role.Wso)} seat of {aircraftId}"
+                    : $"{name} disconnected, not seated"
             );
 
             Requests.Forget(player);
@@ -268,8 +268,8 @@ internal sealed class ServerSession : IDisposable
             && SeatTable.IsValidExit(aircraft);
 
         Plugin.Logger.LogInfo(
-            $"{player.GetDisplayName(PlayerNameContext.Other)} leaves {aircraftId.Value} "
-            + (valid ? "with a valid exit" : "by bailing out")
+            $"{player.GetDisplayName(PlayerNameContext.Other)} left {aircraftId.Value}: "
+            + (valid ? "valid exit" : "bailout, escrow forfeited")
         );
 
         Crew.Release(player, forfeit: !valid);
@@ -286,7 +286,7 @@ internal sealed class ServerSession : IDisposable
         var changed = message.Accepting ? _closedPilots.Remove(connection) : _closedPilots.Add(connection);
         if (changed)
         {
-            Plugin.Logger.LogInfo($"{connection} {(message.Accepting ? "takes crew again" : "stopped taking crew")}");
+            Plugin.Logger.LogInfo($"{connection} accepting crew requests: {message.Accepting}");
         }
     }
 

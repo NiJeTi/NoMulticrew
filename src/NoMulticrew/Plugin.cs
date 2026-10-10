@@ -64,7 +64,7 @@ internal sealed class Plugin : BaseUnityPlugin
         {
             _harmony.UnpatchSelf();
             enabled = false;
-            Logger.LogError($"NoMulticrew is disabled and the game runs vanilla: {e.GetBaseException().Message}\n{e}");
+            Logger.LogError($"Patching failed, plugin disabled: {e}");
             return;
         }
 

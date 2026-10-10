@@ -85,7 +85,7 @@ internal sealed class CrewScreens
 
         if (aircraft.targetCam == null)
         {
-            Plugin.Logger.LogError("The crew's target camera did not attach; the WSO gets no tactical screen");
+            Plugin.Logger.LogError("Target camera not attached, tactical screen skipped");
             return;
         }
 
@@ -226,7 +226,7 @@ internal sealed class CrewScreens
         if (material == null || source == null || texture == null)
         {
             Plugin.Logger.LogError(
-                $"{aircraft.definition.jsonKey} has no screen material, renderer or texture; the WSO gets no screen quad"
+                $"{aircraft.definition.jsonKey} has no screen material, renderer or texture, screen quad skipped"
             );
             return;
         }
