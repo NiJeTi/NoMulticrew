@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using NoMulticrew.Networking;
 using NuclearOption.Networking;
 using UnityEngine;
 
@@ -228,21 +229,20 @@ internal sealed class SeatTable
         Player joiner,
         [NotNullWhen(true)]
         out Airbase? airbase,
-        [NotNullWhen(false)]
-        out string? reason
+        out CrewJoinOutcome refusal
     )
     {
         airbase = null;
 
         if (aircraft.disabled || aircraft.Player == null)
         {
-            reason = Texts.Requests.NoPilot;
+            refusal = CrewJoinOutcome.NoPilot;
             return false;
         }
 
         if (joiner.Aircraft != null)
         {
-            reason = Texts.Requests.LeaveAircraftFirst;
+            refusal = CrewJoinOutcome.LeaveAircraft;
             return false;
         }
 
@@ -250,11 +250,11 @@ internal sealed class SeatTable
             && aircraft.NetworkHQ != null
             && aircraft.NetworkHQ.AnyNearAirbase(aircraft.transform.position, out airbase)))
         {
-            reason = Texts.Requests.NotAtAirbase;
+            refusal = CrewJoinOutcome.NotAtAirbase;
             return false;
         }
 
-        reason = null;
+        refusal = CrewJoinOutcome.Seated;
         return true;
     }
 

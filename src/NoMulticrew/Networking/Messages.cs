@@ -182,27 +182,77 @@ internal enum CrewCue : byte
     WeaponSwitch = 3,
 }
 
+internal enum NoticeTone : byte
+{
+    Neutral = 0,
+    Positive = 1,
+    Caution = 2,
+    Negative = 3,
+}
+
 internal struct CrewNotice : IMessage<CrewNotice>
 {
     public string Text { get; private set; }
+    public NoticeTone Tone { get; private set; }
     public CrewCue Cue { get; private set; }
 
-    public CrewNotice(string text, CrewCue cue = CrewCue.None)
+    public CrewNotice(string text, NoticeTone tone, CrewCue cue)
     {
         Text = text;
+        Tone = tone;
         Cue = cue;
     }
 
     public void Read(NetworkReader reader)
     {
         Text = reader.ReadString();
+        Tone = (NoticeTone)reader.ReadByte();
         Cue = (CrewCue)reader.ReadByte();
     }
 
     public void Write(NetworkWriter writer)
     {
         writer.WriteString(Text);
+        writer.WriteByte((byte)Tone);
         writer.WriteByte((byte)Cue);
+    }
+}
+
+internal enum CrewJoinOutcome : byte
+{
+    Seated = 0,
+    Declined = 1,
+    NoAnswer = 2,
+    PilotLeft = 3,
+    AircraftLost = 4,
+    NoPilot = 5,
+    NotAtAirbase = 6,
+    NotTakingCrew = 7,
+    SeatTaken = 8,
+    LeaveAircraft = 9,
+}
+
+internal struct CrewJoinResult : IMessage<CrewJoinResult>
+{
+    public PersistentID AircraftId { get; private set; }
+    public CrewJoinOutcome Outcome { get; private set; }
+
+    public CrewJoinResult(PersistentID aircraftId, CrewJoinOutcome outcome)
+    {
+        AircraftId = aircraftId;
+        Outcome = outcome;
+    }
+
+    public void Read(NetworkReader reader)
+    {
+        AircraftId = new PersistentID { Id = reader.ReadUInt32() };
+        Outcome = (CrewJoinOutcome)reader.ReadByte();
+    }
+
+    public void Write(NetworkWriter writer)
+    {
+        writer.WriteUInt32(AircraftId.Id);
+        writer.WriteByte((byte)Outcome);
     }
 }
 

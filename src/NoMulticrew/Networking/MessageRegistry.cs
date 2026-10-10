@@ -23,6 +23,7 @@ internal static class MessageRegistry
         Register<CrewHit>();
         Register<CrewAvailability>();
         Register<CrewOpenPilots>();
+        Register<CrewJoinResult>();
     }
 
     private static void Register<T>()

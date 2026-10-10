@@ -1,5 +1,7 @@
+using NoMulticrew.Networking;
 using NoMulticrew.Seats;
 using NuclearOption.Networking;
+using NuclearOption.UIStyleSystem;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -12,13 +14,15 @@ internal sealed class CrewScreen : IDisposable
         Request,
         Waiting,
         Blocked,
+        Unavailable,
     }
 
     private readonly record struct SeatOffer(
         string Airbase,
         string Text,
         PersistentID AircraftId,
-        OfferState State
+        OfferState State,
+        CrewJoinOutcome? Outcome
     );
 
     private sealed class Content(
@@ -68,6 +72,7 @@ internal sealed class CrewScreen : IDisposable
     private readonly List<ScreenRow> _rows = [];
 
     private SeatOffer[] _offers = [];
+    private SeatOffer? _requested;
     private float _offersAt = float.NegativeInfinity;
 
     private float _describedAt = float.NegativeInfinity;
@@ -229,10 +234,26 @@ internal sealed class CrewScreen : IDisposable
                         airbaseName,
                         Texts.CrewScreen.Offer(aircraft.definition.unitName, pilot),
                         aircraft.persistentID,
-                        state
+                        state,
+                        null
                     )
                 );
             }
+        }
+
+        var result = _session.Result;
+
+        if (_requested is { } requested
+            && (_session.IsRequested(requested.AircraftId) || result?.AircraftId == requested.AircraftId)
+            && offers.All(x => x.AircraftId != requested.AircraftId))
+        {
+            var state = _session.IsRequested(requested.AircraftId) ? OfferState.Waiting : OfferState.Unavailable;
+            offers.Add(requested with { State = state });
+        }
+
+        if (result is { } answer && offers.FindIndex(x => x.AircraftId == answer.AircraftId) is var index and >= 0)
+        {
+            offers[index] = offers[index] with { Outcome = answer.Outcome };
         }
 
         _offers = [.. offers.OrderBy(x => x.Airbase).ThenBy(x => x.Text)];
@@ -349,18 +370,41 @@ internal sealed class CrewScreen : IDisposable
             {
                 var row = _layout.Seats.AddRow();
 
-                _rows.Add(ScreenRow.CreateLabel(row, template, offer.Text));
+                var alert = ThemeManager.Active.ColorTheme.Alert;
+
+                _rows.Add(
+                    offer.Outcome is { } outcome
+                        ? ScreenRow.CreateLabel(row, template, Texts.CrewScreen.Outcome(outcome), color: alert)
+                        : ScreenRow.CreateLabel(row, template, offer.Text)
+                );
+
+                if (offer.State == OfferState.Unavailable)
+                {
+                    continue;
+                }
+
                 _rows.Add(
                     ScreenRow.CreateToggle(
                         row,
                         template,
                         offer.State == OfferState.Waiting ? Texts.CrewScreen.Waiting : Texts.CrewScreen.Request,
                         () => offer.State == OfferState.Request,
-                        () => _session.RequestSeat(offer.AircraftId)
+                        () => Request(offer)
                     ).FitToText(Texts.CrewScreen.Request, Texts.CrewScreen.Waiting)
                 );
             }
         }
+    }
+
+    private void Request(SeatOffer offer)
+    {
+        if (_session.HasRequest)
+        {
+            return;
+        }
+
+        _requested = offer with { Outcome = null };
+        _session.RequestSeat(offer.AircraftId);
     }
 
     private void DisposeRows()

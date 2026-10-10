@@ -119,7 +119,7 @@ internal sealed class BackSeat : IDisposable
         }
 
         _bailOutArmedAt = Time.unscaledTime;
-        _session.Notices.ShowNotice(Texts.Crew.BailOutWarning);
+        _session.Notices.ShowNotice(Texts.Crew.BailOutWarning, NoticeTone.Caution);
 
         return true;
     }
@@ -347,6 +347,9 @@ internal sealed class BackSeat : IDisposable
         SceneSingleton<DynamicMap>.i.Minimize();
 
         FlightHud.EnableCanvas(true);
+
+        _session.Notices.ShowNotice(Texts.Requests.Seated, NoticeTone.Positive);
+        Feedback.Play(CrewCue.Select);
 
         StartScanLoops(aircraft);
 

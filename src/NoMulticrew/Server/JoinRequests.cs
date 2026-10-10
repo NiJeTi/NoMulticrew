@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Mirage;
 using NoMulticrew.Networking;
 using NoMulticrew.Seats;
@@ -14,6 +13,7 @@ internal sealed class JoinRequests
         public required int Id { get; init; }
         public required Player Joiner { get; init; }
         public required Aircraft Aircraft { get; init; }
+        public required PersistentID AircraftId { get; init; }
         public required float ExpiresAt { get; init; }
     }
 
@@ -39,7 +39,7 @@ internal sealed class JoinRequests
 
         if (!UnitRegistry.TryGetUnit(message.AircraftId, out var unit) || unit is not Aircraft aircraft)
         {
-            _session.Notify(joiner, Texts.Requests.AircraftGone);
+            Answer(joiner, message.AircraftId, CrewJoinOutcome.AircraftLost);
             return;
         }
 
@@ -52,9 +52,9 @@ internal sealed class JoinRequests
             return;
         }
 
-        if (!CanSeat(aircraft, joiner, out var reason))
+        if (!CanSeat(aircraft, joiner, out var refusal))
         {
-            _session.Notify(joiner, reason);
+            Answer(joiner, aircraft.persistentID, refusal);
             return;
         }
 
@@ -63,6 +63,7 @@ internal sealed class JoinRequests
             Id = _nextId++,
             Joiner = joiner,
             Aircraft = aircraft,
+            AircraftId = aircraft.persistentID,
             ExpiresAt = Time.unscaledTime + TimeoutSeconds
         };
 
@@ -94,7 +95,7 @@ internal sealed class JoinRequests
         if (request.Aircraft == null)
         {
             _requests.Remove(request);
-            _session.Notify(request.Joiner, Texts.Requests.AircraftGone);
+            Answer(request.Joiner, request.AircraftId, CrewJoinOutcome.AircraftLost);
             return;
         }
 
@@ -109,7 +110,7 @@ internal sealed class JoinRequests
         if (!message.Accepted)
         {
             Plugin.Logger.LogInfo($"Crew request {request.Id} declined");
-            _session.Notify(request.Joiner, Texts.Requests.PilotDeclined, CrewCue.Deselect);
+            Answer(request.Joiner, request.AircraftId, CrewJoinOutcome.Declined);
             return;
         }
 
@@ -119,10 +120,10 @@ internal sealed class JoinRequests
             return;
         }
 
-        if (!CanSeat(request.Aircraft, request.Joiner, out var reason))
+        if (!CanSeat(request.Aircraft, request.Joiner, out var refusal))
         {
-            Plugin.Logger.LogInfo($"Crew request {request.Id} accepted but no longer valid: {reason}");
-            _session.Notify(request.Joiner, reason, CrewCue.Deselect);
+            Plugin.Logger.LogInfo($"Crew request {request.Id} accepted but no longer valid: {refusal}");
+            Answer(request.Joiner, request.AircraftId, refusal);
             return;
         }
 
@@ -131,10 +132,11 @@ internal sealed class JoinRequests
         _session.Notify(
             request.Aircraft.Player,
             Texts.Requests.Joined(request.Joiner.GetDisplayName(PlayerNameContext.Other)),
+            NoticeTone.Positive,
             CrewCue.Select
         );
 
-        _session.Notify(request.Joiner, Texts.Requests.Seated, CrewCue.Select);
+        Answer(request.Joiner, request.AircraftId, CrewJoinOutcome.Seated);
     }
 
     public void Tick()
@@ -151,7 +153,7 @@ internal sealed class JoinRequests
 
             _requests.RemoveAt(i);
             Plugin.Logger.LogInfo($"Crew request {request.Id} timed out");
-            _session.Notify(request.Joiner, Texts.Requests.PilotSilent, CrewCue.Deselect);
+            Answer(request.Joiner, request.AircraftId, CrewJoinOutcome.NoAnswer);
         }
     }
 
@@ -174,31 +176,36 @@ internal sealed class JoinRequests
 
             if (toPilot)
             {
-                _session.Notify(request.Joiner, Texts.Requests.PilotLeft, CrewCue.Deselect);
+                Answer(request.Joiner, request.AircraftId, CrewJoinOutcome.PilotLeft);
             }
         }
     }
 
-    private bool CanSeat(Aircraft aircraft, Player joiner, [NotNullWhen(false)] out string? reason)
+    private bool CanSeat(Aircraft aircraft, Player joiner, out CrewJoinOutcome refusal)
     {
-        if (!SeatTable.CanBoard(aircraft, joiner, out _, out reason))
+        if (!SeatTable.CanBoard(aircraft, joiner, out _, out refusal))
         {
             return false;
         }
 
         if (!_session.TakesCrew(aircraft.Player))
         {
-            reason = Texts.Requests.NotTakingCrew;
+            refusal = CrewJoinOutcome.NotTakingCrew;
             return false;
         }
 
         if (_session.Crew.IsCrewed(aircraft.persistentID))
         {
-            reason = Texts.Requests.SeatTaken;
+            refusal = CrewJoinOutcome.SeatTaken;
             return false;
         }
 
         return true;
+    }
+
+    private void Answer(Player joiner, PersistentID aircraftId, CrewJoinOutcome outcome)
+    {
+        _session.SendToPlayer(joiner.Owner, new CrewJoinResult(aircraftId, outcome));
     }
 
     private string? Violation(Aircraft aircraft, Player joiner)

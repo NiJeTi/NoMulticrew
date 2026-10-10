@@ -12,6 +12,7 @@ namespace NoMulticrew.Client;
 internal sealed class ClientSession : IDisposable
 {
     private const float RequestTimeoutSeconds = JoinRequests.TimeoutSeconds + 2f;
+    private const float ResultSeconds = 5f;
 
     private readonly NetworkClient _client;
     private readonly bool _advertised;
@@ -22,6 +23,7 @@ internal sealed class ClientSession : IDisposable
     private CrewScreen? _crewScreen;
 
     private (PersistentID AircraftId, float SentAt)? _request;
+    private (PersistentID AircraftId, CrewJoinOutcome Outcome, float Until)? _result;
 
     private int[] _openPilots = [];
 
@@ -34,6 +36,9 @@ internal sealed class ClientSession : IDisposable
     public CrewKillFeed Kills { get; } = new();
 
     public bool HasRequest => _request != null;
+
+    public (PersistentID AircraftId, CrewJoinOutcome Outcome)? Result =>
+        _result is { } result && Time.unscaledTime < result.Until ? (result.AircraftId, result.Outcome) : null;
 
     public CrewNotices Notices { get; }
 
@@ -67,6 +72,7 @@ internal sealed class ClientSession : IDisposable
         Register<CrewKillAuthor>(OnKillAuthor);
         Register<CrewHit>(OnHit);
         Register<CrewOpenPilots>(OnOpenPilots);
+        Register<CrewJoinResult>(OnJoinResult);
         Plugin.Settings.RejectAllRequests.SettingChanged += OnRejectAllRequestsChanged;
         _client.Authenticated.AddListener(OnAuthenticated);
     }
@@ -87,6 +93,7 @@ internal sealed class ClientSession : IDisposable
         _client.MessageHandler.UnregisterHandler<CrewKillAuthor>();
         _client.MessageHandler.UnregisterHandler<CrewHit>();
         _client.MessageHandler.UnregisterHandler<CrewOpenPilots>();
+        _client.MessageHandler.UnregisterHandler<CrewJoinResult>();
         _handlers.Clear();
         Plugin.Settings.RejectAllRequests.SettingChanged -= OnRejectAllRequestsChanged;
     }
@@ -168,6 +175,7 @@ internal sealed class ClientSession : IDisposable
         Notices.Clear();
         Wheel.Clear();
         _request = null;
+        _result = null;
     }
 
     public void RequestSeat(PersistentID aircraftId)
@@ -178,6 +186,7 @@ internal sealed class ClientSession : IDisposable
         }
 
         _request = (aircraftId, Time.unscaledTime);
+        _result = null;
         Feedback.Play(CrewCue.Select);
 
         if (!Send(new CrewJoinRequest(aircraftId)))
@@ -275,9 +284,31 @@ internal sealed class ClientSession : IDisposable
             return;
         }
 
-        _request = null;
-        Notices.ShowNotice(message.Text);
+        Notices.ShowNotice(message.Text, message.Tone);
         Feedback.Play(message.Cue);
+    }
+
+    private void OnJoinResult(INetworkPlayer player, CrewJoinResult message)
+    {
+        if (!Confirmed)
+        {
+            return;
+        }
+
+        _request = null;
+
+        if (message.Outcome == CrewJoinOutcome.Seated)
+        {
+            return;
+        }
+
+        _result = (message.AircraftId, message.Outcome, Time.unscaledTime + ResultSeconds);
+        Feedback.Play(CrewCue.Deselect);
+
+        if (message.Outcome == CrewJoinOutcome.LeaveAircraft)
+        {
+            Notices.ShowNotice(Texts.Requests.LeaveAircraftFirst, NoticeTone.Negative);
+        }
     }
 
     private void OnTurretVector(INetworkPlayer player, CrewTurretVector message)

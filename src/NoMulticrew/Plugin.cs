@@ -79,11 +79,6 @@ internal sealed class Plugin : BaseUnityPlugin
         Client?.Tick();
     }
 
-    private void OnGUI()
-    {
-        Client?.Notices.Draw();
-    }
-
     private void OnDestroy()
     {
         DisposeServerSession();

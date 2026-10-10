@@ -147,6 +147,7 @@ internal sealed class CrewRegistry
             _session.Notify(
                 aircraft.Player,
                 Texts.Crew.CrewmateLeft(player.GetDisplayName(PlayerNameContext.Other)),
+                NoticeTone.Caution,
                 CrewCue.Deselect
             );
         }

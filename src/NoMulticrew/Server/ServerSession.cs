@@ -104,9 +104,9 @@ internal sealed class ServerSession : IDisposable
         }
     }
 
-    public void Notify(Player player, string text, CrewCue cue = CrewCue.None)
+    public void Notify(Player player, string text, NoticeTone tone, CrewCue cue)
     {
-        SendToPlayer(player.Owner, new CrewNotice(text, cue));
+        SendToPlayer(player.Owner, new CrewNotice(text, tone, cue));
     }
 
     public bool SendToPlayer<T>(INetworkPlayer player, T message)

@@ -1,4 +1,5 @@
 using NoMulticrew.Networking;
+using NuclearOption.UIStyleSystem;
 using UnityEngine;
 
 namespace NoMulticrew.Client.Ui;
@@ -12,8 +13,6 @@ internal sealed class CrewNotices
 
     private readonly List<(CrewJoinPrompt Prompt, float ExpiresAt)> _prompts = [];
 
-    private string _toast = "";
-    private float _toastUntil;
     private float _lastRefusal = float.NegativeInfinity;
 
     public CrewNotices(ClientSession session)
@@ -46,22 +45,17 @@ internal sealed class CrewNotices
         _prompts.RemoveAll(x => now > x.ExpiresAt);
         _prompts.Add((prompt, now + prompt.ExpiresInSeconds));
 
-        ShowNotice(Texts.Requests.Incoming(CrewState.NameOf(prompt.JoinerPlayerIndex)));
+        ShowNotice(Texts.Requests.Incoming(CrewState.NameOf(prompt.JoinerPlayerIndex)), NoticeTone.Neutral);
         Feedback.Play(CrewCue.WeaponSwitch);
     }
 
-    public void ShowNotice(string text)
+    public void ShowNotice(string text, NoticeTone tone)
     {
-        var hud = SceneSingleton<CombatHUD>.i;
         var report = SceneSingleton<AircraftActionsReport>.i;
-        if (hud != null && report != null && hud.aircraft != null)
+        if (report != null)
         {
-            report.ReportText(text, NoticeSeconds);
-            return;
+            report.ReportText(Colored(text, tone), NoticeSeconds);
         }
-
-        _toast = text;
-        _toastUntil = Time.unscaledTime + NoticeSeconds;
     }
 
     public bool Refuse(string text)
@@ -71,7 +65,9 @@ internal sealed class CrewNotices
         if (Time.unscaledTime - _lastRefusal >= RefusalIntervalSeconds)
         {
             _lastRefusal = Time.unscaledTime;
-            SceneSingleton<AircraftActionsReport>.i.ReportText(text, RefusalIntervalSeconds);
+            SceneSingleton<AircraftActionsReport>.i.ReportText(
+                Colored(text, NoticeTone.Negative), RefusalIntervalSeconds
+            );
         }
 
         return false;
@@ -112,15 +108,19 @@ internal sealed class CrewNotices
     public void Clear()
     {
         _prompts.Clear();
-        _toastUntil = 0f;
     }
 
-    public void Draw()
+    private static string Colored(string text, NoticeTone tone)
     {
-        if (Time.unscaledTime < _toastUntil)
+        var theme = ThemeManager.Active.ColorTheme;
+
+        return tone switch
         {
-            GUI.Label(new Rect(20f, Screen.height - 60f, 600f, 24f), _toast);
-        }
+            NoticeTone.Positive => text.AddColor(theme.AllClear),
+            NoticeTone.Caution => text.AddColor(theme.Warning),
+            NoticeTone.Negative => text.AddColor(theme.Alert),
+            _ => text,
+        };
     }
 
     private void Respond(CrewJoinPrompt prompt, bool accepted)

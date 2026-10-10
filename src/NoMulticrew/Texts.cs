@@ -1,3 +1,4 @@
+using NoMulticrew.Networking;
 using NoMulticrew.Seats;
 
 namespace NoMulticrew;
@@ -17,17 +18,8 @@ internal static class Texts
 
     public static class Requests
     {
-        public const string AircraftGone = "That aircraft no longer exists";
-        public const string PilotDeclined = "The pilot declined";
-        public const string PilotSilent = "The pilot did not answer";
-        public const string PilotLeft = "The pilot left";
         public const string Seated = "Seated";
-
-        public const string NoPilot = "That aircraft has no pilot";
         public const string LeaveAircraftFirst = "You need to leave your aircraft first";
-        public const string NotAtAirbase = "The aircraft is not at an airbase";
-        public const string NotTakingCrew = "The pilot is not taking crew";
-        public const string SeatTaken = "That seat is taken";
 
         public static string Incoming(string joiner)
         {
@@ -92,6 +84,33 @@ internal static class Texts
         public const string ConfirmLeave = "CONFIRM LEAVE";
         public const string Request = "REQUEST";
         public const string Waiting = "WAITING";
+
+        public const string Declined = "PILOT DECLINED";
+        public const string NoAnswer = "NO ANSWER";
+        public const string PilotLeft = "PILOT LEFT";
+        public const string AircraftLost = "AIRCRAFT LOST";
+        public const string NoPilot = "NO PILOT";
+        public const string NotAtAirbase = "NOT AT AN AIRBASE";
+        public const string NotTakingCrew = "NOT TAKING CREW";
+        public const string SeatTaken = "SEAT TAKEN";
+        public const string LeaveAircraft = "LEAVE YOUR AIRCRAFT";
+
+        public static string Outcome(CrewJoinOutcome outcome)
+        {
+            return outcome switch
+            {
+                CrewJoinOutcome.Declined => Declined,
+                CrewJoinOutcome.NoAnswer => NoAnswer,
+                CrewJoinOutcome.PilotLeft => PilotLeft,
+                CrewJoinOutcome.AircraftLost => AircraftLost,
+                CrewJoinOutcome.NoPilot => NoPilot,
+                CrewJoinOutcome.NotAtAirbase => NotAtAirbase,
+                CrewJoinOutcome.NotTakingCrew => NotTakingCrew,
+                CrewJoinOutcome.SeatTaken => SeatTaken,
+                CrewJoinOutcome.LeaveAircraft => LeaveAircraft,
+                _ => "",
+            };
+        }
 
         public static string RoleLabel(Role role)
         {
