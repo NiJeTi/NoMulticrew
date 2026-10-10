@@ -82,6 +82,14 @@ internal sealed class PilotSeat
         return true;
     }
 
+    public void OnSingleRemoteFire(Unit unit, byte station)
+    {
+        if (Blocks(unit, station))
+        {
+            unit.weaponStations[station].RemoteFireSingle(unit);
+        }
+    }
+
     public void OnTurretVector(CrewTurretVector message)
     {
         var aircraft = Flown(message.AircraftId, message.Station);

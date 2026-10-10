@@ -144,6 +144,17 @@ internal static class Unit_SingleRemoteFire
 }
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
+[HarmonyPatch(typeof(Unit), "UserCode_RpcSingleRemoteFire_-1161895954")]
+internal static class Unit_UserCode_RpcSingleRemoteFire
+{
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
+    private static void Postfix(Unit __instance, byte stationIndex)
+    {
+        Plugin.Client?.PilotSeat.OnSingleRemoteFire(__instance, stationIndex);
+    }
+}
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
 [HarmonyPatch(typeof(Unit), "UserCode_CmdClaimHit_-1122942669")]
 internal static class Unit_UserCode_CmdClaimHit
 {
