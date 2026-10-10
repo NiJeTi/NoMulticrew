@@ -67,11 +67,11 @@ internal struct CrewRoster : IMessage<CrewRoster>
 
     public float Pending { get; private set; }
 
-    public byte WsoStation { get; private set; }
+    public sbyte WsoStation { get; private set; }
 
-    public byte PilotStation { get; private set; }
+    public sbyte PilotStation { get; private set; }
 
-    public CrewRoster(PersistentID aircraftId, int wsoPlayerIndex, float pending, byte wsoStation, byte pilotStation)
+    public CrewRoster(PersistentID aircraftId, int wsoPlayerIndex, float pending, sbyte wsoStation, sbyte pilotStation)
     {
         AircraftId = aircraftId;
         WsoPlayerIndex = wsoPlayerIndex;
@@ -85,8 +85,8 @@ internal struct CrewRoster : IMessage<CrewRoster>
         AircraftId = new PersistentID { Id = reader.ReadUInt32() };
         WsoPlayerIndex = reader.ReadPackedInt32();
         Pending = reader.ReadSingleConverter();
-        WsoStation = reader.ReadByte();
-        PilotStation = reader.ReadByte();
+        WsoStation = reader.ReadSByte();
+        PilotStation = reader.ReadSByte();
     }
 
     public void Write(NetworkWriter writer)
@@ -94,8 +94,8 @@ internal struct CrewRoster : IMessage<CrewRoster>
         writer.WriteUInt32(AircraftId.Id);
         writer.WritePackedInt32(WsoPlayerIndex);
         writer.WriteSingleConverter(Pending);
-        writer.WriteByte(WsoStation);
-        writer.WriteByte(PilotStation);
+        writer.WriteSByte(WsoStation);
+        writer.WriteSByte(PilotStation);
     }
 }
 
@@ -237,7 +237,7 @@ internal struct CrewCommand : IMessage<CrewCommand>
 
     public PersistentID AircraftId { get; private set; }
 
-    public byte Station { get; private set; }
+    public sbyte Station { get; private set; }
 
     public bool Firing { get; private set; }
 
@@ -251,7 +251,7 @@ internal struct CrewCommand : IMessage<CrewCommand>
 
     public PersistentID[] Targets { get; private set; }
 
-    private CrewCommand(CrewCommandKind kind, PersistentID aircraftId, byte station)
+    private CrewCommand(CrewCommandKind kind, PersistentID aircraftId, sbyte station)
     {
         Kind = kind;
         AircraftId = aircraftId;
@@ -259,24 +259,24 @@ internal struct CrewCommand : IMessage<CrewCommand>
         Targets = [];
     }
 
-    public static CrewCommand FiringState(PersistentID aircraftId, byte station, bool firing)
+    public static CrewCommand FiringState(PersistentID aircraftId, sbyte station, bool firing)
     {
         return new CrewCommand(CrewCommandKind.FiringState, aircraftId, station) { Firing = firing };
     }
 
-    public static CrewCommand SingleFire(PersistentID aircraftId, byte station)
+    public static CrewCommand SingleFire(PersistentID aircraftId, sbyte station)
     {
         return new CrewCommand(CrewCommandKind.SingleFire, aircraftId, station);
     }
 
-    public static CrewCommand StoppedFiring(PersistentID aircraftId, byte station)
+    public static CrewCommand StoppedFiring(PersistentID aircraftId, sbyte station)
     {
         return new CrewCommand(CrewCommandKind.StoppedFiring, aircraftId, station);
     }
 
     public static CrewCommand ClaimHit(
         PersistentID aircraftId,
-        byte station,
+        sbyte station,
         PersistentID hitId,
         Vector3Compressed relativePos,
         Vector3Compressed velocity
@@ -292,7 +292,7 @@ internal struct CrewCommand : IMessage<CrewCommand>
 
     public static CrewCommand LaunchMissile(
         PersistentID aircraftId,
-        byte station,
+        sbyte station,
         PersistentID targetId,
         GlobalPosition aimpoint
     )
@@ -304,17 +304,17 @@ internal struct CrewCommand : IMessage<CrewCommand>
         };
     }
 
-    public static CrewCommand TurretVector(PersistentID aircraftId, byte station, Vector3Compressed direction)
+    public static CrewCommand TurretVector(PersistentID aircraftId, sbyte station, Vector3Compressed direction)
     {
         return new CrewCommand(CrewCommandKind.TurretVector, aircraftId, station) { Vector = direction };
     }
 
-    public static CrewCommand SetStationTargets(PersistentID aircraftId, byte station, PersistentID[] targets)
+    public static CrewCommand SetStationTargets(PersistentID aircraftId, sbyte station, PersistentID[] targets)
     {
         return new CrewCommand(CrewCommandKind.SetStationTargets, aircraftId, station) { Targets = targets };
     }
 
-    public static CrewCommand SelectStation(PersistentID aircraftId, byte station)
+    public static CrewCommand SelectStation(PersistentID aircraftId, sbyte station)
     {
         return new CrewCommand(CrewCommandKind.SelectStation, aircraftId, station);
     }
@@ -323,7 +323,7 @@ internal struct CrewCommand : IMessage<CrewCommand>
     {
         Kind = (CrewCommandKind)reader.ReadByte();
         AircraftId = new PersistentID { Id = reader.ReadUInt32() };
-        Station = reader.ReadByte();
+        Station = reader.ReadSByte();
         Targets = [];
 
         switch (Kind)
@@ -370,7 +370,7 @@ internal struct CrewCommand : IMessage<CrewCommand>
     {
         writer.WriteByte((byte)Kind);
         writer.WriteUInt32(AircraftId.Id);
-        writer.WriteByte(Station);
+        writer.WriteSByte(Station);
 
         switch (Kind)
         {
@@ -410,11 +410,11 @@ internal struct CrewTurretVector : IMessage<CrewTurretVector>
 {
     public PersistentID AircraftId { get; private set; }
 
-    public byte Station { get; private set; }
+    public sbyte Station { get; private set; }
 
     public Vector3Compressed Direction { get; private set; }
 
-    public CrewTurretVector(PersistentID aircraftId, byte station, Vector3Compressed direction)
+    public CrewTurretVector(PersistentID aircraftId, sbyte station, Vector3Compressed direction)
     {
         AircraftId = aircraftId;
         Station = station;
@@ -424,14 +424,14 @@ internal struct CrewTurretVector : IMessage<CrewTurretVector>
     public void Read(NetworkReader reader)
     {
         AircraftId = new PersistentID { Id = reader.ReadUInt32() };
-        Station = reader.ReadByte();
+        Station = reader.ReadSByte();
         Direction = reader.Read<Vector3Compressed>();
     }
 
     public void Write(NetworkWriter writer)
     {
         writer.WriteUInt32(AircraftId.Id);
-        writer.WriteByte(Station);
+        writer.WriteSByte(Station);
         writer.Write(Direction);
     }
 }
@@ -440,13 +440,13 @@ internal struct CrewLaunch : IMessage<CrewLaunch>
 {
     public PersistentID AircraftId { get; private set; }
 
-    public byte Station { get; private set; }
+    public sbyte Station { get; private set; }
 
     public PersistentID TargetId { get; private set; }
 
     public GlobalPosition Aimpoint { get; private set; }
 
-    public CrewLaunch(PersistentID aircraftId, byte station, PersistentID targetId, GlobalPosition aimpoint)
+    public CrewLaunch(PersistentID aircraftId, sbyte station, PersistentID targetId, GlobalPosition aimpoint)
     {
         AircraftId = aircraftId;
         Station = station;
@@ -457,7 +457,7 @@ internal struct CrewLaunch : IMessage<CrewLaunch>
     public void Read(NetworkReader reader)
     {
         AircraftId = new PersistentID { Id = reader.ReadUInt32() };
-        Station = reader.ReadByte();
+        Station = reader.ReadSByte();
         TargetId = new PersistentID { Id = reader.ReadUInt32() };
         Aimpoint = reader.ReadGlobalPosition();
     }
@@ -465,7 +465,7 @@ internal struct CrewLaunch : IMessage<CrewLaunch>
     public void Write(NetworkWriter writer)
     {
         writer.WriteUInt32(AircraftId.Id);
-        writer.WriteByte(Station);
+        writer.WriteSByte(Station);
         writer.WriteUInt32(TargetId.Id);
         writer.WriteGlobalPosition(Aimpoint);
     }

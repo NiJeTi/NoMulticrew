@@ -147,7 +147,7 @@ internal sealed class Plugin : BaseUnityPlugin
     {
         try
         {
-            SeatTable.Audit();
+            SeatTable.Validate();
         }
         catch (Exception e)
         {

@@ -52,7 +52,7 @@ internal sealed class BackSeatWeapons
         {
             if ((_firing & (1 << station)) != 0)
             {
-                Stop(aircraft, (byte)station);
+                Stop(aircraft, (sbyte)station);
             }
         }
 
@@ -67,10 +67,10 @@ internal sealed class BackSeatWeapons
         }
 
         _firing |= 1 << station;
-        _session.Send(CrewCommand.FiringState(_seat.Aircraft!.persistentID, (byte)station, true));
+        _session.Send(CrewCommand.FiringState(_seat.Aircraft!.persistentID, (sbyte)station, true));
     }
 
-    public void ClaimHit(Unit hitUnit, Vector3 relativePos, Vector3 bulletVelocity, byte station)
+    public void ClaimHit(Unit hitUnit, Vector3 relativePos, Vector3 bulletVelocity, sbyte station)
     {
         _session.Send(
             CrewCommand.ClaimHit(
@@ -85,7 +85,7 @@ internal sealed class BackSeatWeapons
 
     public void SingleFire(byte station)
     {
-        _session.Send(CrewCommand.SingleFire(_seat.Aircraft!.persistentID, station));
+        _session.Send(CrewCommand.SingleFire(_seat.Aircraft!.persistentID, (sbyte)station));
     }
 
     public void PushTargets()
@@ -102,7 +102,7 @@ internal sealed class BackSeatWeapons
             .Select(x => x.persistentID)
             .ToArray();
 
-        _session.Send(CrewCommand.SetStationTargets(aircraft.persistentID, (byte)_seat.Station, targets));
+        _session.Send(CrewCommand.SetStationTargets(aircraft.persistentID, (sbyte)_seat.Station, targets));
 
         Plugin.Logger.LogDebug($"Pushed {targets.Length} targets for station {_seat.Station}");
     }
@@ -134,7 +134,7 @@ internal sealed class BackSeatWeapons
         _session.Send(
             CrewCommand.TurretVector(
                 aircraft.persistentID,
-                station.Number,
+                (sbyte)station.Number,
                 NetworkFloatHelper.CompressIfValid(vector, logErrors: true, "direction", Vector3.forward)
             )
         );
@@ -201,7 +201,7 @@ internal sealed class BackSeatWeapons
         _session.Send(
             CrewCommand.LaunchMissile(
                 aircraft.persistentID,
-                station.Number,
+                (sbyte)station.Number,
                 target != null ? target.persistentID : PersistentID.None,
                 aimpoint
             )
@@ -233,11 +233,11 @@ internal sealed class BackSeatWeapons
             }
 
             _firing &= ~bit;
-            Stop(aircraft, (byte)station);
+            Stop(aircraft, (sbyte)station);
         }
     }
 
-    private void Stop(Aircraft aircraft, byte station)
+    private void Stop(Aircraft aircraft, sbyte station)
     {
         _session.Send(CrewCommand.FiringState(aircraft.persistentID, station, false));
         _session.Send(CrewCommand.StoppedFiring(aircraft.persistentID, station));

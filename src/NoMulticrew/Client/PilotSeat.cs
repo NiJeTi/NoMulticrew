@@ -108,7 +108,7 @@ internal sealed class PilotSeat
         aircraft.weaponStations[message.Station].LaunchMount(aircraft, target, message.Aimpoint);
     }
 
-    private Aircraft? Flown(PersistentID aircraftId, byte station)
+    private Aircraft? Flown(PersistentID aircraftId, sbyte station)
     {
         if (UnitRegistry.TryGetUnit<Aircraft>(aircraftId, out var aircraft)
             && Blocks(aircraft, station))

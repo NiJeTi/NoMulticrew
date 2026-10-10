@@ -273,57 +273,59 @@ internal sealed class CrewCommands
 
     private void Execute(Aircraft aircraft, Player sender, CrewCommand message)
     {
+        var station = message.Station;
+
         switch (message.Kind)
         {
             case CrewCommandKind.FiringState:
-                SetFiring(aircraft, message.Station, message.Firing);
+                SetFiring(aircraft, station, message.Firing);
                 break;
             case CrewCommandKind.SingleFire:
-                SingleRemoteFire(aircraft, message.Station);
+                SingleRemoteFire(aircraft, (byte)station);
                 break;
             case CrewCommandKind.StoppedFiring:
-                StoppedFiring(aircraft, message.Station);
+                StoppedFiring(aircraft, (byte)station);
                 break;
             case CrewCommandKind.ClaimHit:
                 _session.Economy.Attributed(
                     sender,
-                    () => ClaimHit(aircraft, message.TargetId, message.Vector, message.Velocity, message.Station)
+                    () => ClaimHit(aircraft, message.TargetId, message.Vector, message.Velocity, (byte)station)
                 );
                 break;
             case CrewCommandKind.LaunchMissile:
-                Launch(aircraft, sender, message);
+                Launch(aircraft, sender, station, message);
                 break;
             case CrewCommandKind.TurretVector:
-                SetTurretVector(aircraft, message.Station, message.Vector);
+                SetTurretVector(aircraft, (byte)station, message.Vector);
                 _session.SendToPlayer(
                     aircraft.Player.Owner,
-                    new CrewTurretVector(aircraft.persistentID, message.Station, message.Vector)
+                    new CrewTurretVector(aircraft.persistentID, station, message.Vector)
                 );
                 break;
             case CrewCommandKind.SetStationTargets:
-                SetStationTargets(aircraft, message.Station, message.Targets);
+                SetStationTargets(aircraft, (byte)station, message.Targets);
                 break;
         }
     }
 
-    private void Launch(Aircraft aircraft, Player sender, CrewCommand message)
+    private void Launch(Aircraft aircraft, Player sender, sbyte station, CrewCommand message)
     {
         UnitRegistry.TryGetUnit(message.TargetId, out var target);
 
-        _session.Economy.Attributed(sender, () => LaunchMissile(aircraft, message.Station, target, message.Aimpoint));
+        _session.Economy.Attributed(sender, () => LaunchMissile(aircraft, (byte)station, target, message.Aimpoint));
 
         if (!aircraft.LocalSim)
         {
             _session.SendToPlayer(
                 aircraft.Player.Owner,
-                new CrewLaunch(aircraft.persistentID, message.Station, message.TargetId, message.Aimpoint)
+                new CrewLaunch(aircraft.persistentID, station, message.TargetId, message.Aimpoint)
             );
         }
     }
 
-    private void SelectStation(INetworkPlayer connection, Player sender, Aircraft aircraft, byte station)
+    private void SelectStation(INetworkPlayer connection, Player sender, Aircraft aircraft, sbyte station)
     {
-        if (station != SeatTable.NoStation && station >= aircraft.weaponStations.Count)
+        if (station < -1 || station >= aircraft.weaponStations.Count)
         {
             Plugin.Logger.LogWarning(
                 $"Crew station {station} from {sender.GetDisplayName(PlayerNameContext.Other)} "
@@ -333,7 +335,7 @@ internal sealed class CrewCommands
             return;
         }
 
-        if (station != SeatTable.NoStation
+        if (station >= 0
             && !Plugin.SeatTable.CanSelect(aircraft, Role.Wso, station, _session.Crew.ServerState(aircraft)))
         {
             if (!Plugin.SeatTable.IsShared(aircraft))
@@ -357,7 +359,7 @@ internal sealed class CrewCommands
         _session.Crew.Select(aircraft.persistentID, station);
     }
 
-    private void SetFiring(Aircraft aircraft, byte station, bool firing)
+    private void SetFiring(Aircraft aircraft, sbyte station, bool firing)
     {
         var id = aircraft.persistentID;
         var (owned, bits) = _masks.GetValueOrDefault(id);

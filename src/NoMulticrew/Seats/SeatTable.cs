@@ -6,11 +6,10 @@ namespace NoMulticrew.Seats;
 
 internal sealed class SeatTable
 {
-    public const byte NoStation = byte.MaxValue;
-
     private const float BoardingSpeed = 50f / 3.6f;
-    private const float BoardingRadarAltitude = 5f;
     private const float ExitSpeed = 2f;
+
+    private const float BoardingRadarAltitude = 5f;
 
     private static readonly Dictionary<string, SeatDefinition> Config = new()
     {
@@ -75,7 +74,14 @@ internal sealed class SeatTable
             )
         ),
         ["UtilityHelo1"] = new SeatDefinition(
-            weapons: ["info_AGM1", "info_AGM_scanner1", "GTG1_info", "Grenade_40mm", "Gun12.7mm"],
+            weapons:
+            [
+                "info_AGM1",
+                "info_AGM_scanner1",
+                "GTG1_info",
+                "Grenade_40mm",
+                "Gun12.7mm"
+            ],
             view: new Vector3(0.98f, 0f, 0f),
             panel: new PanelPlacement(
                 new Vector3(-0.455f, 0.468f, 0.716f),
@@ -88,7 +94,14 @@ internal sealed class SeatTable
             )
         ),
         ["AttackHelo1"] = new SeatDefinition(
-            weapons: ["info_AGM1", "info_AGM2", "info_AGM_heavy", "info_AGM_scanner1", "Gun30mm_Rotary_Turret"],
+            weapons:
+            [
+                "info_AGM1",
+                "info_AGM2",
+                "info_AGM_heavy",
+                "info_AGM_scanner1",
+                "Gun30mm_Rotary_Turret"
+            ],
             view: new Vector3(0f, -0.43f, 1.40f),
             screen: new ScreenPlacement(
                 new Vector3(0f, 0.023f, 1.929f),
@@ -182,7 +195,7 @@ internal sealed class SeatTable
         ),
     };
 
-    private bool _audited;
+    private bool _validated;
 
     public SeatTable()
     {
@@ -190,7 +203,7 @@ internal sealed class SeatTable
         {
             if (!seat.IsShared && seat.Weapons.Count == 0)
             {
-                Plugin.Logger.LogError($"The WSO of {name} lists no weapons");
+                Plugin.Logger.LogError($"In aircraft '{name}' WSO has no weapons");
             }
 
             Plugin.Logger.LogDebug($"Seat {name}: {seat}");
@@ -200,11 +213,6 @@ internal sealed class SeatTable
     public static string Label(Role role)
     {
         return role == Role.Pilot ? "Pilot" : "WSO";
-    }
-
-    public static int StationIndex(byte station)
-    {
-        return station == NoStation ? -1 : station;
     }
 
     public static int StationOf(Unit unit, WeaponInfo weapon)
@@ -354,14 +362,14 @@ internal sealed class SeatTable
         }
     }
 
-    public void Audit()
+    public void Validate()
     {
-        if (_audited)
+        if (_validated)
         {
             return;
         }
 
-        _audited = true;
+        _validated = true;
 
         var known = Resources.FindObjectsOfTypeAll<WeaponInfo>().Select(x => x.name).ToHashSet();
 

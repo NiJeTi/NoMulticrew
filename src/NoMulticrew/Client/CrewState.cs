@@ -146,8 +146,8 @@ internal sealed class CrewState
 
         return new SeatState(
             true,
-            SeatTable.StationIndex(roster.WsoStation),
-            local ? own : SeatTable.StationIndex(roster.PilotStation)
+            roster.WsoStation,
+            local ? own : roster.PilotStation
         );
     }
 

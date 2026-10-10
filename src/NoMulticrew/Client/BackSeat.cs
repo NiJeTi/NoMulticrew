@@ -191,7 +191,7 @@ internal sealed class BackSeat : IDisposable
         Station = station;
 
         _session.Send(
-            CrewCommand.SelectStation(aircraft.persistentID, station >= 0 ? (byte)station : SeatTable.NoStation)
+            CrewCommand.SelectStation(aircraft.persistentID, (sbyte)station)
         );
 
         if (station >= 0)

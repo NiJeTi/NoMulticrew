@@ -10,8 +10,8 @@ internal sealed class CrewRegistry
     private sealed class Entry
     {
         public Player? Wso { get; set; }
-        public byte WsoStation { get; set; } = SeatTable.NoStation;
-        public byte PilotStation { get; set; } = SeatTable.NoStation;
+        public int WsoStation { get; set; } = -1;
+        public int PilotStation { get; set; } = -1;
     }
 
     private readonly Dictionary<PersistentID, Entry> _entries = [];
@@ -46,8 +46,8 @@ internal sealed class CrewRegistry
 
         return new SeatState(
             aboard,
-            aboard ? SeatTable.StationIndex(entry.WsoStation) : -1,
-            SeatTable.StationIndex(entry.PilotStation)
+            aboard ? entry.WsoStation : -1,
+            entry.PilotStation
         );
     }
 
@@ -77,11 +77,9 @@ internal sealed class CrewRegistry
 
         entry.Wso = player;
 
-        if (entry.PilotStation == SeatTable.NoStation)
+        if (entry.PilotStation < 0)
         {
-            entry.PilotStation = aircraft.weaponManager.currentWeaponStation is { } current
-                ? current.Number
-                : SeatTable.NoStation;
+            entry.PilotStation = aircraft.weaponManager.currentWeaponStation?.Number ?? -1;
         }
 
         Plugin.Logger.LogInfo(
@@ -92,7 +90,7 @@ internal sealed class CrewRegistry
         Broadcast(aircraft.persistentID);
     }
 
-    public void Select(PersistentID aircraftId, byte station)
+    public void Select(PersistentID aircraftId, int station)
     {
         EntryOf(aircraftId).WsoStation = station;
 
@@ -114,14 +112,14 @@ internal sealed class CrewRegistry
     {
         var entry = EntryOf(aircraft.persistentID);
 
-        entry.PilotStation = aircraft.weaponStations.Count > 0 ? (byte)0 : SeatTable.NoStation;
+        entry.PilotStation = aircraft.weaponStations.Count > 0 ? 0 : -1;
 
         if (entry.Wso == null)
         {
             return;
         }
 
-        entry.WsoStation = SeatTable.NoStation;
+        entry.WsoStation = -1;
 
         Broadcast(aircraft.persistentID);
     }
@@ -138,7 +136,7 @@ internal sealed class CrewRegistry
 
         var entry = _entries[aircraftId.Value];
         entry.Wso = null;
-        entry.WsoStation = SeatTable.NoStation;
+        entry.WsoStation = -1;
 
         _session.Commands.Released(player, aircraftId.Value);
 
@@ -232,8 +230,8 @@ internal sealed class CrewRegistry
             aircraftId,
             wso != null ? wso.PlayerIndex : -1,
             wso != null ? _session.Economy.PendingOf(wso) : 0f,
-            entry?.WsoStation ?? SeatTable.NoStation,
-            entry?.PilotStation ?? SeatTable.NoStation
+            (sbyte)(entry?.WsoStation ?? -1),
+            (sbyte)(entry?.PilotStation ?? -1)
         );
     }
 

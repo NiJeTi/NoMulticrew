@@ -101,7 +101,7 @@ internal static class Unit_RegisterHit
                     hud.DisplayHit(hitUnit.transform.TransformPoint(relativePos).ToGlobalPosition(), hitUnit);
                 }
 
-                client.BackSeat.Weapons.ClaimHit(hitUnit, relativePos, bulletVelocity, (byte)station);
+                client.BackSeat.Weapons.ClaimHit(hitUnit, relativePos, bulletVelocity, (sbyte)station);
                 return false;
             }
         }
