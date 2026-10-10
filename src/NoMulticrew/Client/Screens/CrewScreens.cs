@@ -234,8 +234,8 @@ internal sealed class CrewScreens
         var uv = placement.Uv;
         var aspect = uv.width * texture.width / (uv.height * texture.height);
 
-        var centre = placement.Center - eye;
-        var distance = centre.magnitude;
+        var center = placement.Center - eye;
+        var distance = center.magnitude;
         var height = 2f * distance * Mathf.Tan(QuadHeightDegrees * 0.5f * Mathf.Deg2Rad);
         var width = Mathf.Min(height * aspect, 2f * distance * Mathf.Tan(QuadMaxWidthDegrees * 0.5f * Mathf.Deg2Rad));
         height = width / aspect;
@@ -250,7 +250,7 @@ internal sealed class CrewScreens
             viewPoint,
             source.gameObject.layer,
             material,
-            [centre - right + up, centre + right + up, centre + right - up, centre - right - up],
+            [center - right + up, center + right + up, center + right - up, center - right - up],
             [
                 new Vector2(uv.xMin, uv.yMax),
                 new Vector2(uv.xMax, uv.yMax),
@@ -263,7 +263,7 @@ internal sealed class CrewScreens
         _quad.Show(false);
 
         Plugin.Logger.LogDebug(
-            $"WSO screen quad {width:F3} x {height:F3} m at {centre:F3} ({distance:F3} m) from the eye, uv {uv}"
+            $"WSO screen quad {width:F3} x {height:F3} m at {center:F3} ({distance:F3} m) from the eye, uv {uv}"
         );
     }
 

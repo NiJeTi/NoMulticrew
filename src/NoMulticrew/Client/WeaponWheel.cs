@@ -13,7 +13,7 @@ internal sealed class WeaponWheel
     private static readonly AccessTools.FieldRef<RadialMenuAction, Color> SelectedColorRef =
         AccessTools.FieldRefAccess<RadialMenuAction, Color>("selectedColor");
 
-    public HashSet<RadialMenuAction> Greyed { get; } = [];
+    public HashSet<RadialMenuAction> Grayed { get; } = [];
 
     public string? Built { get; set; }
 
@@ -31,11 +31,11 @@ internal sealed class WeaponWheel
 
     public void Clear()
     {
-        Greyed.Clear();
+        Grayed.Clear();
         Built = null;
     }
 
-    public static void Grey(RadialMenuAction action)
+    public static void Gray(RadialMenuAction action)
     {
         DefaultColorRef(action) = Color.gray;
         SelectedColorRef(action) = Color.gray;

@@ -73,7 +73,7 @@ internal sealed class ScreenRow : IDisposable
     {
         var label = Object.Instantiate(LabelRef(template), container);
         label.gameObject.name = $"NoMulticrew.CrewScreen.Label: {text}";
-        label.color = usable ? ThemeManager.Active.ColorTheme.AllClear : Color.grey;
+        label.color = usable ? ThemeManager.Active.ColorTheme.AllClear : Color.gray;
 
         var rect = (RectTransform)label.transform;
         rect.sizeDelta = new Vector2(rect.sizeDelta.x, Height);

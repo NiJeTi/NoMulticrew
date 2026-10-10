@@ -22,15 +22,15 @@ internal static class RadialMenuMain_SetupWeapons
         var wheel = client.Wheel;
         var role = client.LocalRole(___aircraft) ?? Role.Pilot;
 
-        wheel.Greyed.Clear();
+        wheel.Grayed.Clear();
 
         foreach (var action in ___allowedActionsWeapons)
         {
             if (action.GetActionType() == RadialMenuAction.ActionType.SelectWeapon
                 && !client.Crew.CanSelect(___aircraft, role, action.weapon_number))
             {
-                wheel.Greyed.Add(action);
-                WeaponWheel.Grey(action);
+                wheel.Grayed.Add(action);
+                WeaponWheel.Gray(action);
             }
         }
     }
@@ -49,9 +49,9 @@ internal static class RadialMenuMain_RefreshWeapons
             return;
         }
 
-        foreach (var action in wheel.Greyed)
+        foreach (var action in wheel.Grayed)
         {
-            WeaponWheel.Grey(action);
+            WeaponWheel.Gray(action);
         }
     }
 }
