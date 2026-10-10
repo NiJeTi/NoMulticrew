@@ -173,7 +173,7 @@ internal sealed class CrewmateScreen : IDisposable
         Strip<EngineTelemetry>(instance);
         Strip<MissileWarningLight>(instance);
 
-        if (_camera?.Texture != null)
+        if (_camera != null)
         {
             foreach (var display in new[] { TargetDisplayRef(_screen), LandingDisplayRef(_screen) })
             {

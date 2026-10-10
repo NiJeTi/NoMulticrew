@@ -26,15 +26,14 @@ internal sealed class CrewmateCam : IDisposable
         AccessTools.FieldRefAccess<TargetCam, Transform?>("camMountRear");
 
     private readonly Aircraft _aircraft;
+    private readonly Transform _part;
+    private readonly Vector3 _forwardMount;
+    private readonly Vector3 _rearMount;
+    private readonly GameObject _root;
+    private readonly Camera _camera;
+    private readonly Volume? _volume;
+    private readonly ColorAdjustments? _adjustments;
 
-    private GameObject? _root;
-    private Camera? _camera;
-    private Volume? _volume;
-    private ColorAdjustments? _adjustments;
-    private Transform? _part;
-
-    private Vector3 _forwardMount;
-    private Vector3 _rearMount;
     private Vector3 _target;
     private Vector3 _previous;
 
@@ -43,35 +42,109 @@ internal sealed class CrewmateCam : IDisposable
     private float _timeOnTarget;
     private bool _infrared;
 
-    public RenderTexture? Texture { get; private set; }
+    public RenderTexture Texture { get; }
 
-    private CrewmateCam(Aircraft aircraft)
+    private CrewmateCam(
+        Aircraft aircraft,
+        Transform part,
+        Vector3 forwardMount,
+        Vector3 rearMount,
+        GameObject root,
+        Camera camera,
+        Volume? volume,
+        RenderTexture texture
+    )
     {
         _aircraft = aircraft;
+        _part = part;
+        _forwardMount = forwardMount;
+        _rearMount = rearMount;
+        _root = root;
+        _camera = camera;
+        _volume = volume;
+        _adjustments = volume != null && volume.profile.TryGet<ColorAdjustments>(out var adjustments)
+            ? adjustments
+            : null;
+
+        Texture = texture;
+        _camera.targetTexture = texture;
+
+        RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
+        RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
     }
 
     public static CrewmateCam? Create(Aircraft aircraft)
     {
-        var cam = new CrewmateCam(aircraft);
+        GameObject? root = null;
 
         try
         {
-            cam.Build();
+            var source = aircraft.GetComponentInChildren<TargetCam>(true);
+            if (source == null)
+            {
+                throw new InvalidOperationException($"{aircraft.definition.jsonKey} has no target camera.");
+            }
+
+            var part = CrewTargetCam.AttachedPartRef(source);
+            var forward = ForwardMountRef(source);
+            var rear = RearMountRef(source);
+            if (part == null || forward == null || rear == null)
+            {
+                throw new InvalidOperationException("The target camera has no part or mounts.");
+            }
+
+            root = Object.Instantiate(GameAssets.i.targetCam, part.transform);
+            root.name = "NoMulticrew.CrewmateTargetCam";
+
+            var cameras = root.GetComponentsInChildren<Camera>(true);
+            if (cameras.Length == 0)
+            {
+                throw new InvalidOperationException("The target camera prefab has no camera.");
+            }
+
+            foreach (var each in cameras)
+            {
+                each.enabled = false;
+            }
+
+            var camera = cameras[0];
+
+            var shared = camera.targetTexture;
+            if (shared == null)
+            {
+                throw new InvalidOperationException("The target camera has no render texture.");
+            }
+
+            var volume = IsolateVolume(camera);
+            var texture = new RenderTexture(shared.descriptor) { name = "NoMulticrew.CrewmateTargetView" };
+
+            return new CrewmateCam(
+                aircraft,
+                part.transform,
+                part.transform.InverseTransformPoint(forward.position),
+                part.transform.InverseTransformPoint(rear.position),
+                root,
+                camera,
+                volume,
+                texture
+            );
         }
         catch (Exception e)
         {
             Plugin.Logger.LogError($"Failed to build the crewmate's target camera: {e}");
-            cam.Dispose();
+
+            if (root != null)
+            {
+                Object.Destroy(root);
+            }
 
             return null;
         }
-
-        return cam;
     }
 
     public bool Tick(IReadOnlyList<Unit> targets)
     {
-        if (_camera == null || _part == null)
+        if (_camera == null)
         {
             return false;
         }
@@ -133,102 +206,36 @@ internal sealed class CrewmateCam : IDisposable
             Object.Destroy(_volume.profile);
         }
 
-        if (Texture != null)
-        {
-            Object.Destroy(Texture);
-        }
-
-        Texture = null;
-
-        if (_root != null)
-        {
-            Object.Destroy(_root);
-        }
-
-        _root = null;
-        _camera = null;
-        _volume = null;
-        _adjustments = null;
+        Object.Destroy(Texture);
+        Object.Destroy(_root);
     }
 
-    private void Build()
+    private static Volume? IsolateVolume(Camera camera)
     {
-        var source = _aircraft.GetComponentInChildren<TargetCam>(true);
-        if (source == null)
+        var volume = camera.GetComponentInChildren<Volume>(true);
+        if (volume == null)
         {
-            throw new InvalidOperationException($"{_aircraft.definition.jsonKey} has no target camera.");
+            return null;
         }
 
-        var part = CrewTargetCam.AttachedPartRef(source);
-        var forward = ForwardMountRef(source);
-        var rear = RearMountRef(source);
-        if (part == null || forward == null || rear == null)
-        {
-            throw new InvalidOperationException("The target camera has no part or mounts.");
-        }
-
-        _part = part.transform;
-        _forwardMount = _part.InverseTransformPoint(forward.position);
-        _rearMount = _part.InverseTransformPoint(rear.position);
-
-        _root = Object.Instantiate(GameAssets.i.targetCam, _part);
-        _root.name = "NoMulticrew.CrewmateTargetCam";
-
-        var cameras = _root.GetComponentsInChildren<Camera>(true);
-        if (cameras.Length == 0)
-        {
-            throw new InvalidOperationException("The target camera prefab has no camera.");
-        }
-
-        foreach (var camera in cameras)
-        {
-            camera.enabled = false;
-        }
-
-        _camera = cameras[0];
-
-        var shared = _camera.targetTexture;
-        if (shared == null)
-        {
-            throw new InvalidOperationException("The target camera has no render texture.");
-        }
-
-        Texture = new RenderTexture(shared.descriptor) { name = "NoMulticrew.CrewmateTargetView" };
-        _camera.targetTexture = Texture;
-
-        _volume = _camera.GetComponentInChildren<Volume>(true);
-        IsolateVolume();
-
-        RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
-        RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
-    }
-
-    private void IsolateVolume()
-    {
-        if (_volume == null)
-        {
-            return;
-        }
-
-        _volume.enabled = false;
+        volume.enabled = false;
 
         var layer = FreeLayer();
         if (layer < 0)
         {
             Plugin.Logger.LogWarning("No free layer for crewmate target view grading, grading disabled");
-            Object.Destroy(_volume);
-            _volume = null;
-            _camera!.GetUniversalAdditionalCameraData().volumeLayerMask = 0;
+            Object.Destroy(volume);
+            camera.GetUniversalAdditionalCameraData().volumeLayerMask = 0;
 
-            return;
+            return null;
         }
 
-        _volume.gameObject.layer = layer;
-        _camera!.GetUniversalAdditionalCameraData().volumeLayerMask = 1 << layer;
-
-        _adjustments = _volume.profile.TryGet<ColorAdjustments>(out var adjustments) ? adjustments : null;
+        volume.gameObject.layer = layer;
+        camera.GetUniversalAdditionalCameraData().volumeLayerMask = 1 << layer;
 
         Plugin.Logger.LogDebug($"Crewmate target view grading on layer {layer}");
+
+        return volume;
     }
 
     private static int FreeLayer()
@@ -258,16 +265,14 @@ internal sealed class CrewmateCam : IDisposable
 
     private void Acquire(IReadOnlyList<Unit> targets, float delta)
     {
-        var camera = _camera!;
-
         PositionAndSize(targets, out var position, out var size);
 
-        if (!camera.enabled)
+        if (!_camera.enabled)
         {
-            camera.fieldOfView = StartFov;
-            camera.nearClipPlane = 2f;
-            camera.farClipPlane = 60000f;
-            camera.transform.SetPositionAndRotation(_part!.TransformPoint(_forwardMount), _aircraft.transform.rotation);
+            _camera.fieldOfView = StartFov;
+            _camera.nearClipPlane = 2f;
+            _camera.farClipPlane = 60000f;
+            _camera.transform.SetPositionAndRotation(_part.TransformPoint(_forwardMount), _aircraft.transform.rotation);
 
             _timeOnTarget = 0f;
             _previous = position;
@@ -277,7 +282,7 @@ internal sealed class CrewmateCam : IDisposable
 
         _timeout = Timeout;
 
-        var distance = Vector3.Distance(position, camera.transform.position);
+        var distance = Vector3.Distance(position, _camera.transform.position);
         var level = NetworkSceneSingleton<LevelInfo>.i;
 
         SetInfrared(
@@ -333,7 +338,7 @@ internal sealed class CrewmateCam : IDisposable
 
     private void Switch(bool on)
     {
-        _camera!.enabled = on;
+        _camera.enabled = on;
 
         if (_volume != null)
         {
