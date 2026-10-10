@@ -10,8 +10,10 @@ internal static class CameraCockpitState_FixedUpdateState
 {
     private static readonly AccessTools.FieldRef<Aircraft?> FeedbackAircraftRef = FeedbackRef<Aircraft?>("_aircraft");
     private static readonly AccessTools.FieldRef<AudioSource?> SourceRef = FeedbackRef<AudioSource?>("_source");
+
     private static readonly AccessTools.FieldRef<AircraftParameters.OnboardAoAEffects?> AoAEffectsRef =
         FeedbackRef<AircraftParameters.OnboardAoAEffects?>("aoaEffects");
+
     private static readonly AccessTools.FieldRef<float> VolumeRef = FeedbackRef<float>("volume");
     private static readonly AccessTools.FieldRef<float> VolumeSmoothedRef = FeedbackRef<float>("volumeSmoothed");
     private static readonly AccessTools.FieldRef<float> ShakeRef = FeedbackRef<float>("shake");
@@ -61,7 +63,9 @@ internal static class CameraCockpitState_FixedUpdateState
         ___antiSlump += slump * 1000f * Time.deltaTime;
         spring += cam.transform.up * ___antiSlump;
         ___camRelativeVel += (-Vector3.ClampMagnitude(___accel, 500f) + spring) * Time.deltaTime;
-        ___camRelativeVel -= Vector3.ClampMagnitude(___camRelativeVel * 20f * Time.deltaTime, ___camRelativeVel.magnitude);
+        ___camRelativeVel -= Vector3.ClampMagnitude(
+            ___camRelativeVel * 20f * Time.deltaTime, ___camRelativeVel.magnitude
+        );
         ___gForce = ___accel.magnitude / 9.81f;
         ___jerk = ___gForcePrev == 0f ? 0f : (___gForce - ___gForcePrev) / Time.deltaTime;
         ___velocityPrev = velocity;
@@ -113,7 +117,8 @@ internal static class CameraCockpitState_FixedUpdateState
         {
             lastUpdate = Time.timeSinceLevelLoad;
             var aoaEffects = AoAEffectsRef()!;
-            var direction = velocity - NetworkSceneSingleton<LevelInfo>.i.GetWind(aircraft.cockpit.xform.GlobalPosition());
+            var direction = velocity -
+                NetworkSceneSingleton<LevelInfo>.i.GetWind(aircraft.cockpit.xform.GlobalPosition());
             var local = aircraft.cockpit.xform.InverseTransformDirection(direction);
             var alpha = Mathf.Atan2(local.y, local.z) * 57.29578f;
             var speedFactor = Mathf.Max(aircraft.speed - aoaEffects.OnsetSpeed, 0f)

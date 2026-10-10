@@ -30,7 +30,9 @@ internal static class CombatHUD_DisplayCountermeasures
     private static IEnumerable<MethodBase> TargetMethods()
     {
         return AccessTools.GetDeclaredMethods(typeof(CombatHUD))
-            .Where(x => x.Name is nameof(CombatHUD.DisplayCountermeasures) or nameof(CombatHUD.DisplayCountermeasureAmmo));
+            .Where(
+                x => x.Name is nameof(CombatHUD.DisplayCountermeasures) or nameof(CombatHUD.DisplayCountermeasureAmmo)
+            );
     }
 
     [SuppressMessage("ReSharper", "UnusedMember.Local")]

@@ -26,7 +26,9 @@ internal sealed class CrewEconomy
 
     private readonly ServerSession _session;
 
-    private readonly Dictionary<(PersistentID Aircraft, WeaponInfo Weapon), Queue<(Player? Launcher, float Time)>> _launches = [];
+    private readonly Dictionary<(PersistentID Aircraft, WeaponInfo Weapon), Queue<(Player? Launcher, float Time)>>
+        _launches = [];
+
     private readonly Dictionary<Missile, Player> _launchers = [];
     private readonly Dictionary<PersistentID, Queue<(Player? Claimant, float Time)>> _claims = [];
     private readonly Dictionary<PersistentID, Dictionary<PersistentID, Ledger>> _ledger = [];
@@ -293,7 +295,9 @@ internal sealed class CrewEconomy
 
         Plugin.Logger.LogDebug(
             $"{type} reward {allocation:F0}/{score:F1} for {player.GetDisplayName(PlayerNameContext.Other)}: "
-            + string.Join(", ", portions.Select(x => $"{x.Earner.GetDisplayName(PlayerNameContext.Other)} {x.Fraction:P0}"))
+            + string.Join(
+                ", ", portions.Select(x => $"{x.Earner.GetDisplayName(PlayerNameContext.Other)} {x.Fraction:P0}")
+            )
         );
 
         _paying = true;
@@ -412,8 +416,8 @@ internal sealed class CrewEconomy
         return UnitRegistry.TryGetUnit<Aircraft>(aircraftId, out var aircraft)
             && aircraft.Player != null
             && !ReferenceEquals(aircraft.Player, crew)
-            ? aircraft.Player
-            : null;
+                ? aircraft.Player
+                : null;
     }
 
     private bool Open(PersistentID aircraft, Player? crew)
@@ -595,7 +599,14 @@ internal sealed class CrewEconomy
         }
     }
 
-    private void Pay(FactionHQ hq, Player player, Unit? target, float allocation, float score, FactionHQ.RewardType type)
+    private void Pay(
+        FactionHQ hq,
+        Player player,
+        Unit? target,
+        float allocation,
+        float score,
+        FactionHQ.RewardType type
+    )
     {
         if (allocation <= 0f && score <= 0f)
         {

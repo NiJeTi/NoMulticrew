@@ -153,7 +153,9 @@ internal sealed class CrewRegistry
             );
         }
 
-        Plugin.Logger.LogInfo($"{player.GetDisplayName(PlayerNameContext.Other)} left their seat in {aircraftId.Value}");
+        Plugin.Logger.LogInfo(
+            $"{player.GetDisplayName(PlayerNameContext.Other)} left their seat in {aircraftId.Value}"
+        );
 
         Broadcast(aircraftId.Value);
     }

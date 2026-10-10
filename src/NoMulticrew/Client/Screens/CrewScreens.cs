@@ -207,12 +207,15 @@ internal sealed class CrewScreens
 
     private Aircraft? CrewedLocalAircraft()
     {
-        if (!_session.Confirmed || !GameManager.GetLocalAircraft(out var aircraft) || aircraft == null || aircraft.disabled)
+        if (!_session.Confirmed || !GameManager.GetLocalAircraft(out var aircraft) || aircraft == null ||
+            aircraft.disabled)
         {
             return null;
         }
 
-        return Plugin.SeatTable.PanelOf(aircraft) != null && _session.Crew.ClientState(aircraft).WsoAboard ? aircraft : null;
+        return Plugin.SeatTable.PanelOf(aircraft) != null && _session.Crew.ClientState(aircraft).WsoAboard
+            ? aircraft
+            : null;
     }
 
     private void BuildQuad(Aircraft aircraft, ScreenPlacement placement, Transform viewPoint, Vector3 eye)
@@ -222,14 +225,16 @@ internal sealed class CrewScreens
         var texture = material != null ? material.GetTexture(EmissionMap) : null;
         if (material == null || source == null || texture == null)
         {
-            Plugin.Logger.LogError($"{aircraft.definition.jsonKey} has no screen material, renderer or texture; the WSO gets no screen quad");
+            Plugin.Logger.LogError(
+                $"{aircraft.definition.jsonKey} has no screen material, renderer or texture; the WSO gets no screen quad"
+            );
             return;
         }
 
         var uv = placement.Uv;
         var aspect = uv.width * texture.width / (uv.height * texture.height);
 
-        var centre = placement.Centre - eye;
+        var centre = placement.Center - eye;
         var distance = centre.magnitude;
         var height = 2f * distance * Mathf.Tan(QuadHeightDegrees * 0.5f * Mathf.Deg2Rad);
         var width = Mathf.Min(height * aspect, 2f * distance * Mathf.Tan(QuadMaxWidthDegrees * 0.5f * Mathf.Deg2Rad));

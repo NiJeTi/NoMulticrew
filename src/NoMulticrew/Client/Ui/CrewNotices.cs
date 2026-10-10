@@ -47,7 +47,9 @@ internal sealed class CrewNotices
         _prompts.RemoveAll(x => now > x.ExpiresAt);
         _prompts.Add((prompt, now + prompt.ExpiresInSeconds));
 
-        ShowNotice($"{CrewState.NameOf(prompt.JoinerPlayerIndex)} wants {SeatTable.Label(Role.Wso)} — open the map to answer");
+        ShowNotice(
+            $"{CrewState.NameOf(prompt.JoinerPlayerIndex)} wants {SeatTable.Label(Role.Wso)} — open the map to answer"
+        );
         Feedback.Play(CrewCue.WeaponSwitch);
     }
 

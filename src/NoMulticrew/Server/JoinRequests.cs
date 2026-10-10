@@ -163,7 +163,9 @@ internal sealed class JoinRequests
             }
 
             _requests.RemoveAt(i);
-            Plugin.Logger.LogInfo($"Crew request {request.Id} dropped: {player.GetDisplayName(PlayerNameContext.Other)} disconnected");
+            Plugin.Logger.LogInfo(
+                $"Crew request {request.Id} dropped: {player.GetDisplayName(PlayerNameContext.Other)} disconnected"
+            );
 
             if (toPilot)
             {

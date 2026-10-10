@@ -27,12 +27,8 @@ internal sealed class Plugin : BaseUnityPlugin
 
     public static bool IsServer => Server != null;
 
-    public static SeatState? SeatStateOf(Aircraft aircraft)
-    {
-        return Server?.Crew.ServerState(aircraft) ?? Client?.Crew.ClientState(aircraft);
-    }
-
-    private static AccessTools.FieldRef<ResourcesAsyncLoader<NetworkManagerNuclearOption>> NetworkManagerLoaderRef = null!;
+    private static AccessTools.FieldRef<ResourcesAsyncLoader<NetworkManagerNuclearOption>> _networkManagerLoaderRef =
+        null!;
 
     private static NetworkManagerNuclearOption? _manager;
 
@@ -56,9 +52,10 @@ internal sealed class Plugin : BaseUnityPlugin
                 }
             }
 
-            NetworkManagerLoaderRef = AccessTools.StaticFieldRefAccess<ResourcesAsyncLoader<NetworkManagerNuclearOption>>(
-                GameMembers.Field(typeof(NetworkManagerNuclearOption), "loader")
-            );
+            _networkManagerLoaderRef =
+                AccessTools.StaticFieldRefAccess<ResourcesAsyncLoader<NetworkManagerNuclearOption>>(
+                    GameMembers.Field(typeof(NetworkManagerNuclearOption), "loader")
+                );
 
             _harmony.PatchAll();
             MessageRegistry.RegisterAll();
@@ -95,9 +92,14 @@ internal sealed class Plugin : BaseUnityPlugin
         _harmony.UnpatchSelf();
     }
 
+    public static SeatState? SeatStateOf(Aircraft aircraft)
+    {
+        return Server?.Crew.ServerState(aircraft) ?? Client?.Crew.ClientState(aircraft);
+    }
+
     private static void Attach()
     {
-        var manager = NetworkManagerLoaderRef().IsLoaded ? NetworkManagerNuclearOption.i : null;
+        var manager = _networkManagerLoaderRef().IsLoaded ? NetworkManagerNuclearOption.i : null;
         if (manager == null || ReferenceEquals(manager, _manager))
         {
             return;

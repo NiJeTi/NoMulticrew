@@ -18,9 +18,8 @@ internal sealed class CrewMarks : IDisposable
         GameMembers.Method(typeof(HUDUnitMarker), "UpdateColor")
     );
 
-    private static readonly Action<HUDUnitMarker> SetMarkerFactionColor = AccessTools.MethodDelegate<Action<HUDUnitMarker>>(
-        GameMembers.Method(typeof(HUDUnitMarker), "SetFactionColor")
-    );
+    private static readonly Action<HUDUnitMarker> SetMarkerFactionColor =
+        AccessTools.MethodDelegate<Action<HUDUnitMarker>>(GameMembers.Method(typeof(HUDUnitMarker), "SetFactionColor"));
 
     private readonly ClientSession _session;
 
@@ -147,11 +146,13 @@ internal sealed class CrewMarks : IDisposable
             _session.Crew.CollectCrewmateTargets(_aircraft, _session.LocalRole(_aircraft)!.Value, _next);
         }
 
-        _next.RemoveWhere(static id =>
-            !UnitRegistry.TryGetUnit(id, out var unit)
-            || (unit.NetworkHQ != null
-                && SceneSingleton<DynamicMap>.i != null
-                && unit.NetworkHQ == SceneSingleton<DynamicMap>.i.HQ));
+        _next.RemoveWhere(
+            static id =>
+                !UnitRegistry.TryGetUnit(id, out var unit)
+                || (unit.NetworkHQ != null
+                    && SceneSingleton<DynamicMap>.i != null
+                    && unit.NetworkHQ == SceneSingleton<DynamicMap>.i.HQ)
+        );
     }
 
     private void DrawLines()
@@ -177,7 +178,10 @@ internal sealed class CrewMarks : IDisposable
                     continue;
                 }
 
-                Draw(Line(used++, map), from.transform.localPosition, to.transform.localPosition, color, LineThickness / scale);
+                Draw(
+                    Line(used++, map), from.transform.localPosition, to.transform.localPosition, color,
+                    LineThickness / scale
+                );
             }
         }
 
@@ -218,7 +222,13 @@ internal sealed class CrewMarks : IDisposable
         return line;
     }
 
-    private static void Draw((GameObject Instance, Image Image) line, Vector3 source, Vector3 target, Color color, float thickness)
+    private static void Draw(
+        (GameObject Instance, Image Image) line,
+        Vector3 source,
+        Vector3 target,
+        Color color,
+        float thickness
+    )
     {
         var delta = target - source;
         var transform = line.Instance.transform;

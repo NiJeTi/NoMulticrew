@@ -32,7 +32,9 @@ internal static class TargetClaimIndex_IsClaimer
     {
         if (Target == null && NoWingmen.Installed)
         {
-            Plugin.Logger.LogWarning("NoWingmen TargetClaimIndex.IsClaimer not found: a WSO's own targets show as claimed");
+            Plugin.Logger.LogWarning(
+                "NoWingmen TargetClaimIndex.IsClaimer not found: a WSO's own targets show as claimed"
+            );
         }
 
         return Target != null;
@@ -59,14 +61,18 @@ internal static class TargetClaimIndex_IsClaimer
 internal static class MarkColorResolver_TryResolveIdentity
 {
     private static readonly MethodBase? Target =
-        NoWingmen.Find("NoWingmen.Marks.MarkColorResolver", "TryResolveIdentity", typeof(Unit), typeof(Color).MakeByRefType());
+        NoWingmen.Find(
+            "NoWingmen.Marks.MarkColorResolver", "TryResolveIdentity", typeof(Unit), typeof(Color).MakeByRefType()
+        );
 
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
     private static bool Prepare()
     {
         if (Target == null && NoWingmen.Installed)
         {
-            Plugin.Logger.LogWarning("NoWingmen MarkColorResolver.TryResolveIdentity not found: a WSO's aircraft shows as a teammate's");
+            Plugin.Logger.LogWarning(
+                "NoWingmen MarkColorResolver.TryResolveIdentity not found: a WSO's aircraft shows as a teammate's"
+            );
         }
 
         return Target != null;

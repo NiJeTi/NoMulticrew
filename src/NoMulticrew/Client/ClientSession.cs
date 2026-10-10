@@ -313,7 +313,9 @@ internal sealed class ClientSession : IDisposable
             || BackSeat.Aircraft == null
             || hud == null
             || !UnitRegistry.TryGetUnit(message.TargetId, out var target)
-            || !NetworkFloatHelper.TryDecompress(message.RelativePos, out var relativePos, logErrors: false, "relativePos"))
+            || !NetworkFloatHelper.TryDecompress(
+                message.RelativePos, out var relativePos, logErrors: false, "relativePos"
+            ))
         {
             return;
         }

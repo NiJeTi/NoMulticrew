@@ -146,7 +146,9 @@ internal sealed class ServerSession : IDisposable
     {
         SendToPlayer(
             crew.Owner,
-            new CrewHit(target.persistentID, NetworkFloatHelper.CompressIfValid(relativePos, logErrors: false, "relativePos"))
+            new CrewHit(
+                target.persistentID, NetworkFloatHelper.CompressIfValid(relativePos, logErrors: false, "relativePos")
+            )
         );
     }
 

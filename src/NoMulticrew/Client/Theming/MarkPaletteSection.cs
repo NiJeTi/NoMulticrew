@@ -12,8 +12,10 @@ internal sealed class MarkPaletteSection : IDisposable
 {
     private const string Title = "NoMulticrew Marks";
     private const string CrewTargetLabel = "Crew target";
+
     private const string CrewTargetTooltip =
         "Color of targets selected by the other seats of your aircraft, on the HUD and the map, and of the lines drawn to them.";
+
     private const string NoWingmenSectionName = "NoWingmen.PaletteSection";
 
     private static readonly AccessTools.FieldRef<AccessibilityMenu, ColorPicker> ColorPickerPrefabRef =
@@ -31,13 +33,17 @@ internal sealed class MarkPaletteSection : IDisposable
     private static readonly AccessTools.FieldRef<AccessibilityMenu, bool> IsThemeEditedRef =
         AccessTools.FieldRefAccess<AccessibilityMenu, bool>("isThemeEdited");
 
-    private static readonly MethodInfo RefreshThemeName = GameMembers.Method(typeof(AccessibilityMenu), "RefreshThemeName");
+    private static readonly MethodInfo RefreshThemeName = GameMembers.Method(
+        typeof(AccessibilityMenu), "RefreshThemeName"
+    );
 
     private static readonly MethodInfo RefreshButtons = GameMembers.Method(typeof(AccessibilityMenu), "RefreshButtons");
 
     private static readonly MethodInfo HoverIn = GameMembers.Method(typeof(AccessibilityMenu), "OnColorNameHoverIn");
 
-    private static readonly MethodInfo HoverOut = GameMembers.Method(typeof(AccessibilityMenu), "OnColorNameHoveredOut");
+    private static readonly MethodInfo HoverOut = GameMembers.Method(
+        typeof(AccessibilityMenu), "OnColorNameHoveredOut"
+    );
 
     private static MarkPaletteSection? _current;
 

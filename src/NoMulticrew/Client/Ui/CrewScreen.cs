@@ -219,7 +219,9 @@ internal sealed class CrewScreen : IDisposable
 
                 var state = _session.IsRequested(aircraft.persistentID)
                     ? OfferState.Waiting
-                    : _session.HasRequest ? OfferState.Blocked : OfferState.Request;
+                    : _session.HasRequest
+                        ? OfferState.Blocked
+                        : OfferState.Request;
 
                 offers.Add(
                     new SeatOffer(
@@ -255,9 +257,7 @@ internal sealed class CrewScreen : IDisposable
                 : SeatTable.Label(holder).ToUpperInvariant();
             var usable = Plugin.SeatTable.CanSelect(aircraft, mine, i, state);
 
-            stations.Add(
-                ($"{i}  {weapon.shortName}  {label}{(i == selected ? " >" : "")}", usable)
-            );
+            stations.Add(($"{i}  {weapon.shortName}  {label}{(i == selected ? " >" : "")}", usable));
         }
     }
 

@@ -263,7 +263,9 @@ internal sealed class CrewCommands
             return true;
         }
 
-        Plugin.Logger.LogWarning($"Crew {kind} rate limit exceeded by {connection}, dropping it [penalty={limit.Penalty}]");
+        Plugin.Logger.LogWarning(
+            $"Crew {kind} rate limit exceeded by {connection}, dropping it [penalty={limit.Penalty}]"
+        );
         connection.SetError(limit.Penalty, PlayerErrorFlags.RateLimit);
 
         return false;

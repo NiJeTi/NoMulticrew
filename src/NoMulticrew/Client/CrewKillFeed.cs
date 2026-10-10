@@ -13,9 +13,10 @@ internal sealed class CrewKillFeed
             GameMembers.Method(typeof(MessageManager), "KillFeedFilter")
         );
 
-    private static readonly Func<FactionHQ, Color> ColorFromFaction = AccessTools.MethodDelegate<Func<FactionHQ, Color>>(
-        GameMembers.Method(typeof(MessageManager), "ColorFromFaction")
-    );
+    private static readonly Func<FactionHQ, Color> ColorFromFaction =
+        AccessTools.MethodDelegate<Func<FactionHQ, Color>>(
+            GameMembers.Method(typeof(MessageManager), "ColorFromFaction")
+        );
 
     private readonly Dictionary<PersistentID, (int PlayerIndex, float Time)> _authors = [];
 
@@ -23,7 +24,8 @@ internal sealed class CrewKillFeed
     {
         var now = Time.unscaledTime;
 
-        foreach (var stale in _authors.Where(x => now - x.Value.Time > RecordLifetimeSeconds).Select(x => x.Key).ToList())
+        foreach (var stale in _authors.Where(x => now - x.Value.Time > RecordLifetimeSeconds).Select(x => x.Key)
+            .ToList())
         {
             _authors.Remove(stale);
         }

@@ -27,7 +27,9 @@ internal sealed class CrewTargetCam
 
     private static readonly MethodInfo OnSetGear = GameMembers.Method(typeof(TargetCam), "TargetCam_OnSetGear");
 
-    private static readonly MethodInfo OnBeginRendering = GameMembers.Method(typeof(TargetCam), "OnBeginCameraRendering");
+    private static readonly MethodInfo OnBeginRendering = GameMembers.Method(
+        typeof(TargetCam), "OnBeginCameraRendering"
+    );
 
     private static readonly MethodInfo OnEndRendering = GameMembers.Method(typeof(TargetCam), "OnEndCameraRendering");
 

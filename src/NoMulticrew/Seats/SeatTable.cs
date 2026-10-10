@@ -6,7 +6,7 @@ namespace NoMulticrew.Seats;
 
 internal sealed class SeatTable
 {
-    public const byte NoStation = 255;
+    public const byte NoStation = byte.MaxValue;
 
     private const float BoardingSpeed = 50f / 3.6f;
     private const float BoardingRadarAltitude = 5f;
@@ -223,8 +223,10 @@ internal sealed class SeatTable
     public static bool CanBoard(
         Aircraft aircraft,
         Player joiner,
-        [NotNullWhen(true)] out Airbase? airbase,
-        [NotNullWhen(false)] out string? reason
+        [NotNullWhen(true)]
+        out Airbase? airbase,
+        [NotNullWhen(false)]
+        out string? reason
     )
     {
         airbase = null;
@@ -247,9 +249,8 @@ internal sealed class SeatTable
             return false;
         }
 
-        if (!(aircraft.radarAlt < BoardingRadarAltitude
-                && aircraft.speed < BoardingSpeed
-                && aircraft.NetworkHQ.AnyNearAirbase(aircraft.transform.position, out airbase)))
+        if (!(aircraft is { radarAlt: < BoardingRadarAltitude, speed: < BoardingSpeed }
+            && aircraft.NetworkHQ.AnyNearAirbase(aircraft.transform.position, out airbase)))
         {
             reason = "The aircraft is not at an airbase";
             return false;
@@ -368,7 +369,7 @@ internal sealed class SeatTable
         {
             foreach (var weapon in seat.Weapons.Where(x => !known.Contains(x)))
             {
-                Plugin.Logger.LogError($"The WSO of {name} lists '{weapon}', which matches no WeaponInfo");
+                Plugin.Logger.LogError($"Aircraft '{name}' contains invalid weapon '{weapon}'");
             }
         }
     }
