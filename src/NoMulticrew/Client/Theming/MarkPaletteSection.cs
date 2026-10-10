@@ -13,8 +13,7 @@ internal sealed class MarkPaletteSection : IDisposable
     private const string Title = "NoMulticrew Marks";
     private const string CrewTargetLabel = "Crew target";
 
-    private const string CrewTargetTooltip =
-        "Color of targets selected by the other seats of your aircraft, on the HUD and the map, and of the lines drawn to them.";
+    private const string CrewTargetTooltip = "Color of targets selected by the other seats of your aircraft.";
 
     private const string NoWingmenSectionName = "NoWingmen.PaletteSection";
 
